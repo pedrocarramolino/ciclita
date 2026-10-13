@@ -3,12 +3,13 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Chip } from '../../components/Chip'
 import { Icon } from '../../components/Icon'
+import { Switch } from '../../components/Switch'
 import { db, type DayLog } from '../../db/db'
 import { addCustomSymptom, saveDay, type DayForm } from '../../db/repo'
 import { formatLong, today, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
 import { t } from '../../i18n/es'
-import { FLOW_OPTIONS, MOOD_OPTIONS } from './options'
+import { FLOW_OPTIONS, MOOD_OPTIONS } from '../../domain/options'
 
 /** Hoja modal con el registro de un día. Usa <dialog> nativo (foco atrapado, Escape cierra). */
 export function DaySheet({ date, onClose }: { date: ISODate; onClose: () => void }) {
@@ -131,18 +132,7 @@ function DayFormView({
             <h3 id="sec-period" className="font-bold">
               {l.periodQuestion}
             </h3>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isPeriod}
-              aria-labelledby="sec-period"
-              onClick={() => setIsPeriod(!isPeriod)}
-              className={`relative h-8 w-14 shrink-0 rounded-full transition ${isPeriod ? 'bg-primary' : 'bg-line'}`}
-            >
-              <span
-                className={`absolute top-1 size-6 rounded-full bg-white shadow transition-all ${isPeriod ? 'left-7' : 'left-1'}`}
-              />
-            </button>
+            <Switch checked={isPeriod} onChange={setIsPeriod} labelledBy="sec-period" />
           </div>
           {isPeriod && (
             <fieldset className="mt-3">

@@ -11,8 +11,43 @@ export interface Settings {
   periodLength: number | null
   theme: Theme
   language: 'es'
-  /** Hash PBKDF2 del PIN (fase 5). */
+  /** Hash PBKDF2 del PIN; null = sin PIN. */
   pinHash: string | null
+  /** Intentos fallidos seguidos y momento (ms) hasta el que el PIN está bloqueado. */
+  pinFailures: number
+  pinLockedUntil: number
+  reminders: ReminderSettings
+  /** Última vez que se mostró cada recordatorio (para no repetirlo). */
+  reminderLog: ReminderLog
+}
+
+export interface ReminderSettings {
+  periodEnabled: boolean
+  periodDaysBefore: number
+  dailyEnabled: boolean
+  /** 'HH:MM' */
+  dailyTime: string
+  pillEnabled: boolean
+  pillTime: string
+  /** Textos neutros que no revelan el motivo en la pantalla de bloqueo. */
+  discreet: boolean
+}
+
+export interface ReminderLog {
+  /** Inicio previsto del periodo sobre el que ya se avisó. */
+  period?: ISODate
+  daily?: ISODate
+  pill?: ISODate
+}
+
+export const DEFAULT_REMINDERS: ReminderSettings = {
+  periodEnabled: false,
+  periodDaysBefore: 2,
+  dailyEnabled: false,
+  dailyTime: '21:00',
+  pillEnabled: false,
+  pillTime: '22:00',
+  discreet: true,
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -22,12 +57,20 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   language: 'es',
   pinHash: null,
+  pinFailures: 0,
+  pinLockedUntil: 0,
+  reminders: DEFAULT_REMINDERS,
+  reminderLog: {},
 }
 
 export async function getSettings(database: AppDB = db): Promise<Settings> {
   const rows = await database.settings.toArray()
-  const stored = Object.fromEntries(rows.map((r) => [r.key, r.value]))
-  return { ...DEFAULT_SETTINGS, ...stored } as Settings
+  const stored = Object.fromEntries(rows.map((r) => [r.key, r.value])) as Partial<Settings>
+  return {
+    ...DEFAULT_SETTINGS,
+    ...stored,
+    reminders: { ...DEFAULT_REMINDERS, ...stored.reminders },
+  }
 }
 
 export async function setSettings(

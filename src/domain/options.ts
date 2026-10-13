@@ -1,4 +1,4 @@
-import type { Flow } from '../../db/db'
+import type { Flow } from '../db/db'
 
 export const FLOW_OPTIONS: { value: Flow; label: string; drops: number }[] = [
   { value: 'spotting', label: 'Manchado', drops: 0 },

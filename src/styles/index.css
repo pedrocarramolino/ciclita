@@ -25,6 +25,8 @@
   --lavender-soft: #e9e2f4;
   --focus: #7a4fb0;
   --chart-bar: #b5503f;
+  --danger: #9f2d2d;
+  --on-danger: #ffffff;
   color-scheme: light;
 }
 
@@ -44,6 +46,8 @@
   --lavender-soft: #3b2f52;
   --focus: #d7c3f5;
   --chart-bar: #d9705c;
+  --danger: #f19a9a;
+  --on-danger: #2a1420;
   color-scheme: dark;
 }
 
@@ -63,6 +67,8 @@
   --color-lavender: var(--lavender);
   --color-lavender-soft: var(--lavender-soft);
   --color-accent: var(--focus);
+  --color-danger: var(--danger);
+  --color-on-danger: var(--on-danger);
 }
 
 html,
