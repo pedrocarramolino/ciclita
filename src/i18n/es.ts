@@ -133,6 +133,24 @@ export const es = {
       'Sin cuentas, sin analítica ni rastreadores. Tus registros nunca salen de tu dispositivo salvo que tú los exportes. Los recordatorios, si los activas, se programan en un servidor (Upstash) con su hora y su texto.',
     saved: 'Guardado',
   },
+  update: {
+    available: 'Hay una versión nueva de la app.',
+    offlineReady: 'La app ya funciona sin conexión.',
+    reload: 'Actualizar',
+    later: 'Más tarde',
+    ok: 'Entendido',
+  },
+  install: {
+    title: 'Instalar la app',
+    hint: 'Ábrela desde tu pantalla de inicio como cualquier otra app, también sin conexión.',
+    button: 'Instalar en este dispositivo',
+    iosSteps: [
+      'Abre esta página en Safari.',
+      'Toca el botón Compartir (el cuadrado con la flecha hacia arriba).',
+      'Elige «Añadir a pantalla de inicio» y confirma.',
+    ],
+    manual: 'Usa la opción «Instalar app» o «Añadir a pantalla de inicio» del menú de tu navegador.',
+  },
   notifications: {
     discreetTitle: 'Ciclo',
     discreet: {

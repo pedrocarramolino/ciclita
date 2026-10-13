@@ -1,9 +1,13 @@
 /// <reference lib="webworker" />
 /**
- * Service worker: precarga de la app (modo offline, se completa en la fase 6) y
- * recepción de las notificaciones Web Push enviadas por el servidor (Upstash QStash).
+ * Service worker:
+ *  - Modo offline: precarga toda la app (HTML, JS, CSS, fuentes e iconos) y sirve
+ *    index.html para cualquier navegación, así la app abre sin conexión.
+ *  - Notificaciones: muestra los Web Push enviados por el servidor (Upstash QStash).
+ *  - Actualizaciones: la nueva versión espera hasta que la app pide activarla.
  */
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
+import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching'
+import { NavigationRoute, registerRoute } from 'workbox-routing'
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null } | string>
@@ -12,7 +16,13 @@ declare const self: ServiceWorkerGlobalScope & {
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
-self.addEventListener('install', () => void self.skipWaiting())
+// Navegaciones → index.html precargado (la app usa rutas con #, pero así cubrimos
+// cualquier URL). Las llamadas a /api nunca se sirven desde la caché.
+registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/api\//] }))
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') void self.skipWaiting()
+})
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))
 
 interface PushPayload {
@@ -33,8 +43,8 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title, {
       body: data.body,
       tag: data.tag,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/badge-96.png',
+      icon: '/pwa-192x192.png',
+      badge: '/badge-96.png',
       data: { url: data.url ?? '/' },
     }),
   )

@@ -128,5 +128,5 @@ export async function syncPush(prediction: Prediction | null, opts: { force?: bo
 /** Notificación de prueba local, mostrada por el service worker. */
 export async function showTestNotification(title: string, body: string) {
   const reg = await swRegistration()
-  await reg.showNotification(title, { body, tag: 'ciclo-test', icon: '/icons/icon-192.png' })
+  await reg.showNotification(title, { body, tag: 'ciclo-test', icon: '/pwa-192x192.png' })
 }

@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { BottomNav } from './components/BottomNav'
+import { UpdatePrompt } from './components/UpdatePrompt'
 import { getSettings, type Theme } from './db/settings'
 import { CalendarScreen } from './features/calendar/CalendarScreen'
 import { Home } from './features/home/Home'
@@ -26,6 +27,8 @@ function useTheme(theme: Theme | undefined) {
     const apply = () => {
       const dark = theme === 'dark' || ((theme ?? 'system') === 'system' && mq.matches)
       document.documentElement.classList.toggle('dark', dark)
+      // Color de la barra del sistema acorde al tema (crema / ciruela).
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1f141d' : '#fbf6f0')
     }
     apply()
     mq.addEventListener('change', apply)
@@ -67,21 +70,30 @@ export default function App() {
   const prediction = usePrediction()
   usePushSync(settings?.onboardingDone ? settings.reminders : undefined, prediction)
 
-  if (!settings) return null // cargando IndexedDB
-  if (locked) return <LockScreen onUnlock={unlock} />
-  if (!settings.onboardingDone) return <Onboarding />
+  let screen: ReactNode
+  if (!settings) screen = null // cargando IndexedDB
+  else if (locked) screen = <LockScreen onUnlock={unlock} />
+  else if (!settings.onboardingDone) screen = <Onboarding />
+  else
+    screen = (
+      <div className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))]">
+        {route === 'home' && <Home />}
+        {route === 'calendar' && <CalendarScreen />}
+        {route === 'stats' && (
+          <Suspense fallback={null}>
+            <StatsScreen />
+          </Suspense>
+        )}
+        {route === 'settings' && <SettingsScreen />}
+        <BottomNav route={route} onNavigate={navigate} />
+      </div>
+    )
 
+  // El service worker (UpdatePrompt) se registra en todas las pantallas, también en el onboarding.
   return (
-    <div className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))]">
-      {route === 'home' && <Home />}
-      {route === 'calendar' && <CalendarScreen />}
-      {route === 'stats' && (
-        <Suspense fallback={null}>
-          <StatsScreen />
-        </Suspense>
-      )}
-      {route === 'settings' && <SettingsScreen />}
-      <BottomNav route={route} onNavigate={navigate} />
-    </div>
+    <>
+      {screen}
+      <UpdatePrompt />
+    </>
   )
 }

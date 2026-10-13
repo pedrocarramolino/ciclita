@@ -5,6 +5,7 @@ import { getSettings, setSettings, type Theme } from '../../db/settings'
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../../domain/prediction'
 import { t } from '../../i18n/es'
 import { DataSection } from './DataSection'
+import { InstallSection } from './InstallSection'
 import { PinSection } from './PinSection'
 import { RemindersSection } from './RemindersSection'
 import { Section } from './Section'
@@ -21,6 +22,8 @@ export function SettingsScreen() {
   return (
     <main className="mx-auto w-full max-w-md space-y-4 px-4 pt-6 pb-4">
       <h1 className="text-2xl font-extrabold">{s.title}</h1>
+
+      <InstallSection />
 
       <Section title={s.cycleSection} hint={s.cycleHint}>
         <NumberStepper
