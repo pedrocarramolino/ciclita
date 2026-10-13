@@ -1,6 +1,13 @@
-/** Textos en español. Estructura preparada para añadir más idiomas. */
+/**
+ * Textos en español (idioma por defecto). Los demás idiomas tienen exactamente esta
+ * misma estructura: TypeScript avisa si falta algún texto.
+ */
+/** Números con decimales al estilo español: "29,8". */
+const num = (n: number) => n.toLocaleString('es')
+
 export const es = {
   appName: 'Ciclita',
+  locale: 'es',
   legal: 'Esta app no es un método anticonceptivo ni sustituye el consejo médico.',
   common: {
     next: 'Continuar',
@@ -57,6 +64,58 @@ export const es = {
     cancel: 'Cancelar',
     continue: 'Continuar',
   },
+  stepper: {
+    minus: (label: string) => `Restar un día a ${label.toLowerCase()}`,
+    plus: (label: string) => `Sumar un día a ${label.toLowerCase()}`,
+  },
+  options: {
+    flow: { spotting: 'Manchado', light: 'Ligero', medium: 'Medio', heavy: 'Abundante' },
+    mucus: { dry: 'Seco', sticky: 'Pegajoso', creamy: 'Cremoso', watery: 'Acuoso', eggwhite: 'Clara de huevo' },
+    sex: { protected: 'Con protección', unprotected: 'Sin protección' },
+    mood: {
+      happy: 'Alegría',
+      calm: 'Calma',
+      neutral: 'Normal',
+      sad: 'Tristeza',
+      irritable: 'Irritabilidad',
+      anxious: 'Ansiedad',
+      tired: 'Sin energía',
+    },
+  },
+  symptomCategories: {
+    pain: 'Dolor',
+    digestion: 'Digestión',
+    skin: 'Piel y pelo',
+    energy: 'Energía y sueño',
+    appetite: 'Apetito',
+    other: 'Otros',
+  },
+  /** Nombre a mostrar de cada síntoma del catálogo (en español, el propio nombre). */
+  symptomNames: {} as Record<string, string>,
+  backupErrors: {
+    invalidJson: 'El archivo no es un JSON válido.',
+    notBackup: 'El archivo no parece una copia de seguridad de esta app.',
+    newer: 'La copia es de una versión más nueva de la app.',
+    csvHeader: 'El CSV no tiene el formato de esta app (falta la cabecera "fecha;periodo;…").',
+  },
+  csv: {
+    header: [
+      'fecha',
+      'periodo',
+      'flujo',
+      'sintomas',
+      'animo',
+      'dolor',
+      'medicacion',
+      'notas',
+      'temperatura',
+      'moco',
+      'relaciones',
+      'peso',
+    ],
+    yes: 'sí',
+    no: 'no',
+  },
   settings: {
     title: 'Ajustes',
     cycleSection: 'Tu ciclo',
@@ -65,7 +124,8 @@ export const es = {
     theme: 'Tema',
     themes: { light: 'Claro', dark: 'Oscuro', system: 'Automático' },
     language: 'Idioma',
-    languages: { es: 'Español' },
+    languages: { es: 'Español', en: 'English' },
+    languageHint: 'La app se recargará en el idioma elegido.',
     reminders: 'Recordatorios',
     remindersUnsupported: 'Este navegador no permite notificaciones.',
     remindersDenied:
@@ -108,7 +168,7 @@ export const es = {
       patch: 'Un parche nuevo cada semana durante 3 semanas y 1 de descanso.',
       injection: 'Cada 12 semanas, con un aviso una semana antes.',
     },
-    nextEvent: (date: string) => `Próximo aviso: ${date}`,
+    nextEvent: (date: string) => `Próximo aviso: ${date.toLowerCase()}`,
     time: 'Hora',
     discreet: 'Notificaciones discretas',
     discreetHint:
@@ -249,8 +309,8 @@ export const es = {
     nextWithMargin: (d: string, m: number) => `${d} (±${m} ${m === 1 ? 'día' : 'días'})`,
     irregular: (v: number) =>
       `La duración de los ciclos varía ${v} días en este periodo (más de 7 días se considera irregular).`,
-    // toLocaleString('es') escribe los decimales con coma: "29,8 días".
-    days: (n: number) => `${n.toLocaleString('es')} ${n === 1 ? 'día' : 'días'}`,
+    days: (n: number) => `${num(n)} ${n === 1 ? 'día' : 'días'}`,
+    decimal: num,
     cyclesTitle: 'Ciclos',
     colStart: 'Inicio',
     colCycle: 'Ciclo',
@@ -275,16 +335,15 @@ export const es = {
     notesTitle: 'Notas',
     fertilityTitle: 'Fertilidad y peso',
     temperatureRow: (n: number) => `Temperatura basal (${n} ${n === 1 ? 'registro' : 'registros'})`,
-    temperatureRange: (min: number, max: number) =>
-      `${min.toLocaleString('es')}–${max.toLocaleString('es')} °C`,
+    temperatureRange: (min: number, max: number) => `${num(min)}–${num(max)} °C`,
     mucusRow: 'Días con moco cervical registrado',
     sexRow: 'Relaciones sexuales',
     sexValue: (p: number, u: number) => `${p} con protección · ${u} sin protección`,
     weightRow: 'Peso',
     weightValue: (a: number, b: number, da: string, db: string) =>
       a === b && da === db
-        ? `${a.toLocaleString('es')} kg (${da})`
-        : `${a.toLocaleString('es')} kg (${da}) → ${b.toLocaleString('es')} kg (${db})`,
+        ? `${num(a)} kg (${da})`
+        : `${num(a)} kg (${da}) → ${num(b)} kg (${db})`,
     footer:
       'Informe elaborado a partir de los registros de la propia persona en la app Ciclita. Las fechas previstas son estimaciones. No es un diagnóstico ni sustituye la valoración médica.',
   },
@@ -435,7 +494,7 @@ export const es = {
     moreFieldsHint: 'Puedes registrar también temperatura basal, moco cervical, relaciones sexuales o peso activándolos en Ajustes → Qué registras.',
   },
   home: {
-    todayIs: (date: string) => `Hoy, ${date}`,
+    todayIs: (date: string) => `Hoy, ${date.toLowerCase()}`,
     noData: 'Registra tu periodo para ver tus predicciones',
     noDataHint: 'Cuando empiece, pulsa el botón de abajo o márcalo en el calendario.',
     periodDay: (n: number) => `Día ${n} de tu periodo`,
@@ -474,4 +533,4 @@ export const es = {
   },
 }
 
-export const t = es
+export type Messages = typeof es

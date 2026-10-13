@@ -10,7 +10,7 @@ import {
   type CycleRecord,
   type SymptomStat,
 } from '../../domain/stats'
-import { t } from '../../i18n/es'
+import { symptomLabel, t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { CycleChart } from './CycleChart'
 
@@ -166,7 +166,7 @@ function Symptoms({ symptoms }: { symptoms: SymptomStat[] }) {
           {symptoms.map((sym) => (
             <li key={sym.name}>
               <div className="flex items-baseline justify-between gap-3">
-                <span className="font-bold">{sym.name}</span>
+                <span className="font-bold">{symptomLabel(sym.name)}</span>
                 <span className="shrink-0 text-sm text-muted tabular-nums">{s.times(sym.count)}</span>
               </div>
               <div aria-hidden="true" className="mt-1 h-2 rounded-full bg-surface-soft">

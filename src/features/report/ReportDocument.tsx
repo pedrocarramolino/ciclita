@@ -1,7 +1,7 @@
 import { formatFullDate } from '../../domain/dates'
 import { FLOW_OPTIONS } from '../../domain/options'
 import type { Report } from '../../domain/report'
-import { t } from '../../i18n/es'
+import { lang, symptomLabel, t } from '../../i18n'
 
 /**
  * El informe en sí, sin interfaz alrededor. Su HTML también se guarda tal cual como
@@ -14,7 +14,7 @@ export function ReportDocument({ report: r, name }: { report: Report; name?: str
   const days = (n: number | null) => (n === null ? '—' : R.days(n))
 
   return (
-    <article className="rpt" lang="es">
+    <article className="rpt" lang={lang}>
       <h1>{R.docTitle}</h1>
       {name?.trim() && <p className="rpt-name">{name.trim()}</p>}
       <p className="rpt-meta">{R.rangeLine(formatFullDate(r.from), formatFullDate(r.to))}</p>
@@ -107,7 +107,7 @@ export function ReportDocument({ report: r, name }: { report: Report; name?: str
             </tr>
             <tr>
               <th scope="row">{R.painAverage}</th>
-              <td className="num">{r.pain.average.toLocaleString('es')} / 10</td>
+              <td className="num">{t.report.decimal(r.pain.average)} / 10</td>
             </tr>
             <tr>
               <th scope="row">{R.painMax}</th>
@@ -136,7 +136,7 @@ export function ReportDocument({ report: r, name }: { report: Report; name?: str
           <tbody>
             {r.symptoms.map((sym) => (
               <tr key={sym.name}>
-                <td>{sym.name}</td>
+                <td>{symptomLabel(sym.name)}</td>
                 <td className="num">{sym.count}</td>
                 <td>{sym.topPhase ? t.stats.phases[sym.topPhase] : '—'}</td>
               </tr>

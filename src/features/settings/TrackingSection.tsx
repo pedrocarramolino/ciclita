@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import { Switch } from '../../components/Switch'
 import { setSettings, type TrackingSettings } from '../../db/settings'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 import { Row, Section } from './Section'
 
 const KEYS: (keyof TrackingSettings)[] = ['temperature', 'mucus', 'sex', 'weight']

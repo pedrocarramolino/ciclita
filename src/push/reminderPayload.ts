@@ -7,7 +7,7 @@ import { addDays, today as todayISO, type ISODate } from '../domain/dates'
 import { buildEventReminders } from '../domain/reminderEvents'
 import type { AppMode } from '../domain/modes'
 import type { Prediction } from '../domain/prediction'
-import { t } from '../i18n/es'
+import { t } from '../i18n'
 
 export interface TimedReminder {
   time: string

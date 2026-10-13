@@ -7,7 +7,7 @@ import { downloadText } from '../../db/data'
 import { db } from '../../db/db'
 import { today } from '../../domain/dates'
 import { buildReport, reportFileName, type ReportMonths } from '../../domain/report'
-import { t } from '../../i18n/es'
+import { lang, t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { ReportDocument } from './ReportDocument'
 import './report.css'
@@ -42,7 +42,7 @@ export function ReportScreen() {
     const body = docRef.current?.innerHTML
     if (!report || !body) return
     const html = `<!doctype html>
-<html lang="es">
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

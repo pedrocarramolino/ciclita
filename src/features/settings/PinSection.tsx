@@ -5,7 +5,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { setSettings } from '../../db/settings'
 import { disableEncryption, enableEncryption, isVaultUnlocked, rekeyVault } from '../../db/vault'
 import { hashPin, verifyPin } from '../../security/pin'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 import { Section } from './Section'
 
 type Flow = 'set' | 'change' | 'remove' | 'encrypt' | 'decrypt'

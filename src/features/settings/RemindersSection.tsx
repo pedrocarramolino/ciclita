@@ -6,7 +6,7 @@ import { setSettings, type Settings, type ReminderSettings } from '../../db/sett
 import { permission, requestPermission, showTestNotification, syncPush } from '../../push/pushClient'
 import { formatLong, today } from '../../domain/dates'
 import { buildEventReminders, type ContraceptionMethod } from '../../domain/reminderEvents'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { Row, Section } from './Section'
 
@@ -183,7 +183,7 @@ export function RemindersSection({ settings }: { settings: Settings }) {
             <TimeField id="contraception-time" value={c.time} onChange={(v) => updateContraception({ time: v })} />
             {nextContraception && (
               <p className="text-sm font-bold">
-                {s.nextEvent(formatLong(nextContraception.date).toLowerCase())} ·{' '}
+                {s.nextEvent(formatLong(nextContraception.date))} ·{' '}
                 {t.notifications.events[nextContraception.type].body}
               </p>
             )}

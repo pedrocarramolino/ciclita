@@ -8,7 +8,7 @@ import { db, type DayLog } from '../../db/db'
 import { addCustomSymptom, saveDay, type DayForm } from '../../db/repo'
 import { formatLong, today, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
-import { t } from '../../i18n/es'
+import { symptomLabel, t } from '../../i18n'
 import {
   FLOW_OPTIONS,
   MOOD_OPTIONS,
@@ -139,7 +139,7 @@ function DayFormView({
   const mine = [...new Set([...customSymptoms, ...(form.symptoms ?? []).filter((s) => !findCatalogSymptom(s))])]
   const chip = (name: string) => (
     <Chip key={name} selected={!!form.symptoms?.includes(name)} onClick={() => toggleSymptom(name)}>
-      {name}
+      {symptomLabel(name)}
     </Chip>
   )
   const l = t.log

@@ -54,7 +54,7 @@ src/
   components/        Componentes reutilizables (botones, chips, PIN, diálogos…)
   push/              Suscripción push y sincronización de recordatorios con el servidor
   security/          Hash y verificación del PIN
-  i18n/es.ts         Textos (español)
+  i18n/              Textos: es.ts (español, por defecto) y en.ts (inglés). El idioma se elige en Ajustes
   sw.ts              Service worker: modo offline y notificaciones
 ```
 

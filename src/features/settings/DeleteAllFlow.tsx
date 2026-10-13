@@ -3,7 +3,7 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { wipeAll } from '../../db/data'
 import { getSettings } from '../../db/settings'
 import { unregisterPush, unsubscribeBrowserPush } from '../../push/pushClient'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 
 /** Borrado total con doble confirmación: aviso + escribir "BORRAR". */
 export function DeleteAllFlow({ onCancel }: { onCancel: () => void }) {

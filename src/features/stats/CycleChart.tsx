@@ -1,11 +1,11 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { formatDayMonth, parseISODate } from '../../domain/dates'
 import type { CycleRecord } from '../../domain/stats'
-import { t } from '../../i18n/es'
+import { locale, t } from '../../i18n'
 import { barPath, chartLayout } from './chartLayout'
 
 const HEIGHT = 224
-const monthShort = new Intl.DateTimeFormat('es', { month: 'short' })
+const monthShort = new Intl.DateTimeFormat(locale, { month: 'short' })
 
 /** Ancho disponible del contenedor, actualizado al girar el móvil o cambiar el tamaño. */
 function useWidth<T extends HTMLElement>() {

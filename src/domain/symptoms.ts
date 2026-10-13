@@ -4,6 +4,7 @@
  * cifrados. Los síntomas personalizados sí se guardan en la base de datos.
  */
 import type { DayLog } from '../db/db'
+import { en, locale, t } from '../i18n'
 
 export interface SymptomCategory {
   id: string
@@ -14,32 +15,32 @@ export interface SymptomCategory {
 export const SYMPTOM_CATALOG: SymptomCategory[] = [
   {
     id: 'pain',
-    label: 'Dolor',
+    label: t.symptomCategories.pain,
     symptoms: ['Dolor abdominal', 'Calambres', 'Dolor de cabeza', 'Migraña', 'Dolor lumbar', 'Dolor articular', 'Sensibilidad en el pecho'],
   },
   {
     id: 'digestion',
-    label: 'Digestión',
+    label: t.symptomCategories.digestion,
     symptoms: ['Hinchazón', 'Náuseas', 'Diarrea', 'Estreñimiento', 'Gases'],
   },
   {
     id: 'skin',
-    label: 'Piel y pelo',
+    label: t.symptomCategories.skin,
     symptoms: ['Acné', 'Piel grasa', 'Piel seca', 'Caída del pelo'],
   },
   {
     id: 'energy',
-    label: 'Energía y sueño',
+    label: t.symptomCategories.energy,
     symptoms: ['Cansancio', 'Insomnio', 'Somnolencia', 'Dificultad para concentrarse'],
   },
   {
     id: 'appetite',
-    label: 'Apetito',
+    label: t.symptomCategories.appetite,
     symptoms: ['Antojos', 'Más apetito', 'Menos apetito'],
   },
   {
     id: 'other',
-    label: 'Otros',
+    label: t.symptomCategories.other,
     symptoms: ['Sofocos', 'Sudores nocturnos', 'Mareos', 'Retención de líquidos', 'Flujo vaginal inusual', 'Sequedad vaginal'],
   },
 ]
@@ -70,10 +71,13 @@ export const PERIMENOPAUSE_FREQUENT = [
   'Dolor de cabeza',
 ]
 
-/** Busca un síntoma del catálogo sin distinguir mayúsculas ni tildes. */
+/**
+ * Busca un síntoma del catálogo sin distinguir mayúsculas ni tildes, también por su
+ * nombre en inglés. Devuelve el nombre guardado (en español).
+ */
 export function findCatalogSymptom(name: string): string | undefined {
   const key = normalize(name)
-  return CATALOG_SYMPTOMS.find((s) => normalize(s) === key)
+  return CATALOG_SYMPTOMS.find((s) => normalize(s) === key || normalize(en.symptomNames[s] ?? '') === key)
 }
 
 export const normalize = (s: string) =>
@@ -91,7 +95,7 @@ export const normalize = (s: string) =>
 export function frequentSymptoms(days: DayLog[], limit = 8, defaults: string[] = DEFAULT_FREQUENT): string[] {
   const counts = new Map<string, number>()
   for (const d of days) for (const s of d.symptoms ?? []) counts.set(s, (counts.get(s) ?? 0) + 1)
-  const used = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es')).map(([s]) => s)
+  const used = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], locale)).map(([s]) => s)
   const out = used.slice(0, limit)
   for (const s of defaults) {
     if (out.length >= limit) break

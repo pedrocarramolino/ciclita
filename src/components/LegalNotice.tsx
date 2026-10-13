@@ -1,4 +1,4 @@
-import { t } from '../i18n/es'
+import { t } from '../i18n'
 
 export function LegalNotice({ className = '' }: { className?: string }) {
   return (

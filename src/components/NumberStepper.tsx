@@ -1,3 +1,5 @@
+import { t } from '../i18n'
+
 interface Props {
   id: string
   label: string
@@ -26,7 +28,7 @@ export function NumberStepper({ id, label, help, value, min, max, unit, disabled
       <div className="mt-2 flex items-center gap-3">
         <button
           type="button"
-          aria-label={`Restar un día a ${label.toLowerCase()}`}
+          aria-label={t.stepper.minus(label)}
           disabled={disabled || value <= min}
           onClick={() => set(value - 1)}
           className="size-12 rounded-full border border-line bg-surface text-2xl font-bold disabled:opacity-40"
@@ -50,7 +52,7 @@ export function NumberStepper({ id, label, help, value, min, max, unit, disabled
         </div>
         <button
           type="button"
-          aria-label={`Sumar un día a ${label.toLowerCase()}`}
+          aria-label={t.stepper.plus(label)}
           disabled={disabled || value >= max}
           onClick={() => set(value + 1)}
           className="size-12 rounded-full border border-line bg-surface text-2xl font-bold disabled:opacity-40"

@@ -8,7 +8,7 @@
  */
 import { getSettings, setSettings, type PushDevice, type Settings } from '../db/settings'
 import type { Prediction } from '../domain/prediction'
-import { t } from '../i18n/es'
+import { t } from '../i18n'
 import { buildReminders, hasReminders } from './reminderPayload'
 
 export function pushSupported(): boolean {

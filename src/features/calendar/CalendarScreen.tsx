@@ -6,7 +6,7 @@ import { getSettings } from '../../db/settings'
 import { monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
 import { formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
 

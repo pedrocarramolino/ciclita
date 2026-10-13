@@ -1,5 +1,5 @@
 import { useRegisterSW } from 'virtual:pwa-register/react'
-import { t } from '../i18n/es'
+import { t } from '../i18n'
 import { Button } from './Button'
 
 /** Cada cuánto se buscan versiones nuevas mientras la app está abierta. */

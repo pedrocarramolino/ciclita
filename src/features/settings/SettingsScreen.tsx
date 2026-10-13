@@ -3,7 +3,7 @@ import { LegalNotice } from '../../components/LegalNotice'
 import { NumberStepper } from '../../components/NumberStepper'
 import { getSettings, setSettings, type Theme } from '../../db/settings'
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../../domain/prediction'
-import { t } from '../../i18n/es'
+import { LANGS, lang, setLanguage, t, type Lang } from '../../i18n'
 import { DataSection } from './DataSection'
 import { InstallSection } from './InstallSection'
 import { PinSection } from './PinSection'
@@ -96,12 +96,23 @@ export function SettingsScreen() {
           </label>
           <select
             id="language"
-            value={settings.language}
-            onChange={() => {}}
+            value={lang}
+            onChange={(e) => {
+              const l = e.target.value as Lang
+              void setSettings({ language: l }).then(() => setLanguage(l))
+            }}
+            aria-describedby="language-hint"
             className="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
           >
-            <option value="es">{s.languages.es}</option>
+            {LANGS.map((l) => (
+              <option key={l} value={l} lang={l}>
+                {s.languages[l]}
+              </option>
+            ))}
           </select>
+          <p id="language-hint" className="mt-1 text-xs text-muted">
+            {s.languageHint}
+          </p>
         </div>
       </Section>
 

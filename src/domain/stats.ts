@@ -2,6 +2,7 @@
  * Estadísticas a partir del historial. Funciones puras, sin acceso a la base de datos.
  */
 import type { DayLog, Period } from '../db/db'
+import { locale } from '../i18n'
 import { addDays, diffDays, type ISODate } from './dates'
 import { periodDateSet } from './periods'
 import { fertileWindowFor } from './prediction'
@@ -130,5 +131,5 @@ export function symptomStats(
     const best = PHASES.reduce((a, b) => (s.byPhase[b] > s.byPhase[a] ? b : a))
     s.topPhase = s.byPhase[best] > 0 ? best : null
   }
-  return out.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'es'))
+  return out.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, locale))
 }

@@ -2,6 +2,7 @@
  * Utilidades de fechas. Todas las fechas de calendario se guardan como cadenas
  * 'YYYY-MM-DD' en hora local, para evitar desfases por zona horaria.
  */
+import { locale } from '../i18n'
 
 export type ISODate = string
 
@@ -30,10 +31,10 @@ export function addDays(s: ISODate, n: number): ISODate {
 const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1)
 
 // Crear un Intl.DateTimeFormat es caro: se crean una sola vez y se reutilizan.
-const LONG = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' })
-const DAY_MONTH = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long' })
-const MONTH_YEAR = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' })
-const FULL_DATE = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric' })
+const LONG = new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' })
+const DAY_MONTH = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long' })
+const MONTH_YEAR = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' })
+const FULL_DATE = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' })
 
 /** "Martes, 13 de octubre" */
 export function formatLong(s: ISODate): string {

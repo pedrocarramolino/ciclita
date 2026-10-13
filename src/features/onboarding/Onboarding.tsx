@@ -5,7 +5,7 @@ import { LegalNotice } from '../../components/LegalNotice'
 import { NumberStepper } from '../../components/NumberStepper'
 import { completeOnboarding } from '../../db/settings'
 import { addDays, today } from '../../domain/dates'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 
 const TOTAL_STEPS = 3
 const PRIVACY_ICONS: IconName[] = ['phone', 'shield', 'lock']

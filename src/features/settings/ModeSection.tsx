@@ -2,7 +2,7 @@ import { useId } from 'react'
 import { setSettings, type Settings } from '../../db/settings'
 import { formatFullDate, today } from '../../domain/dates'
 import { lastPeriodFromDueDate, pregnancyInfo, type AppMode } from '../../domain/modes'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { Section } from './Section'
 

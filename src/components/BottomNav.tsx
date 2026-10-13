@@ -1,5 +1,5 @@
 import { Icon, type IconName } from './Icon'
-import { t } from '../i18n/es'
+import { t } from '../i18n'
 import type { Route } from '../useHashRoute'
 
 const ITEMS: { route: Route; icon: IconName; label: string }[] = [

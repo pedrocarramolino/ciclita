@@ -4,6 +4,9 @@ import './styles/index.css'
 import App from './App.tsx'
 import { migrateLegacyDb } from './db/migrate'
 import { isEncrypted } from './db/vault'
+import { lang } from './i18n'
+
+document.documentElement.lang = lang
 
 // Antes de pintar la app: se migra la base de datos del nombre antiguo si existe y se
 // mira si los datos están cifrados (entonces lo primero es pedir el PIN).

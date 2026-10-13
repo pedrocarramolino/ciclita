@@ -2,6 +2,7 @@
  * Informe para el médico: resumen del ciclo a partir de los registros, calculado en
  * el propio dispositivo. Función pura (sin base de datos) para poder probarla.
  */
+import { lang } from '../i18n'
 import type { DayLog, Flow, Period } from '../db/db'
 import { parseISODate, toISODate, type ISODate } from './dates'
 import type { PredictedPeriod, Prediction } from './prediction'
@@ -164,5 +165,5 @@ export function buildReport(
 }
 
 /** Nombre de archivo para descargar el informe. */
-export const reportFileName = (r: Report) => `ciclita-informe-${r.generatedOn}.html`
+export const reportFileName = (r: Report) => `ciclita-${lang === 'en' ? 'report' : 'informe'}-${r.generatedOn}.html`
 

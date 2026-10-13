@@ -4,7 +4,7 @@ import { Icon } from '../../components/Icon'
 import { endPeriod, startPeriod } from '../../db/repo'
 import { diffDays, formatDayMonth, formatLong, formatRange, today as todayISO } from '../../domain/dates'
 import type { Prediction, Source } from '../../domain/prediction'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
 import { db } from '../../db/db'
@@ -32,7 +32,7 @@ export function Home() {
 
   return (
     <main className="mx-auto w-full max-w-md space-y-4 px-4 pt-6 pb-4">
-      <p className="text-sm font-bold text-muted">{h.todayIs(formatLong(today).toLowerCase())}</p>
+      <p className="text-sm font-bold text-muted">{h.todayIs(formatLong(today))}</p>
 
       {pregnancy && <PregnancyHero info={pregnancy} />}
       {mode === 'perimenopause' && <PerimenopauseHero info={perimenopauseInfo(modeData.periods, today)} prediction={p} />}

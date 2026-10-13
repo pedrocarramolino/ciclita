@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/Button'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 import { Section } from './Section'
 
 interface BeforeInstallPromptEvent extends Event {

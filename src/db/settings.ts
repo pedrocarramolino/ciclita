@@ -1,3 +1,4 @@
+import type { Lang } from '../i18n'
 import { db, type AppDB } from './db'
 import type { ISODate } from '../domain/dates'
 import type { ContraceptionMethod } from '../domain/reminderEvents'
@@ -12,7 +13,7 @@ export interface Settings {
   cycleLength: number | null
   periodLength: number | null
   theme: Theme
-  language: 'es'
+  language: Lang
   /** Hash PBKDF2 del PIN; null = sin PIN. */
   pinHash: string | null
   /** Intentos fallidos seguidos y momento (ms) hasta el que el PIN está bloqueado. */

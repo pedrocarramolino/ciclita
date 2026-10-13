@@ -4,7 +4,7 @@ import { Icon } from '../../components/Icon'
 import { PinPad } from '../../components/PinPad'
 import { lockoutMs, MAX_ATTEMPTS } from '../../security/pin'
 import { settingsPinCheck, type PinCheck } from './pinCheck'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 import { DeleteAllFlow } from '../settings/DeleteAllFlow'
 
 /** Pantalla de bloqueo con teclado numérico, esperas tras fallos y "¿Has olvidado tu PIN?". */

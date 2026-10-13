@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Button } from './Button'
-import { t } from '../i18n/es'
+import { t } from '../i18n'
 
 /**
  * Diálogo de confirmación modal (<dialog> nativo). Si se indica `typeToConfirm`,

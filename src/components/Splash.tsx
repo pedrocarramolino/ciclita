@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { t } from '../i18n/es'
+import { t } from '../i18n'
 
 /** Duración mínima de la animación de apertura y del fundido de salida (ms). */
 const MIN_MS = 1050

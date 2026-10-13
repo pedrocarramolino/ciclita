@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { t } from '../i18n/es'
+import { t } from '../i18n'
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'] as const
 

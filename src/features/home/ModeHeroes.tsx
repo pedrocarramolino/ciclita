@@ -1,7 +1,7 @@
 import { formatFullDate } from '../../domain/dates'
 import type { PerimenopauseInfo, PregnancyInfo } from '../../domain/modes'
 import type { Prediction } from '../../domain/prediction'
-import { t } from '../../i18n/es'
+import { t } from '../../i18n'
 
 /** Anillo de progreso sencillo (decorativo: el texto ya lo describe). */
 function ProgressRing({ progress, center, color }: { progress: number; center: string; color: string }) {

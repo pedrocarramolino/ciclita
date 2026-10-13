@@ -4,7 +4,8 @@
  */
 import type { DayLog, Flow, Mucus, Period, Sex } from '../db/db'
 import { diffDays, type ISODate } from './dates'
-import { FLOW_OPTIONS, MOOD_OPTIONS, MUCUS_OPTIONS, SEX_OPTIONS, TEMPERATURE_RANGE, WEIGHT_RANGE } from './options'
+import { en, es, lang, symptomLabel, t, type Messages } from '../i18n'
+import { MOOD_OPTIONS, MUCUS_OPTIONS, SEX_OPTIONS, TEMPERATURE_RANGE, WEIGHT_RANGE } from './options'
 
 export const BACKUP_APP = 'ciclita'
 /** Identificador de las copias hechas antes del cambio de nombre (se siguen aceptando). */
@@ -80,15 +81,15 @@ export function parseBackup(text: string): Backup {
   try {
     raw = JSON.parse(text)
   } catch {
-    throw new BackupError('El archivo no es un JSON válido.')
+    throw new BackupError(t.backupErrors.invalidJson)
   }
   const b = raw as Partial<Backup>
   const knownApp = b && (b.app === BACKUP_APP || LEGACY_BACKUP_APPS.includes(String(b.app)))
   if (!knownApp || typeof b.version !== 'number') {
-    throw new BackupError('El archivo no parece una copia de seguridad de esta app.')
+    throw new BackupError(t.backupErrors.notBackup)
   }
   if (b.version > BACKUP_VERSION) {
-    throw new BackupError('La copia es de una versión más nueva de la app.')
+    throw new BackupError(t.backupErrors.newer)
   }
   const periods = (Array.isArray(b.periods) ? b.periods : [])
     .filter((p) => p && isDate(p.startDate) && (p.endDate === null || isDate(p.endDate)))
@@ -114,29 +115,33 @@ export function parseBackup(text: string): Backup {
 // ---------- CSV ----------
 
 const SEP = ';' // Excel en español usa ';' como separador de columnas.
-export const CSV_HEADER = [
-  'fecha',
-  'periodo',
-  'flujo',
-  'sintomas',
-  'animo',
-  'dolor',
-  'medicacion',
-  'notas',
-  'temperatura',
-  'moco',
-  'relaciones',
-  'peso',
-]
+/** Cabecera en el idioma de la app. Al importar se aceptan las de todos los idiomas. */
+export const CSV_HEADER: string[] = t.csv.header
+/** Nombres internos de las columnas (los de la cabecera en español). */
+const COLS = es.csv.header
+const LANG_MESSAGES: Messages[] = [es, en]
 
-const flowLabel = (f?: Flow) => FLOW_OPTIONS.find((o) => o.value === f)?.label ?? ''
-const moodLabel = (m?: string) => MOOD_OPTIONS.find((o) => o.value === m)?.label ?? ''
-const mucusLabel = (m?: Mucus) => MUCUS_OPTIONS.find((o) => o.value === m)?.label ?? ''
-const sexLabel = (s?: Sex) => SEX_OPTIONS.find((o) => o.value === s)?.label ?? ''
-// Decimales con coma, como espera Excel en español.
-const decimal = (n?: number) => (n === undefined ? '' : String(n).replace('.', ','))
-const parseNum = (s: string) => (s === '' ? undefined : Number(s.replace(',', '.')))
+type OptionGroup = keyof Messages['options']
+/** Etiqueta de una opción en el idioma de la app ('' si no hay valor). */
+const optionLabel = (group: OptionGroup, value?: string) =>
+  value ? ((t.options[group] as Record<string, string>)[value] ?? '') : ''
 const norm = (s: string) => s.trim().toLowerCase()
+/** Valor de una opción a partir de su etiqueta en cualquier idioma. */
+function optionValue<V extends string>(group: OptionGroup, label: string): V | undefined {
+  const key = norm(label)
+  if (!key) return undefined
+  for (const m of LANG_MESSAGES) {
+    const found = Object.entries(m.options[group] as Record<string, string>).find(([, l]) => norm(l) === key)
+    if (found) return found[0] as V
+  }
+  return undefined
+}
+/** Los síntomas del catálogo se guardan en español: se traducen al leer un CSV en otro idioma. */
+const symptomFromCSV = (name: string) =>
+  Object.entries(en.symptomNames).find(([, l]) => norm(l) === norm(name))?.[0] ?? name
+// Decimales con coma en español (como espera Excel) y con punto en inglés.
+const decimal = (n?: number) => (n === undefined ? '' : lang === 'en' ? String(n) : String(n).replace('.', ','))
+const parseNum = (s: string) => (s === '' ? undefined : Number(s.replace(',', '.')))
 
 /**
  * Celda CSV segura. Las que empiezan por = + - @ (o tabulador / retorno) se prefijan
@@ -155,16 +160,16 @@ export function toCSV(periodDays: Set<ISODate>, days: DayLog[]): string {
     const d = byDate.get(date)
     return [
       date,
-      periodDays.has(date) ? 'sí' : 'no',
-      flowLabel(d?.flow),
-      (d?.symptoms ?? []).join(', '),
-      moodLabel(d?.mood),
+      periodDays.has(date) ? t.csv.yes : t.csv.no,
+      optionLabel('flow', d?.flow),
+      (d?.symptoms ?? []).map(symptomLabel).join(', '),
+      optionLabel('mood', d?.mood),
       d?.pain === undefined ? '' : String(d.pain),
       d?.medication ?? '',
       d?.notes ?? '',
       decimal(d?.temperature),
-      mucusLabel(d?.mucus),
-      sexLabel(d?.sex),
+      optionLabel('mucus', d?.mucus),
+      optionLabel('sex', d?.sex),
       decimal(d?.weight),
     ]
       .map(csvCell)
@@ -220,10 +225,12 @@ export interface CSVImport {
 export function parseCSV(text: string): CSVImport {
   const rows = parseCSVRows(text)
   const header = rows.shift()?.map(norm)
-  if (!header || header[0] !== 'fecha' || !header.includes('periodo')) {
-    throw new BackupError('El CSV no tiene el formato de esta app (falta la cabecera "fecha;periodo;…").')
+  const names = header && LANG_MESSAGES.map((m) => m.csv.header).find((h) => header[0] === h[0] && header.includes(h[1]))
+  if (!header || !names) {
+    throw new BackupError(t.backupErrors.csvHeader)
   }
-  const col = (name: string) => header.indexOf(name)
+  // `name` es el nombre interno (español); se busca el de la cabecera del archivo.
+  const col = (name: string) => header.indexOf(names[COLS.indexOf(name)])
   // Quita el ' que añade la exportación delante de las celdas tipo fórmula.
   const unescapeFormula = (v: string) => (/^'[=+\-@\t\r]/.test(v) ? v.slice(1) : v)
   const get = (r: string[], name: string) =>
@@ -242,19 +249,20 @@ export function parseCSV(text: string): CSVImport {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean)
+      .map(symptomFromCSV)
     sym.forEach((s) => symptoms.add(s))
     const painRaw = get(r, 'dolor')
     const day = sanitizeDay({
       date,
-      flow: FLOW_OPTIONS.find((o) => norm(o.label) === norm(get(r, 'flujo')))?.value,
+      flow: optionValue<Flow>('flow', get(r, 'flujo')),
       symptoms: sym,
-      mood: MOOD_OPTIONS.find((o) => norm(o.label) === norm(get(r, 'animo')))?.value,
+      mood: optionValue('mood', get(r, 'animo')),
       pain: painRaw === '' ? undefined : Number(painRaw),
       medication: get(r, 'medicacion'),
       notes: get(r, 'notas'),
       temperature: parseNum(get(r, 'temperatura')),
-      mucus: MUCUS_OPTIONS.find((o) => norm(o.label) === norm(get(r, 'moco')))?.value,
-      sex: SEX_OPTIONS.find((o) => norm(o.label) === norm(get(r, 'relaciones')))?.value,
+      mucus: optionValue<Mucus>('mucus', get(r, 'moco')),
+      sex: optionValue<Sex>('sex', get(r, 'relaciones')),
       weight: parseNum(get(r, 'peso')),
     })
     const hasData =
