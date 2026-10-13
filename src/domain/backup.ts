@@ -6,7 +6,9 @@ import type { DayLog, Flow, Period } from '../db/db'
 import { diffDays, type ISODate } from './dates'
 import { MOOD_OPTIONS, FLOW_OPTIONS } from './options'
 
-export const BACKUP_APP = 'registro-mensual'
+export const BACKUP_APP = 'ciclita'
+/** Identificador de las copias hechas antes del cambio de nombre (se siguen aceptando). */
+const LEGACY_BACKUP_APPS = ['registro-mensual']
 export const BACKUP_VERSION = 1
 
 export interface Backup {
@@ -73,7 +75,8 @@ export function parseBackup(text: string): Backup {
     throw new BackupError('El archivo no es un JSON válido.')
   }
   const b = raw as Partial<Backup>
-  if (!b || b.app !== BACKUP_APP || typeof b.version !== 'number') {
+  const knownApp = b && (b.app === BACKUP_APP || LEGACY_BACKUP_APPS.includes(String(b.app)))
+  if (!knownApp || typeof b.version !== 'number') {
     throw new BackupError('El archivo no parece una copia de seguridad de esta app.')
   }
   if (b.version > BACKUP_VERSION) {

@@ -33,13 +33,19 @@ describe('copia JSON', () => {
   it('rechaza archivos que no son copias de la app', () => {
     expect(() => parseBackup('no es json')).toThrow(BackupError)
     expect(() => parseBackup('{"hola": 1}')).toThrow(BackupError)
-    expect(() => parseBackup('{"app":"registro-mensual","version":99}')).toThrow(/más nueva/)
+    expect(() => parseBackup('{"app":"ciclita","version":99}')).toThrow(/más nueva/)
+  })
+
+  it('acepta copias hechas con el nombre anterior de la app', () => {
+    const b = parseBackup(JSON.stringify({ app: 'registro-mensual', version: 1, periods, days: [] }))
+    expect(b.app).toBe('ciclita')
+    expect(b.periods).toEqual(periods)
   })
 
   it('descarta entradas inválidas y nunca importa un PIN', () => {
     const b = parseBackup(
       JSON.stringify({
-        app: 'registro-mensual',
+        app: 'ciclita',
         version: 1,
         periods: [{ startDate: 'ayer', endDate: null }, { startDate: '2026-09-05', endDate: '2026-09-01' }],
         days: [{ date: '2026-09-01', pain: 42, flow: 'raro', mood: 'x', symptoms: [1, ' Acné '] }],

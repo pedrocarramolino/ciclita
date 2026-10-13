@@ -35,13 +35,18 @@ export interface SettingRow {
   value: unknown
 }
 
+/** Nombre de la base de datos IndexedDB. */
+export const DB_NAME = 'ciclita'
+/** Nombre anterior (versiones previas al cambio de nombre); se migra en migrate.ts. */
+export const LEGACY_DB_NAME = 'registro-mensual'
+
 export class AppDB extends Dexie {
   periods!: EntityTable<Period, 'id'>
   days!: EntityTable<DayLog, 'date'>
   symptoms!: EntityTable<Symptom, 'id'>
   settings!: EntityTable<SettingRow, 'key'>
 
-  constructor(name = 'registro-mensual') {
+  constructor(name = DB_NAME) {
     super(name)
     this.version(1).stores({
       periods: '++id, startDate',

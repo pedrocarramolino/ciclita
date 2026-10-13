@@ -31,14 +31,14 @@ export function DataSection() {
         <Button
           variant="secondary"
           onClick={async () =>
-            downloadText(`registro-mensual-${today()}.json`, await exportJSON(), 'application/json')
+            downloadText(`ciclita-${today()}.json`, await exportJSON(), 'application/json')
           }
         >
           {s.exportJSON}
         </Button>
         <Button
           variant="secondary"
-          onClick={async () => downloadText(`registro-mensual-${today()}.csv`, await exportCSV(), 'text/csv;charset=utf-8')}
+          onClick={async () => downloadText(`ciclita-${today()}.csv`, await exportCSV(), 'text/csv;charset=utf-8')}
         >
           {s.exportCSV}
         </Button>
