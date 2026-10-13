@@ -9,6 +9,18 @@ const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const MAX_TEXT = 200
 
+/**
+ * Servicios push de los navegadores. Solo se aceptan suscripciones a estos dominios:
+ * así nadie puede usar el servidor para enviar peticiones a direcciones arbitrarias.
+ */
+const PUSH_HOSTS = ['fcm.googleapis.com', 'push.services.mozilla.com', 'push.apple.com', 'notify.windows.com']
+
+export function isPushServiceUrl(url: URL): boolean {
+  if (url.protocol !== 'https:' || url.port !== '' || url.username || url.password) return false
+  const host = url.hostname.toLowerCase()
+  return PUSH_HOSTS.some((h) => host === h || host.endsWith(`.${h}`))
+}
+
 function fail(msg: string): never {
   throw new ValidationError(msg)
 }
@@ -90,7 +102,7 @@ export function validateRegister(raw: unknown): RegisterInput {
   } catch {
     fail('subscription.endpoint no válido')
   }
-  if (url.protocol !== 'https:' || String(endpoint).length > 1000) fail('subscription.endpoint no válido')
+  if (!isPushServiceUrl(url) || String(endpoint).length > 1000) fail('subscription.endpoint no válido')
   if (
     typeof keys.p256dh !== 'string' ||
     typeof keys.auth !== 'string' ||

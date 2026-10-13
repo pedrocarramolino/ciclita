@@ -80,6 +80,15 @@ describe('CSV', () => {
     expect(back.symptoms.sort()).toEqual(['Cansancio', 'Dolor abdominal', 'Migraña'])
   })
 
+  it('neutraliza celdas que Excel ejecutaría como fórmulas', () => {
+    const csv = toCSV(new Set(), [{ date: '2026-09-02', notes: '=HYPERLINK("http://x")', medication: '+1', updatedAt: 0 }])
+    const row = parseCSVRows(csv)[1]
+    expect(row[6]).toBe("'+1")
+    expect(row[7]).toBe(`'=HYPERLINK("http://x")`)
+    // Al volver a importar, el texto original se recupera intacto.
+    expect(parseCSV(csv).days[0]).toMatchObject({ medication: '+1', notes: '=HYPERLINK("http://x")' })
+  })
+
   it('acepta CSV separados por comas', () => {
     const back = parseCSV('fecha,periodo,flujo\n2026-01-01,sí,Ligero\n2026-01-02,si,\n')
     expect(back.periods).toEqual([{ startDate: '2026-01-01', endDate: '2026-01-02' }])

@@ -52,7 +52,14 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const url = new URL((event.notification.data?.url as string) ?? '/', self.location.origin).href
+  // Solo se abren páginas de la propia app, aunque el aviso dijera otra cosa.
+  let url = new URL('/', self.location.origin).href
+  try {
+    const target = new URL((event.notification.data?.url as string) ?? '/', self.location.origin)
+    if (target.origin === self.location.origin) url = target.href
+  } catch {
+    // URL no válida: se abre el inicio.
+  }
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })

@@ -29,18 +29,19 @@ export function addDays(s: ISODate, n: number): ISODate {
 
 const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1)
 
+// Crear un Intl.DateTimeFormat es caro: se crean una sola vez y se reutilizan.
+const LONG = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' })
+const DAY_MONTH = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long' })
+const MONTH_YEAR = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' })
+
 /** "Martes, 13 de octubre" */
 export function formatLong(s: ISODate): string {
-  return capitalize(
-    new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' }).format(
-      parseISODate(s),
-    ),
-  )
+  return capitalize(LONG.format(parseISODate(s)))
 }
 
 /** "13 de octubre" */
 export function formatDayMonth(s: ISODate): string {
-  return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long' }).format(parseISODate(s))
+  return DAY_MONTH.format(parseISODate(s))
 }
 
 /** "11–14 de noviembre" o, si cambia de mes, "30 de octubre – 3 de noviembre". */
@@ -52,9 +53,7 @@ export function formatRange(a: ISODate, b: ISODate): string {
 
 /** "Octubre de 2026" */
 export function formatMonthYear(year: number, month: number): string {
-  return capitalize(
-    new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' }).format(new Date(year, month, 1)),
-  )
+  return capitalize(MONTH_YEAR.format(new Date(year, month, 1)))
 }
 
 /** Días enteros de `a` a `b` (positivo si b es posterior). */

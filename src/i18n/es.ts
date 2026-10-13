@@ -119,6 +119,7 @@ export const es = {
     importDone: (p: number, d: number) =>
       `Importado: ${p} ${p === 1 ? 'periodo' : 'periodos'} y ${d} ${d === 1 ? 'día' : 'días'} con registro.`,
     importError: (msg: string) => `No se pudo importar. ${msg}`,
+    importTooBig: 'El archivo es demasiado grande (máximo 10 MB).',
     deleteAll: 'Borrar todos mis datos',
     deleteTitle: '¿Borrar todos tus datos?',
     deleteBody:

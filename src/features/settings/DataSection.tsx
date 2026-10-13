@@ -8,6 +8,9 @@ import { t } from '../../i18n/es'
 import { DeleteAllFlow } from './DeleteAllFlow'
 import { Section } from './Section'
 
+/** Una copia de años de registros ocupa unos cientos de KB: 10 MB es un margen amplio. */
+const MAX_IMPORT_BYTES = 10 * 1024 * 1024
+
 export function DataSection() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<File | null>(null)
@@ -17,6 +20,10 @@ export function DataSection() {
 
   const doImport = async (file: File) => {
     setPending(null)
+    if (file.size > MAX_IMPORT_BYTES) {
+      setStatus(s.importError(s.importTooBig))
+      return
+    }
     try {
       const r = await importFile(file.name, await file.text())
       setStatus(s.importDone(r.periods, r.days))

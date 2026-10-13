@@ -1,8 +1,8 @@
 import { createECDH, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { AuthError, deliver, register, unregister, type Deps } from './service.js'
+import { AuthError, deliver, QuotaError, register, unregister, type Deps } from './service.js'
 import type { DeliverMessage, DeviceRecord, PushPayload, RegisterInput } from './types.js'
-import { validateRegister, ValidationError } from './validate.js'
+import { isPushServiceUrl, validateRegister, ValidationError } from './validate.js'
 
 const ID = '0f8b7c1e-2d3a-4b5c-8d9e-0a1b2c3d4e5f'
 const SECRET = 'a'.repeat(43)
@@ -103,6 +103,16 @@ describe('register / unregister', () => {
     expect(f.records.get(ID)?.jobs).toEqual({ pill: { version: 'v2', messageId: 'msg-2' } })
   })
 
+  it('respeta el cupo global de dispositivos nuevos, pero no afecta a los ya registrados', async () => {
+    const f = fakeDeps()
+    await register(f.deps, input(DAILY))
+    f.deps.allowNewDevice = async () => false
+    await register(f.deps, input(DAILY)) // existente: se puede actualizar
+    await expect(
+      register(f.deps, { ...input(DAILY), deviceId: '9f8b7c1e-2d3a-4b5c-8d9e-0a1b2c3d4e5f' }),
+    ).rejects.toThrow(QuotaError)
+  })
+
   it('rechaza actualizar o borrar un dispositivo con otro secreto', async () => {
     const f = fakeDeps()
     await register(f.deps, input({}))
@@ -183,6 +193,9 @@ describe('validateRegister', () => {
     ['deviceId', { ...valid, deviceId: '../../x' }],
     ['secret corto', { ...valid, secret: 'abc' }],
     ['endpoint http', { ...valid, subscription: { ...SUB, endpoint: 'http://evil.test/x' } }],
+    ['endpoint fuera de los servicios push', { ...valid, subscription: { ...SUB, endpoint: 'https://evil.test/x' } }],
+    ['dominio que imita uno push', { ...valid, subscription: { ...SUB, endpoint: 'https://fcm.googleapis.com.evil.test/x' } }],
+    ['endpoint con puerto o usuario', { ...valid, subscription: { ...SUB, endpoint: 'https://u@fcm.googleapis.com:444/x' } }],
     ['clave p256dh inventada', { ...valid, subscription: { ...SUB, keys: { ...SUB.keys, p256dh: 'B' + 'x'.repeat(86) } } }],
     ['auth de longitud incorrecta', { ...valid, subscription: { ...SUB, keys: { ...SUB.keys, auth: 'y'.repeat(10) } } }],
     ['zona horaria', { ...valid, timezone: 'Marte/Olympus' }],
@@ -191,5 +204,16 @@ describe('validateRegister', () => {
     ['periodo invertido', { ...valid, reminders: { period: { title: 'T', from: '2026-10-29', until: '2026-10-27', bodies: ['a'] } } }],
   ])('rechaza %s', (_name, body) => {
     expect(() => validateRegister(body)).toThrow(ValidationError)
+  })
+})
+
+describe('isPushServiceUrl', () => {
+  it.each([
+    'https://fcm.googleapis.com/fcm/send/abc',
+    'https://updates.push.services.mozilla.com/wpush/v2/abc',
+    'https://web.push.apple.com/abc',
+    'https://wns2-par02p.notify.windows.com/w/?token=abc',
+  ])('acepta %s', (u) => {
+    expect(isPushServiceUrl(new URL(u))).toBe(true)
   })
 })

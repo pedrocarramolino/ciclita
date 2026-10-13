@@ -57,9 +57,13 @@ export interface Deps {
   pusher: Pusher
   now: () => Date
   newVersion?: () => string
+  /** Cupo global de dispositivos nuevos (protege la cuota de QStash). Sin definir = sin límite. */
+  allowNewDevice?: () => Promise<boolean>
 }
 
 export class AuthError extends Error {}
+/** Se ha alcanzado el límite global de dispositivos nuevos por día. */
+export class QuotaError extends Error {}
 
 export const hashSecret = (secret: string) => createHash('sha256').update(secret).digest('hex')
 
@@ -111,6 +115,9 @@ async function loadAuthorized(deps: Deps, deviceId: string, secret: string) {
 
 export async function register(deps: Deps, input: RegisterInput): Promise<void> {
   const existing = await loadAuthorized(deps, input.deviceId, input.secret)
+  if (!existing && deps.allowNewDevice && !(await deps.allowNewDevice())) {
+    throw new QuotaError('Se ha alcanzado el límite diario de dispositivos nuevos. Inténtalo mañana.')
+  }
   const newVersion = deps.newVersion ?? randomUUID
 
   const jobs: DeviceRecord['jobs'] = {}

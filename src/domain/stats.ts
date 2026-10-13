@@ -70,17 +70,28 @@ export function phaseOf(
   avgPeriod: number,
   today: ISODate,
 ): Phase | null {
-  const starts = periods.map((p) => p.startDate).sort()
-  const idx = starts.findLastIndex((s) => s <= date)
-  if (idx < 0) return null
-  if (periodDateSet(periods, today).has(date)) return 'menstrual'
+  return phaseFinder(periods, avgCycle, avgPeriod, today)(date)
+}
 
-  const start = starts[idx]
-  const next = starts[idx + 1] ?? addDays(start, avgCycle)
-  const w = fertileWindowFor(start, next, avgPeriod)
-  if (date < w.start) return 'follicular'
-  if (date <= w.end) return 'ovulatory'
-  return 'luteal'
+/**
+ * Prepara una vez lo que es común a todos los días (inicios ordenados y días de
+ * periodo) y devuelve una función rápida para situar cada día en su fase.
+ */
+function phaseFinder(periods: Period[], avgCycle: number, avgPeriod: number, today: ISODate) {
+  const starts = periods.map((p) => p.startDate).sort()
+  const periodDays = periodDateSet(periods, today)
+  return (date: ISODate): Phase | null => {
+    const idx = starts.findLastIndex((s) => s <= date)
+    if (idx < 0) return null
+    if (periodDays.has(date)) return 'menstrual'
+
+    const start = starts[idx]
+    const next = starts[idx + 1] ?? addDays(start, avgCycle)
+    const w = fertileWindowFor(start, next, avgPeriod)
+    if (date < w.start) return 'follicular'
+    if (date <= w.end) return 'ovulatory'
+    return 'luteal'
+  }
 }
 
 export interface SymptomStat {
@@ -100,9 +111,10 @@ export function symptomStats(
   today: ISODate,
 ): SymptomStat[] {
   const map = new Map<string, SymptomStat>()
+  const phaseOfDay = phaseFinder(periods, avgCycle, avgPeriod, today)
   for (const d of days) {
     if (!d.symptoms?.length) continue
-    const phase = phaseOf(d.date, periods, avgCycle, avgPeriod, today)
+    const phase = phaseOfDay(d.date)
     for (const name of d.symptoms) {
       let s = map.get(name)
       if (!s) {

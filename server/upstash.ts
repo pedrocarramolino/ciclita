@@ -76,6 +76,13 @@ export function upstash() {
     limiter: Ratelimit.slidingWindow(30, '1 h'),
     prefix: 'ciclo:ratelimit',
   })
+  // Límite global de dispositivos nuevos al día, para que nadie agote la cuota de QStash.
+  const newDevices = new Ratelimit({
+    redis,
+    limiter: Ratelimit.fixedWindow(50, '1 d'),
+    prefix: 'ciclo:new-devices',
+  })
+  deps.allowNewDevice = async () => (await newDevices.limit('global')).success
 
   cached = { env, redis, deps, receiver, ratelimit }
   return cached

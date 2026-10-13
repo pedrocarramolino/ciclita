@@ -1,5 +1,5 @@
 import { clientIp, error, json, readJson } from '../server/http.js'
-import { AuthError, register, unregister } from '../server/service.js'
+import { AuthError, QuotaError, register, unregister } from '../server/service.js'
 import { upstash } from '../server/upstash.js'
 import { validateCredentials, validateRegister, ValidationError } from '../server/validate.js'
 
@@ -20,6 +20,7 @@ async function handle(request: Request, action: (body: unknown) => Promise<void>
   } catch (e) {
     if (e instanceof ValidationError || e instanceof SyntaxError) return error(e.message, 400)
     if (e instanceof AuthError) return error(e.message, 403)
+    if (e instanceof QuotaError) return error(e.message, 429)
     console.error(e)
     return error('Error interno', 500)
   }

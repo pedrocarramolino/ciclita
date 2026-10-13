@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { t } from '../i18n/es'
 
 /** Duración mínima de la animación de apertura y del fundido de salida (ms). */
-const MIN_MS = 1300
+const MIN_MS = 1050
 const FADE_MS = 350
 
 const reducedMotion = () =>
@@ -11,7 +11,8 @@ const reducedMotion = () =>
 /**
  * Animación de apertura con el logo de Ciclita: se dibuja el anillo del ciclo, cae la
  * gota y aparece la luna. Se muestra al abrir la app (mientras carga IndexedDB) y se
- * desvanece. Con "reducir movimiento" activado en el sistema no se muestra.
+ * desvanece (tocar la pantalla la salta). Con "reducir movimiento" activado en el
+ * sistema no se muestra.
  * Es decorativa: aria-hidden, y no bloquea el contenido para lectores de pantalla.
  */
 export function Splash({ ready }: { ready: boolean }) {
@@ -34,8 +35,10 @@ export function Splash({ ready }: { ready: boolean }) {
   if (reduce || gone) return null
 
   return (
+    // Tocar la pantalla salta la animación (en cuanto los datos estén cargados).
     <div
       aria-hidden="true"
+      onClick={() => setMinDone(true)}
       className={`splash fixed inset-0 z-50 grid place-items-center bg-bg ${leaving ? 'splash-out' : ''}`}
     >
       <div className="flex flex-col items-center">

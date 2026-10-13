@@ -7,15 +7,36 @@ import { getSettings, type Theme } from './db/settings'
 import { CalendarScreen } from './features/calendar/CalendarScreen'
 import { Home } from './features/home/Home'
 import { LockScreen } from './features/lock/LockScreen'
-import { Onboarding } from './features/onboarding/Onboarding'
-import { SettingsScreen } from './features/settings/SettingsScreen'
 import { usePushSync } from './push/usePushSync'
+import { preloadable } from './preloadable'
 import { useHashRoute } from './useHashRoute'
 import { usePrediction } from './usePrediction'
 
-// Recharts pesa bastante: la pantalla de estadísticas se carga solo cuando se abre.
-const StatsScreen = lazy(() =>
-  import('./features/stats/StatsScreen').then((m) => ({ default: m.StatsScreen })),
+// Pantallas que no hacen falta al arrancar: se cargan cuando se abren (el service
+// worker ya las tiene en caché, así que aparecen al instante). Estadísticas incluye
+// Recharts, que es lo más pesado; Ajustes incluye PIN, copias de seguridad y push.
+const stats = preloadable(() => import('./features/stats/StatsScreen').then((m) => m.StatsScreen))
+const settingsScreen = preloadable(() =>
+  import('./features/settings/SettingsScreen').then((m) => m.SettingsScreen),
+)
+const StatsScreen = stats.Component
+const SettingsScreen = settingsScreen.Component
+
+/** Precarga las pantallas diferidas cuando la app queda libre tras abrirse. */
+function usePreloadScreens(enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return
+    const preload = () => void Promise.all([stats.preload(), settingsScreen.preload()]).catch(() => {})
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(preload, { timeout: 3000 })
+      return () => cancelIdleCallback(id)
+    }
+    const id = setTimeout(preload, 1500)
+    return () => clearTimeout(id)
+  }, [enabled])
+}
+const Onboarding = lazy(() =>
+  import('./features/onboarding/Onboarding').then((m) => ({ default: m.Onboarding })),
 )
 
 /** Tiempo fuera de la app tras el cual se vuelve a pedir el PIN. */
@@ -70,11 +91,17 @@ export default function App() {
   useTheme(settings?.theme)
   const prediction = usePrediction()
   usePushSync(settings?.onboardingDone ? settings.reminders : undefined, prediction)
+  usePreloadScreens(!!settings?.onboardingDone)
 
   let screen: ReactNode
   if (!settings) screen = null // cargando IndexedDB
   else if (locked) screen = <LockScreen onUnlock={unlock} />
-  else if (!settings.onboardingDone) screen = <Onboarding />
+  else if (!settings.onboardingDone)
+    screen = (
+      <Suspense fallback={null}>
+        <Onboarding />
+      </Suspense>
+    )
   else
     screen = (
       <div className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))]">
@@ -85,7 +112,11 @@ export default function App() {
             <StatsScreen />
           </Suspense>
         )}
-        {route === 'settings' && <SettingsScreen />}
+        {route === 'settings' && (
+          <Suspense fallback={null}>
+            <SettingsScreen />
+          </Suspense>
+        )}
         <BottomNav route={route} onNavigate={navigate} />
       </div>
     )

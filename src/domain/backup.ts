@@ -112,7 +112,12 @@ const flowLabel = (f?: Flow) => FLOW_OPTIONS.find((o) => o.value === f)?.label ?
 const moodLabel = (m?: string) => MOOD_OPTIONS.find((o) => o.value === m)?.label ?? ''
 const norm = (s: string) => s.trim().toLowerCase()
 
-function csvCell(v: string): string {
+/**
+ * Celda CSV segura. Las que empiezan por = + - @ (o tabulador / retorno) se prefijan
+ * con ' para que Excel no las ejecute como fórmulas (inyección CSV).
+ */
+function csvCell(raw: string): string {
+  const v = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw
   return /[";\n\r,]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
 }
 
@@ -189,7 +194,10 @@ export function parseCSV(text: string): CSVImport {
     throw new BackupError('El CSV no tiene el formato de esta app (falta la cabecera "fecha;periodo;…").')
   }
   const col = (name: string) => header.indexOf(name)
-  const get = (r: string[], name: string) => (col(name) >= 0 ? (r[col(name)] ?? '').trim() : '')
+  // Quita el ' que añade la exportación delante de las celdas tipo fórmula.
+  const unescapeFormula = (v: string) => (/^'[=+\-@\t\r]/.test(v) ? v.slice(1) : v)
+  const get = (r: string[], name: string) =>
+    col(name) >= 0 ? unescapeFormula((r[col(name)] ?? '').trim()) : ''
 
   const periodDates: ISODate[] = []
   const days: DayLog[] = []
