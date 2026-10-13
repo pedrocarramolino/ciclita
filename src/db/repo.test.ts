@@ -59,9 +59,17 @@ describe('startPeriod / endPeriod', () => {
 describe('addCustomSymptom', () => {
   it('añade el síntoma una sola vez, sin distinguir mayúsculas', async () => {
     const d = await freshDB()
-    expect(await addCustomSymptom('  migraña ', d)).toBe('Migraña')
-    expect(await addCustomSymptom('MIGRAÑA', d)).toBe('Migraña')
-    expect(await d.symptoms.where('name').equals('Migraña').count()).toBe(1)
+    expect(await addCustomSymptom('  dolor de oído ', d)).toBe('Dolor de oído')
+    expect(await addCustomSymptom('DOLOR DE OIDO', d)).toBe('Dolor de oído')
+    expect(await d.symptoms.where('name').equals('Dolor de oído').count()).toBe(1)
+  })
+
+  it('si el síntoma ya está en el catálogo, lo usa sin crear uno nuevo', async () => {
+    const d = await freshDB()
+    const before = await d.symptoms.count()
+    expect(await addCustomSymptom('nauseas', d)).toBe('Náuseas')
+    expect(await addCustomSymptom('sofocos', d)).toBe('Sofocos')
+    expect(await d.symptoms.count()).toBe(before)
   })
 
   it('reutiliza un síntoma predefinido', async () => {

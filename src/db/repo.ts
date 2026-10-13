@@ -1,5 +1,6 @@
 import { db, type AppDB, type DayLog } from './db'
 import { periodDateSet, togglePeriodDay } from '../domain/periods'
+import { findCatalogSymptom, normalize } from '../domain/symptoms'
 import { today as todayISO, type ISODate } from '../domain/dates'
 
 export type DayForm = Omit<DayLog, 'date' | 'updatedAt'>
@@ -77,8 +78,11 @@ export async function addCustomSymptom(name: string, database: AppDB = db): Prom
   const clean = name.trim().replace(/\s+/g, ' ')
   if (!clean) return null
   const label = clean[0].toUpperCase() + clean.slice(1)
+  // Si ya está en el catálogo, se usa ese (sin crear un duplicado).
+  const inCatalog = findCatalogSymptom(label)
+  if (inCatalog) return inCatalog
   const all = await database.symptoms.toArray()
-  const existing = all.find((s) => s.name.toLowerCase() === label.toLowerCase())
+  const existing = all.find((s) => normalize(s.name) === normalize(label))
   if (existing) return existing.name
   await database.symptoms.add({ name: label, builtin: false })
   return label

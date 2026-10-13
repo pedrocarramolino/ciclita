@@ -19,6 +19,7 @@ import {
   WEIGHT_RANGE,
 } from '../../domain/options'
 import { getSettings } from '../../db/settings'
+import { DEFAULT_FREQUENT, findCatalogSymptom, frequentSymptoms, SYMPTOM_CATALOG } from '../../domain/symptoms'
 
 /** Hoja modal con el registro de un día. Usa <dialog> nativo (foco atrapado, Escape cierra). */
 export function DaySheet({ date, onClose }: { date: ISODate; onClose: () => void }) {
@@ -117,7 +118,20 @@ function DayFormView({
   const tracking = useLiveQuery(() => getSettings().then((s) => s.tracking))
   const [newSymptom, setNewSymptom] = useState('')
   const [saving, setSaving] = useState(false)
-  const symptoms = useLiveQuery(() => db.symptoms.toArray()) ?? []
+  const customSymptoms = useLiveQuery(async () => {
+    const all = await db.symptoms.toArray()
+    return all.filter((s) => !s.builtin && !findCatalogSymptom(s.name)).map((s) => s.name)
+  }) ?? []
+  const frequent = useLiveQuery(async () => frequentSymptoms(await db.days.toArray())) ?? DEFAULT_FREQUENT
+  const selectedCount = form.symptoms?.length ?? 0
+  // Si hay algo marcado que no está entre los más usados, el catálogo se abre solo.
+  const openCatalog = (form.symptoms ?? []).some((s) => !frequent.includes(s))
+  const mine = [...new Set([...customSymptoms, ...(form.symptoms ?? []).filter((s) => !findCatalogSymptom(s))])]
+  const chip = (name: string) => (
+    <Chip key={name} selected={!!form.symptoms?.includes(name)} onClick={() => toggleSymptom(name)}>
+      {name}
+    </Chip>
+  )
   const l = t.log
 
   const set = <K extends keyof DayForm>(k: K, v: DayForm[K]) => setForm((f) => ({ ...f, [k]: v }))
@@ -181,17 +195,28 @@ function DayFormView({
           <h3 id="sec-symptoms" className="mb-2 font-bold">
             {l.symptoms}
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {symptoms.map((s) => (
-              <Chip
-                key={s.id}
-                selected={!!form.symptoms?.includes(s.name)}
-                onClick={() => toggleSymptom(s.name)}
-              >
-                {s.name}
-              </Chip>
-            ))}
-          </div>
+          <p className="mb-2 text-sm font-bold text-muted">{l.frequentSymptoms}</p>
+          <div className="flex flex-wrap gap-2">{frequent.map(chip)}</div>
+          <details className="mt-3 rounded-2xl bg-surface p-3" open={openCatalog}>
+            <summary className="min-h-9 cursor-pointer py-1 font-bold text-primary">
+              {l.allSymptoms}
+              {selectedCount > 0 && <span className="font-semibold text-muted"> · {l.selectedCount(selectedCount)}</span>}
+            </summary>
+            <div className="mt-2 space-y-3">
+              {SYMPTOM_CATALOG.map((cat) => (
+                <div key={cat.id}>
+                  <h4 className="mb-1.5 text-sm font-bold text-muted">{cat.label}</h4>
+                  <div className="flex flex-wrap gap-2">{cat.symptoms.map(chip)}</div>
+                </div>
+              ))}
+              {mine.length > 0 && (
+                <div>
+                  <h4 className="mb-1.5 text-sm font-bold text-muted">{l.mySymptoms}</h4>
+                  <div className="flex flex-wrap gap-2">{mine.map(chip)}</div>
+                </div>
+              )}
+            </div>
+          </details>
           <form
             className="mt-3 flex gap-2"
             onSubmit={(e) => {
