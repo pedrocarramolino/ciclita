@@ -89,6 +89,19 @@ body {
   outline-offset: 2px;
 }
 
+/* ---------- Gráfica de ciclos: las barras crecen desde el eje al aparecer ---------- */
+.chart-bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: bar-grow 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
 /* ---------- Animación de apertura (Splash) ---------- */
 .splash {
   transition: opacity 350ms ease;

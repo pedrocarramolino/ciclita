@@ -32,7 +32,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 
 - React 19 + TypeScript + Vite, Tailwind CSS v4
 - IndexedDB con Dexie
-- Recharts (gráficas, cargadas bajo demanda)
+- Gráfica de barras propia en SVG (sin librerías de gráficas)
 - vite-plugin-pwa (service worker propio con Workbox, manifest)
 - Funciones serverless de Vercel (`/api`) + Upstash Redis, Upstash QStash y Web Push (`web-push`)
 - Vitest para los tests

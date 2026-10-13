@@ -13,8 +13,8 @@ import { useHashRoute } from './useHashRoute'
 import { usePrediction } from './usePrediction'
 
 // Pantallas que no hacen falta al arrancar: se cargan cuando se abren (el service
-// worker ya las tiene en caché, así que aparecen al instante). Estadísticas incluye
-// Recharts, que es lo más pesado; Ajustes incluye PIN, copias de seguridad y push.
+// worker ya las tiene en caché, así que aparecen al instante). Ajustes incluye PIN,
+// copias de seguridad y push.
 const stats = preloadable(() => import('./features/stats/StatsScreen').then((m) => m.StatsScreen))
 const settingsScreen = preloadable(() =>
   import('./features/settings/SettingsScreen').then((m) => m.SettingsScreen),

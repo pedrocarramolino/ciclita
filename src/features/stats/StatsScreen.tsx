@@ -106,12 +106,11 @@ function ChartCard({ cycles, average }: { cycles: CycleRecord[]; average: number
           {s.average(average)}
         </span>
       </div>
-      <figure
-        role="img"
-        aria-label={s.chartSummary(cycles.length, Math.min(...lengths), Math.max(...lengths), average)}
-        className="mt-3 h-56"
-      >
+      <figure className="mt-3">
         <CycleChart cycles={cycles} average={average} />
+        <figcaption className="sr-only">
+          {s.chartSummary(cycles.length, Math.min(...lengths), Math.max(...lengths), average)}
+        </figcaption>
       </figure>
       <details className="mt-2">
         <summary className="min-h-11 cursor-pointer py-2 text-sm font-bold text-primary">
