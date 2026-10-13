@@ -26,7 +26,10 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 - Cada dispositivo se identifica en el servidor con un id aleatorio y un secreto (en Redis solo se guarda su hash). Los registros caducan a los 90 días sin actividad.
 - Al desactivar todos los recordatorios o al borrar los datos, se elimina también lo guardado en el servidor.
 - Con **Notificaciones discretas** (activado por defecto) los textos enviados al servidor y mostrados en la pantalla de bloqueo son neutros.
-- El PIN evita miradas indiscretas, pero los datos de IndexedDB no van cifrados: no sustituye el bloqueo del teléfono.
+- **Cifrado opcional con el PIN** (*Ajustes → Privacidad y seguridad → Cifrar mis datos*): todos los datos (periodos, registros, síntomas, notas y ajustes) se guardan en el dispositivo cifrados con AES-256-GCM, con una clave derivada del PIN (PBKDF2-SHA256, 600.000 iteraciones, sal aleatoria). En claro solo queda el tema de color, para pintar la pantalla de desbloqueo. Al desbloquear, los datos se descifran a una copia en memoria que desaparece al bloquear o cerrar la app; cada cambio se vuelve a cifrar al momento.
+  - Si se olvida el PIN, los datos cifrados **no se pueden recuperar**: conviene exportar una copia de seguridad (las copias exportadas no van cifradas).
+  - Un PIN de 4 dígitos protege frente a miradas y frente a quien copie los datos del navegador, pero con acceso técnico al dispositivo se podrían probar las 10.000 combinaciones. No sustituye el bloqueo del teléfono.
+- Sin cifrado, el PIN solo evita miradas indiscretas: los datos de IndexedDB quedan en claro.
 
 ## Tecnología
 

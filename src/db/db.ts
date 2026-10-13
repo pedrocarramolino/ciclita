@@ -1,4 +1,4 @@
-import Dexie, { type EntityTable } from 'dexie'
+import Dexie, { type DexieOptions, type EntityTable } from 'dexie'
 import type { ISODate } from '../domain/dates'
 
 /** Un periodo menstrual. Es la fuente de verdad de los inicios de ciclo. */
@@ -35,6 +35,24 @@ export interface SettingRow {
   value: unknown
 }
 
+/**
+ * Bóveda cifrada (ver vault.ts). Con el cifrado activado, es lo único que queda en
+ * disco: todos los datos van dentro de `data`, cifrados con AES-GCM.
+ */
+export interface VaultRow {
+  key: 'vault'
+  version: 1
+  salt: Uint8Array<ArrayBuffer>
+  iterations: number
+  iv: Uint8Array<ArrayBuffer>
+  data: ArrayBuffer
+  /** Intentos fallidos y bloqueo temporal (antes de desbloquear no hay otro sitio donde guardarlos). */
+  failures: number
+  lockedUntil: number
+  /** Tema elegido, en claro, para que la pantalla de desbloqueo use los colores correctos. */
+  theme?: string
+}
+
 /** Nombre de la base de datos IndexedDB. */
 export const DB_NAME = 'ciclita'
 /** Nombre anterior (versiones previas al cambio de nombre); se migra en migrate.ts. */
@@ -45,15 +63,17 @@ export class AppDB extends Dexie {
   days!: EntityTable<DayLog, 'date'>
   symptoms!: EntityTable<Symptom, 'id'>
   settings!: EntityTable<SettingRow, 'key'>
+  vault!: EntityTable<VaultRow, 'key'>
 
-  constructor(name = DB_NAME) {
-    super(name)
+  constructor(name = DB_NAME, options?: DexieOptions) {
+    super(name, options)
     this.version(1).stores({
       periods: '++id, startDate',
       days: 'date',
       symptoms: '++id, &name',
       settings: 'key',
     })
+    this.version(2).stores({ vault: 'key' })
     this.on('populate', (tx) => {
       tx.table('symptoms').bulkAdd(BUILTIN_SYMPTOMS.map((name) => ({ name, builtin: true })))
     })
@@ -73,4 +93,15 @@ export const BUILTIN_SYMPTOMS = [
   'Insomnio',
 ]
 
-export const db = new AppDB()
+/** Base de datos en disco (IndexedDB real del navegador). */
+export const diskDb = new AppDB()
+
+/**
+ * Base de datos que usa la app. Normalmente es la de disco; con el cifrado activado,
+ * tras desbloquear es una copia en memoria (vault.ts) y en disco solo queda la bóveda.
+ */
+export let db: AppDB = diskDb
+
+export function setActiveDb(d: AppDB) {
+  db = d
+}

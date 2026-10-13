@@ -5,6 +5,7 @@ import { downloadText, exportCSV, exportJSON, importFile } from '../../db/data'
 import { BackupError } from '../../domain/backup'
 import { today } from '../../domain/dates'
 import { t } from '../../i18n/es'
+import { isVaultUnlocked } from '../../db/vault'
 import { DeleteAllFlow } from './DeleteAllFlow'
 import { Section } from './Section'
 
@@ -69,6 +70,7 @@ export function DataSection() {
       <p role="status" className="text-sm font-bold">
         {status}
       </p>
+      {isVaultUnlocked() && <p className="text-xs text-muted">{t.encryption.exportsNotEncrypted}</p>}
 
       <Button variant="danger" className="w-full" onClick={() => setDeleting(true)}>
         {s.deleteAll}

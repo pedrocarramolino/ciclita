@@ -2,13 +2,22 @@ import { useEffect, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { PinPad } from '../../components/PinPad'
-import { getSettings, setSettings } from '../../db/settings'
-import { lockoutMs, MAX_ATTEMPTS, verifyPin } from '../../security/pin'
+import { lockoutMs, MAX_ATTEMPTS } from '../../security/pin'
+import { settingsPinCheck, type PinCheck } from './pinCheck'
 import { t } from '../../i18n/es'
 import { DeleteAllFlow } from '../settings/DeleteAllFlow'
 
-/** Pantalla de bloqueo. Los intentos fallidos se guardan para que recargar no los reinicie. */
-export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
+/** Pantalla de bloqueo con teclado numérico, esperas tras fallos y "¿Has olvidado tu PIN?". */
+export function LockScreen({
+  onUnlock,
+  check = settingsPinCheck,
+  encrypted = false,
+}: {
+  onUnlock: () => void
+  check?: PinCheck
+  /** Con el cifrado activado se avisa de que olvidar el PIN hace perder los datos. */
+  encrypted?: boolean
+}) {
   const [attempt, setAttempt] = useState(0)
   const [message, setMessage] = useState('')
   const [checking, setChecking] = useState(false)
@@ -19,8 +28,8 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
   const l = t.lock
 
   useEffect(() => {
-    void getSettings().then((s) => setLockedUntil(s.pinLockedUntil))
-  }, [])
+    void check.getState().then((s) => setLockedUntil(s.lockedUntil))
+  }, [check])
 
   const waiting = lockedUntil > now
   useEffect(() => {
@@ -31,15 +40,16 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
 
   const submit = async (pin: string) => {
     setChecking(true)
-    const s = await getSettings()
-    if (s.pinHash && (await verifyPin(pin, s.pinHash))) {
-      await setSettings({ pinFailures: 0, pinLockedUntil: 0 })
+    setMessage(encrypted ? l.unlocking : '')
+    if (await check.verify(pin)) {
+      await check.setState({ failures: 0, lockedUntil: 0 })
       onUnlock()
       return
     }
-    const failures = s.pinFailures + 1
+    const { failures: prev } = await check.getState()
+    const failures = prev + 1
     const until = Date.now() + lockoutMs(failures)
-    await setSettings({ pinFailures: failures, pinLockedUntil: until })
+    await check.setState({ failures, lockedUntil: until })
     setLockedUntil(until)
     setNow(Date.now())
     const left = MAX_ATTEMPTS - failures
@@ -54,7 +64,8 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
         <Icon name="lock" className="size-8" />
       </div>
       <h1 className="mt-4 text-2xl font-extrabold">{l.title}</h1>
-      <p role="alert" className="mt-2 min-h-12 text-center text-sm font-bold text-danger">
+      {encrypted && <p className="mt-1 text-sm text-muted">{l.encryptedHint}</p>}
+      <p role="alert" className={`mt-2 min-h-12 text-center text-sm font-bold ${checking ? 'text-muted' : 'text-danger'}`}>
         {waiting ? l.wait(Math.ceil((lockedUntil - now) / 1000)) : message}
       </p>
       <div className="mt-2 w-full">
@@ -65,7 +76,7 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
       </Button>
       {forgot && !wiping && (
         <section className="mt-2 rounded-3xl bg-surface p-5 text-sm shadow-sm">
-          <p>{l.forgotBody}</p>
+          <p>{encrypted ? l.forgotEncrypted : l.forgotBody}</p>
           <Button variant="danger" className="mt-4 w-full" onClick={() => setWiping(true)}>
             {t.settings.deleteAll}
           </Button>

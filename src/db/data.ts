@@ -1,4 +1,5 @@
-import { db, type AppDB } from './db'
+import { db, diskDb, type AppDB } from './db'
+import { closeVaultSession } from './vault'
 import { getSettings, setSettings, type Settings } from './settings'
 import { buildBackup, parseBackup, parseCSV, toCSV } from '../domain/backup'
 import { today, type ISODate } from '../domain/dates'
@@ -77,9 +78,14 @@ export async function importFile(
   return { periods: b.periods.length, days: b.days.length }
 }
 
-/** Borra la base de datos completa. La app vuelve al onboarding al recargar. */
-export async function wipeAll(database: AppDB = db): Promise<void> {
-  await database.delete()
+/**
+ * Borra todos los datos del dispositivo: la base de datos en disco (incluida la
+ * bóveda cifrada) y, si estaba desbloqueada, la copia en memoria. La app vuelve al
+ * onboarding al recargar.
+ */
+export async function wipeAll(disk: AppDB = diskDb): Promise<void> {
+  await closeVaultSession().catch(() => {})
+  await disk.delete()
 }
 
 /** Descarga un texto como archivo, sin pasar por ningún servidor. */

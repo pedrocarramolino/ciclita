@@ -78,14 +78,22 @@ async function getOrCreateSubscription(reg: ServiceWorkerRegistration): Promise<
   return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(key) })
 }
 
+/**
+ * Cancela la suscripción push del navegador. Aunque no se pueda avisar al servidor
+ * (p. ej. datos cifrados con un PIN olvidado), el siguiente envío fallará con 410 y el
+ * servidor borrará el dispositivo, así que no llegarán más avisos.
+ */
+export async function unsubscribeBrowserPush(): Promise<void> {
+  if (!pushSupported()) return
+  const reg = await navigator.serviceWorker.getRegistration()
+  await (await reg?.pushManager.getSubscription())?.unsubscribe()
+}
+
 /** Borra este dispositivo del servidor y cancela la suscripción push. */
 export async function unregisterPush(device: PushDevice | null): Promise<void> {
   if (!device) return
   await api('DELETE', { deviceId: device.id, secret: device.secret })
-  if (pushSupported()) {
-    const reg = await navigator.serviceWorker.getRegistration()
-    await (await reg?.pushManager.getSubscription())?.unsubscribe()
-  }
+  await unsubscribeBrowserPush()
 }
 
 /**

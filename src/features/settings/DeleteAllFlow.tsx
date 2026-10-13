@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { wipeAll } from '../../db/data'
 import { getSettings } from '../../db/settings'
-import { unregisterPush } from '../../push/pushClient'
+import { unregisterPush, unsubscribeBrowserPush } from '../../push/pushClient'
 import { t } from '../../i18n/es'
 
 /** Borrado total con doble confirmación: aviso + escribir "BORRAR". */
@@ -12,8 +12,11 @@ export function DeleteAllFlow({ onCancel }: { onCancel: () => void }) {
 
   const wipe = async () => {
     // Primero se borra lo que haya en el servidor de avisos (si falla, se borra igual en local).
-    const { pushDevice } = await getSettings()
+    // Con los datos cifrados y bloqueados no hay credenciales: al menos se cancela la
+    // suscripción del navegador para que dejen de llegar avisos.
+    const { pushDevice } = await getSettings().catch(() => ({ pushDevice: null }))
     await unregisterPush(pushDevice).catch(() => {})
+    await unsubscribeBrowserPush().catch(() => {})
     await wipeAll()
     history.replaceState(null, '', location.pathname)
     location.reload()

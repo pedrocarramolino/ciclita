@@ -1,18 +1,26 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '../../components/Button'
 import { PinPad } from '../../components/PinPad'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { setSettings } from '../../db/settings'
+import { disableEncryption, enableEncryption, isVaultUnlocked, rekeyVault } from '../../db/vault'
 import { hashPin, verifyPin } from '../../security/pin'
 import { t } from '../../i18n/es'
 import { Section } from './Section'
 
-type Flow = 'set' | 'change' | 'remove'
-type Step = 'current' | 'new' | 'repeat'
+type Flow = 'set' | 'change' | 'remove' | 'encrypt' | 'decrypt'
+type Step = 'current' | 'new' | 'repeat' | 'working'
+
+/** Recarga la app tras activar o desactivar el cifrado (cambia dónde viven los datos). */
+const reloadApp = () => setTimeout(() => location.reload(), 600)
 
 export function PinSection({ pinHash }: { pinHash: string | null }) {
   const [flow, setFlow] = useState<Flow | null>(null)
+  const [confirmEncrypt, setConfirmEncrypt] = useState(false)
   const [status, setStatus] = useState('')
+  const encrypted = isVaultUnlocked()
   const s = t.settings
+  const e = t.encryption
 
   return (
     <Section title={s.security}>
@@ -26,18 +34,58 @@ export function PinSection({ pinHash }: { pinHash: string | null }) {
             <Button variant="secondary" onClick={() => setFlow('change')}>
               {s.pinChange}
             </Button>
-            <Button variant="ghost" onClick={() => setFlow('remove')}>
-              {s.pinRemove}
-            </Button>
+            {!encrypted && (
+              <Button variant="ghost" onClick={() => setFlow('remove')}>
+                {s.pinRemove}
+              </Button>
+            )}
           </>
         ) : (
           <Button onClick={() => setFlow('set')}>{s.pinSet}</Button>
         )}
       </div>
-      <p className="text-xs text-muted">{s.pinNote}</p>
+      {!encrypted && <p className="text-xs text-muted">{s.pinNote}</p>}
+
+      {/* Cifrado de los datos con el PIN */}
+      <div className="rounded-2xl bg-surface-soft p-4">
+        <p className="font-bold">{e.title}</p>
+        <p className="mt-1 text-sm text-muted">{encrypted ? e.on : pinHash ? e.offWithPin : e.offNoPin}</p>
+        {encrypted ? (
+          <>
+            <p className="mt-2 text-xs text-muted">{e.removePinBlocked}</p>
+            <Button variant="secondary" className="mt-3" onClick={() => setFlow('decrypt')}>
+              {e.disable}
+            </Button>
+          </>
+        ) : (
+          pinHash && (
+            <Button className="mt-3" onClick={() => setConfirmEncrypt(true)}>
+              {e.enable}
+            </Button>
+          )
+        )}
+      </div>
+
       <p role="status" className="text-sm font-bold">
         {status}
       </p>
+      {confirmEncrypt && (
+        <ConfirmDialog
+          title={e.confirmTitle}
+          confirmLabel={e.confirmButton}
+          onConfirm={() => {
+            setConfirmEncrypt(false)
+            setFlow('encrypt')
+          }}
+          onCancel={() => setConfirmEncrypt(false)}
+        >
+          <ul className="list-disc space-y-2 pl-5">
+            {e.warnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+        </ConfirmDialog>
+      )}
       {flow && (
         <PinDialog
           flow={flow}
@@ -94,12 +142,26 @@ function PinDialog({
     setAttempt((a) => a + 1)
   }
 
+  const e = t.encryption
+
   const onPin = async (pin: string) => {
     if (step === 'current') {
       if (!pinHash || !(await verifyPin(pin, pinHash))) return next('current', t.lock.wrong)
       if (flow === 'remove') {
         await setSettings({ pinHash: null, pinFailures: 0, pinLockedUntil: 0 })
         return onDone(s.pinRemoved)
+      }
+      if (flow === 'encrypt' || flow === 'decrypt') {
+        setStep('working')
+        try {
+          if (flow === 'encrypt') await enableEncryption(pin)
+          else await disableEncryption()
+        } catch (err) {
+          console.error(err)
+          return next('current', e.failed)
+        }
+        reloadApp()
+        return
       }
       return next('new')
     }
@@ -109,10 +171,21 @@ function PinDialog({
     }
     if (pin !== first) return next('new', s.pinMismatch)
     await setSettings({ pinHash: await hashPin(pin), pinFailures: 0, pinLockedUntil: 0 })
+    // Con el cifrado activado, los datos se vuelven a cifrar con el PIN nuevo.
+    if (isVaultUnlocked()) await rekeyVault(pin)
     onDone(s.pinSaved)
   }
 
-  const title = step === 'current' ? s.pinCurrent : step === 'new' ? s.pinNew : s.pinRepeat
+  const title =
+    step === 'working'
+      ? flow === 'encrypt'
+        ? e.encrypting
+        : e.decrypting
+      : step === 'current'
+        ? s.pinCurrent
+        : step === 'new'
+          ? s.pinNew
+          : s.pinRepeat
 
   return (
     <dialog
@@ -127,11 +200,13 @@ function PinDialog({
         {error}
       </p>
       <div className="mt-4">
-        <PinPad onComplete={(p) => void onPin(p)} resetKey={attempt} />
+        <PinPad onComplete={(p) => void onPin(p)} resetKey={attempt} disabled={step === 'working'} />
       </div>
-      <Button variant="ghost" className="mt-6 w-full" onClick={onCancel}>
-        {t.confirm.cancel}
-      </Button>
+      {step !== 'working' && (
+        <Button variant="ghost" className="mt-6 w-full" onClick={onCancel}>
+          {t.confirm.cancel}
+        </Button>
+      )}
     </dialog>
   )
 }

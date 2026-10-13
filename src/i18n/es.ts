@@ -45,6 +45,10 @@ export const es = {
     forgot: '¿Has olvidado tu PIN?',
     forgotBody:
       'Como tus datos solo están en este dispositivo y no hay cuentas, no se puede recuperar el PIN. La única opción es borrar todos los datos y empezar de nuevo (si tienes una copia de seguridad, podrás importarla después).',
+    forgotEncrypted:
+      'Tus datos están cifrados con el PIN y nadie puede descifrarlos sin él, tampoco nosotros. La única opción es borrar todos los datos y empezar de nuevo (si tienes una copia de seguridad, podrás importarla después).',
+    encryptedHint: 'Tus datos están cifrados en este dispositivo.',
+    unlocking: 'Descifrando tus datos…',
     digit: (d: string) => `Dígito ${d}`,
     deleteDigit: 'Borrar último dígito',
     entered: (n: number) => `${n} de 4 dígitos introducidos`,
@@ -151,6 +155,28 @@ export const es = {
       'Elige «Añadir a pantalla de inicio» y confirma.',
     ],
     manual: 'Usa la opción «Instalar app» o «Añadir a pantalla de inicio» del menú de tu navegador.',
+  },
+  encryption: {
+    title: 'Cifrar mis datos con el PIN',
+    offNoPin: 'Activa primero un PIN para poder cifrar tus datos.',
+    offWithPin:
+      'Tus registros, fechas, síntomas y notas se guardarán cifrados (AES-256) en el dispositivo. Sin el PIN nadie puede leerlos.',
+    on: 'Tus datos están cifrados en este dispositivo con tu PIN.',
+    enable: 'Cifrar mis datos',
+    disable: 'Desactivar cifrado',
+    removePinBlocked: 'Para quitar el PIN, desactiva antes el cifrado.',
+    confirmTitle: 'Antes de cifrar tus datos',
+    confirmButton: 'Entendido, cifrar',
+    warnings: [
+      'Si olvidas el PIN, tus datos no se podrán recuperar de ninguna forma. Exporta antes una copia de seguridad.',
+      'Las copias que exportes no van cifradas: guárdalas en un lugar seguro.',
+      'Un PIN de 4 dígitos protege frente a miradas y frente a quien copie los datos del navegador, pero alguien con conocimientos técnicos y tu dispositivo podría probar todas las combinaciones. Mantén también el bloqueo del teléfono.',
+      'Al abrir la app tardará un momento más en descifrar tus datos.',
+    ],
+    encrypting: 'Cifrando tus datos…',
+    decrypting: 'Descifrando tus datos…',
+    failed: 'No se pudo completar. Tus datos siguen como estaban.',
+    exportsNotEncrypted: 'Las copias que exportes no van cifradas: guárdalas en un lugar seguro.',
   },
   notifications: {
     discreetTitle: 'Ciclita',

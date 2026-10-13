@@ -7,6 +7,8 @@ import { getSettings, type Theme } from './db/settings'
 import { CalendarScreen } from './features/calendar/CalendarScreen'
 import { Home } from './features/home/Home'
 import { LockScreen } from './features/lock/LockScreen'
+import type { PinCheck } from './features/lock/pinCheck'
+import { flushVault, getVaultRow, isVaultUnlocked, unlockVault, vaultLockStore } from './db/vault'
 import { usePushSync } from './push/usePushSync'
 import { preloadable } from './preloadable'
 import { useHashRoute } from './useHashRoute'
@@ -62,8 +64,8 @@ function useTheme(theme: Theme | undefined) {
  * Bloqueo por PIN: se bloquea al abrir la app y al volver tras más de 1 minuto
  * fuera. Activar el PIN desde ajustes no bloquea la sesión en curso.
  */
-function useAppLock(pinHash: string | null | undefined): [boolean, () => void] {
-  const [locked, setLocked] = useState<boolean | null>(null)
+function useAppLock(pinHash: string | null | undefined, startUnlocked: boolean): [boolean, () => void] {
+  const [locked, setLocked] = useState<boolean | null>(startUnlocked ? false : null)
   const hasPin = useRef(false)
   useEffect(() => {
     hasPin.current = !!pinHash
@@ -75,7 +77,12 @@ function useAppLock(pinHash: string | null | undefined): [boolean, () => void] {
     let hiddenAt = 0
     const onVisibility = () => {
       if (document.hidden) hiddenAt = Date.now()
-      else if (hasPin.current && hiddenAt && Date.now() - hiddenAt > RELOCK_AFTER_MS) setLocked(true)
+      else if (hasPin.current && hiddenAt && Date.now() - hiddenAt > RELOCK_AFTER_MS) {
+        // Con los datos cifrados, bloquear es recargar: así la copia descifrada en
+        // memoria desaparece y hay que volver a introducir el PIN para descifrar.
+        if (isVaultUnlocked()) void flushVault().finally(() => location.reload())
+        else setLocked(true)
+      }
     }
     document.addEventListener('visibilitychange', onVisibility)
     return () => document.removeEventListener('visibilitychange', onVisibility)
@@ -84,10 +91,37 @@ function useAppLock(pinHash: string | null | undefined): [boolean, () => void] {
   return [!!locked && !!pinHash, () => setLocked(false)]
 }
 
-export default function App() {
+/**
+ * Con el cifrado activado, primero se pide el PIN para descifrar la bóveda; la app
+ * se monta después, ya leyendo de la copia descifrada en memoria.
+ */
+export default function App({ encrypted }: { encrypted: boolean }) {
+  const [unlocked, setUnlocked] = useState(!encrypted)
+  return unlocked ? <MainApp startUnlocked={encrypted} /> : <VaultGate onUnlock={() => setUnlocked(true)} />
+}
+
+const vaultPinCheck = (): PinCheck => {
+  const store = vaultLockStore()
+  return { verify: (pin) => unlockVault(pin), getState: store.get, setState: store.set }
+}
+
+function VaultGate({ onUnlock }: { onUnlock: () => void }) {
+  const [check] = useState(vaultPinCheck)
+  const theme = useLiveQuery(async () => ((await getVaultRow())?.theme ?? 'system') as Theme)
+  useTheme(theme)
+  return (
+    <>
+      <LockScreen onUnlock={onUnlock} check={check} encrypted />
+      <UpdatePrompt />
+      <Splash ready />
+    </>
+  )
+}
+
+function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
   const settings = useLiveQuery(() => getSettings())
   const [route, navigate] = useHashRoute()
-  const [locked, unlock] = useAppLock(settings?.pinHash)
+  const [locked, unlock] = useAppLock(settings?.pinHash, startUnlocked)
   useTheme(settings?.theme)
   const prediction = usePrediction()
   usePushSync(settings?.onboardingDone ? settings.reminders : undefined, prediction)
