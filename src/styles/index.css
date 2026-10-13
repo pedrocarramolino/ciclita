@@ -1,0 +1,90 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/nunito';
+
+/* El tema oscuro se activa con la clase .dark en <html> (claro / oscuro / automático). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Tokens de color. Los pares texto/fondo cumplen WCAG AA (≥ 4.5:1).
+ * Claro: rosa empolvado, coral y lavanda sobre crema.
+ * Oscuro: ciruelas profundos.
+ */
+:root {
+  --bg: #fbf6f0;
+  --surface: #ffffff;
+  --surface-soft: #f6ebe6;
+  --text: #3b2a33;
+  --text-muted: #6e5862;
+  --border: #ead9d6;
+  --primary: #b5503f; /* coral oscuro: texto blanco 5:1 */
+  --primary-soft: #f6d6cc;
+  --on-primary: #ffffff;
+  --rose: #d8a7b1;
+  --rose-soft: #f3dfe3;
+  --lavender: #b9a7d6;
+  --lavender-soft: #e9e2f4;
+  --focus: #7a4fb0;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #1f141d;
+  --surface: #2c1d2a;
+  --surface-soft: #3a2737;
+  --text: #f6eaf0;
+  --text-muted: #cdb6c3;
+  --border: #4a3346;
+  --primary: #f0a08e;
+  --primary-soft: #5a3240;
+  --on-primary: #2a1420;
+  --rose: #c88c99;
+  --rose-soft: #4d2d3c;
+  --lavender: #a993cc;
+  --lavender-soft: #3b2f52;
+  --focus: #d7c3f5;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Nunito Variable', ui-rounded, system-ui, sans-serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-soft: var(--surface-soft);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-line: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+  --color-rose: var(--rose);
+  --color-rose-soft: var(--rose-soft);
+  --color-lavender: var(--lavender);
+  --color-lavender-soft: var(--lavender-soft);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
