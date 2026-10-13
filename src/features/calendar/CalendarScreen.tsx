@@ -2,11 +2,22 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { db } from '../../db/db'
-import { monthGrid, type GridDay } from '../../domain/calendar'
+import { monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
 import { formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
 import { t } from '../../i18n/es'
+import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
+
+interface DayState {
+  isToday: boolean
+  isFuture: boolean
+  isPeriod: boolean
+  isPredicted: boolean
+  isFertile: boolean
+  isOvulation: boolean
+  isLogged: boolean
+}
 
 export function CalendarScreen() {
   const [now] = useState(() => new Date())
@@ -26,6 +37,23 @@ export function CalendarScreen() {
     ])
     return { periodDays: periodDateSet(periods, today), logged: new Set(loggedKeys) }
   }, [first, last, today])
+
+  const prediction = usePrediction()
+  const predicted = useMemo(() => prediction && predictionDates(prediction), [prediction])
+
+  const stateOf = (date: ISODate): DayState => {
+    const isPeriod = !!data?.periodDays.has(date)
+    return {
+      isToday: date === today,
+      isFuture: date > today,
+      isPeriod,
+      // Lo registrado manda sobre lo previsto.
+      isPredicted: !isPeriod && !!predicted?.predicted.has(date),
+      isFertile: !isPeriod && !!predicted?.fertile.has(date),
+      isOvulation: !isPeriod && !!predicted?.ovulation.has(date),
+      isLogged: !!data?.logged.has(date),
+    }
+  }
 
   const shift = (delta: number) =>
     setYm(({ y, m }) => {
@@ -88,14 +116,7 @@ export function CalendarScreen() {
               <tr key={week[0].date}>
                 {week.map((gd) => (
                   <td key={gd.date} className="p-0.5">
-                    <DayCell
-                      gd={gd}
-                      isToday={gd.date === today}
-                      isFuture={gd.date > today}
-                      isPeriod={!!data?.periodDays.has(gd.date)}
-                      isLogged={!!data?.logged.has(gd.date)}
-                      onSelect={setSelected}
-                    />
+                    <DayCell gd={gd} s={stateOf(gd.date)} onSelect={setSelected} />
                   </td>
                 ))}
               </tr>
@@ -112,44 +133,43 @@ export function CalendarScreen() {
   )
 }
 
-function DayCell({
-  gd,
-  isToday,
-  isFuture,
-  isPeriod,
-  isLogged,
-  onSelect,
-}: {
-  gd: GridDay
-  isToday: boolean
-  isFuture: boolean
-  isPeriod: boolean
-  isLogged: boolean
-  onSelect: (d: ISODate) => void
-}) {
+function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: ISODate) => void }) {
   const c = t.calendar
   const parts = [formatLong(gd.date)]
-  if (isToday) parts.push(c.todayMark)
-  if (isPeriod) parts.push(c.period)
-  if (isLogged) parts.push(c.logged)
+  if (s.isToday) parts.push(c.todayMark)
+  if (s.isPeriod) parts.push(c.period)
+  if (s.isPredicted) parts.push(c.predicted)
+  if (s.isOvulation) parts.push(c.ovulation)
+  else if (s.isFertile) parts.push(c.fertile)
+  if (s.isLogged) parts.push(c.logged)
+
+  const look = s.isPeriod
+    ? 'bg-primary text-on-primary'
+    : s.isPredicted
+      ? 'border-2 border-dashed border-primary text-ink'
+      : s.isOvulation
+        ? 'bg-accent text-surface'
+        : s.isFertile
+        ? 'bg-lavender-soft text-ink'
+        : 'text-ink hover:bg-surface-soft'
 
   return (
     <button
       type="button"
-      disabled={isFuture}
+      disabled={s.isFuture}
       onClick={() => onSelect(gd.date)}
       aria-label={parts.join(', ')}
       className={`relative mx-auto grid aspect-square w-full max-w-12 place-items-center rounded-full text-base font-bold transition
-        ${gd.inMonth ? '' : 'opacity-40'}
-        ${isPeriod ? 'bg-primary text-on-primary' : 'text-ink hover:bg-surface-soft'}
-        ${isToday ? 'ring-2 ring-ink ring-offset-2 ring-offset-surface' : ''}
-        disabled:cursor-default disabled:hover:bg-transparent`}
+        ${gd.inMonth ? '' : 'opacity-40'} ${look}
+        
+        ${s.isToday ? 'outline-2 outline-offset-2 outline-ink' : ''}
+        disabled:cursor-default`}
     >
       {gd.day}
-      {isLogged && (
+      {s.isLogged && (
         <span
           aria-hidden="true"
-          className={`absolute bottom-1 size-1.5 rounded-full ${isPeriod ? 'bg-on-primary' : 'bg-lavender'}`}
+          className={`absolute bottom-1 size-1.5 rounded-full ${s.isPeriod ? 'bg-on-primary' : s.isOvulation ? 'bg-surface' : 'bg-accent'}`}
         />
       )}
     </button>
@@ -158,24 +178,28 @@ function DayCell({
 
 function Legend() {
   const c = t.calendar
+  const item = (swatch: string, label: string) => (
+    <li className="flex items-center gap-2">
+      <span aria-hidden="true" className={`size-5 shrink-0 rounded-full ${swatch}`} />
+      {label}
+    </li>
+  )
   return (
     <section aria-label={c.legend} className="mt-4 mb-4 rounded-2xl bg-surface p-4">
       <ul className="grid grid-cols-2 gap-3 text-sm">
-        <li className="flex items-center gap-2">
-          <span aria-hidden="true" className="size-5 rounded-full bg-primary" />
-          {c.period}
-        </li>
+        {item('bg-primary', c.period)}
+        {item('border-2 border-dashed border-primary', c.predicted)}
+        {item('bg-lavender-soft', c.fertile)}
+        {item('bg-accent', c.ovulation)}
+        {item('outline-2 outline-offset-1 outline-ink', c.todayMark)}
         <li className="flex items-center gap-2">
           <span aria-hidden="true" className="grid size-5 place-items-center">
-            <span className="size-2 rounded-full bg-lavender" />
+            <span className="size-2 rounded-full bg-accent" />
           </span>
           {c.logged}
         </li>
-        <li className="flex items-center gap-2">
-          <span aria-hidden="true" className="size-5 rounded-full ring-2 ring-ink" />
-          {c.todayMark}
-        </li>
       </ul>
+      <p className="mt-3 text-xs text-muted">{c.estimatesNote}</p>
     </section>
   )
 }

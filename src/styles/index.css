@@ -60,6 +60,7 @@
   --color-rose-soft: var(--rose-soft);
   --color-lavender: var(--lavender);
   --color-lavender-soft: var(--lavender-soft);
+  --color-accent: var(--focus);
 }
 
 html,

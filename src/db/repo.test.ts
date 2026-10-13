@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { AppDB } from './db'
-import { addCustomSymptom, saveDay } from './repo'
+import { addCustomSymptom, endPeriod, saveDay, startPeriod } from './repo'
 
 const TODAY = '2026-10-13'
 let database: AppDB
@@ -29,6 +29,30 @@ describe('saveDay', () => {
     await saveDay('2026-10-10', { flow: 'light', notes: '   ' }, false, d, TODAY)
     expect(await d.periods.count()).toBe(0)
     expect(await d.days.get('2026-10-10')).toBeUndefined()
+  })
+})
+
+describe('startPeriod / endPeriod', () => {
+  it('abre un periodo en curso y lo cierra', async () => {
+    const d = await freshDB()
+    await startPeriod('2026-10-10', d)
+    expect(await d.periods.toArray()).toMatchObject([{ startDate: '2026-10-10', endDate: null }])
+    await endPeriod('2026-10-14', d)
+    expect(await d.periods.toArray()).toMatchObject([{ startDate: '2026-10-10', endDate: '2026-10-14' }])
+  })
+
+  it('no duplica si ya hay periodo ese día', async () => {
+    const d = await freshDB()
+    await startPeriod('2026-10-10', d)
+    await startPeriod('2026-10-10', d)
+    expect(await d.periods.count()).toBe(1)
+  })
+
+  it('se une al periodo que terminó el día anterior', async () => {
+    const d = await freshDB()
+    await d.periods.add({ startDate: '2026-10-07', endDate: '2026-10-09' })
+    await startPeriod('2026-10-10', d)
+    expect(await d.periods.toArray()).toMatchObject([{ startDate: '2026-10-07', endDate: null }])
   })
 })
 

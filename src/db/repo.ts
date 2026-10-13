@@ -43,6 +43,31 @@ export async function saveDay(
   })
 }
 
+/** "Ha empezado mi periodo": abre un periodo en curso desde `date`. */
+export async function startPeriod(
+  date: ISODate = todayISO(),
+  database: AppDB = db,
+): Promise<void> {
+  await database.transaction('rw', database.periods, async () => {
+    const periods = await database.periods.toArray()
+    if (periodDateSet(periods, date).has(date)) return
+    // Si el periodo anterior terminó ayer, se une a él.
+    const next = togglePeriodDay(periods, date, true, date).map((p) =>
+      p.endDate === date ? { ...p, endDate: null } : p,
+    )
+    await database.periods.clear()
+    await database.periods.bulkAdd(next)
+  })
+}
+
+/** "Ha terminado mi periodo": cierra el periodo en curso en `date`. */
+export async function endPeriod(date: ISODate = todayISO(), database: AppDB = db): Promise<void> {
+  const ongoing = await database.periods.filter((p) => p.endDate === null).first()
+  if (!ongoing?.id) return
+  const end = date < ongoing.startDate ? ongoing.startDate : date
+  await database.periods.update(ongoing.id, { endDate: end })
+}
+
 /** Añade un síntoma personalizado (si no existe ya) y devuelve su nombre normalizado. */
 export async function addCustomSymptom(name: string, database: AppDB = db): Promise<string | null> {
   const clean = name.trim().replace(/\s+/g, ' ')

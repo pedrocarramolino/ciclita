@@ -1,4 +1,18 @@
-import { addDays, toISODate, type ISODate } from './dates'
+import { addDays, diffDays, toISODate, type ISODate } from './dates'
+import type { DateRange, Prediction } from './prediction'
+
+function rangeDates({ start, end }: DateRange): ISODate[] {
+  return Array.from({ length: diffDays(start, end) + 1 }, (_, i) => addDays(start, i))
+}
+
+/** Fechas de los periodos previstos y de las ventanas fértiles, para pintar el calendario. */
+export function predictionDates(p: Prediction) {
+  return {
+    predicted: new Set(p.nextPeriods.flatMap(rangeDates)),
+    fertile: new Set(p.fertileWindows.flatMap(rangeDates)),
+    ovulation: new Set(p.fertileWindows.map((w) => w.ovulation)),
+  }
+}
 
 export interface GridDay {
   date: ISODate

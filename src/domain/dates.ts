@@ -43,6 +43,13 @@ export function formatDayMonth(s: ISODate): string {
   return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long' }).format(parseISODate(s))
 }
 
+/** "11–14 de noviembre" o, si cambia de mes, "30 de octubre – 3 de noviembre". */
+export function formatRange(a: ISODate, b: ISODate): string {
+  if (a === b) return formatDayMonth(a)
+  if (a.slice(0, 7) === b.slice(0, 7)) return `${Number(a.slice(8))}–${formatDayMonth(b)}`
+  return `${formatDayMonth(a)} – ${formatDayMonth(b)}`
+}
+
 /** "Octubre de 2026" */
 export function formatMonthYear(year: number, month: number): string {
   return capitalize(

@@ -47,6 +47,10 @@ export const es = {
     period: 'Periodo',
     logged: 'Con registro',
     todayMark: 'Hoy',
+    predicted: 'Periodo previsto',
+    fertile: 'Ventana fértil estimada',
+    ovulation: 'Ovulación estimada',
+    estimatesNote: 'Los periodos previstos, la ventana fértil y la ovulación son estimaciones.',
     hint: 'Toca un día para registrar cómo te sientes.',
   },
   log: {
@@ -69,8 +73,38 @@ export const es = {
     save: 'Guardar',
   },
   home: {
-    ready: 'Todo listo',
-    soon: 'La pantalla de inicio llega en la próxima fase. Mientras tanto, puedes registrar tus días en el calendario.',
+    todayIs: (date: string) => `Hoy, ${date}`,
+    noData: 'Registra tu periodo para ver tus predicciones',
+    noDataHint: 'Cuando empiece, pulsa el botón de abajo o márcalo en el calendario.',
+    periodDay: (n: number) => `Día ${n} de tu periodo`,
+    startsIn: (n: number) =>
+      n === 0
+        ? 'Tu periodo podría empezar hoy'
+        : n === 1
+          ? 'Tu periodo empieza mañana'
+          : `Tu periodo empieza en ${n} días`,
+    late: (n: number) => `Tu periodo se retrasa ${n} ${n === 1 ? 'día' : 'días'}`,
+    lateHint: 'Los ciclos pueden variar por estrés, viajes, cambios de rutina u otros motivos.',
+    cycleDay: (n: number) => `Día ${n} de tu ciclo`,
+    fertile: 'Ventana fértil estimada',
+    started: 'Ha empezado mi periodo',
+    ended: 'Ha terminado mi periodo',
+    logToday: 'Registrar hoy',
+    upcoming: 'Próximos periodos',
+    fertileNext: 'Próxima ventana fértil',
+    inDays: (n: number) => (n <= 0 ? 'hoy' : n === 1 ? 'mañana' : `en ${n} días`),
+    yourCycle: 'Tu ciclo',
+    avgCycle: 'Ciclo medio',
+    avgPeriod: 'Periodo medio',
+    source: {
+      history: (n: number) => `Según tus últimos ${n} ${n === 1 ? 'ciclo' : 'ciclos'}`,
+      historyPeriod: 'Según tus periodos registrados',
+      user: 'El valor que indicaste',
+      default: 'Valor habitual mientras no haya datos',
+    },
+    estimates:
+      'Las predicciones son estimaciones basadas en tus registros y pueden no coincidir con tu ciclo real.',
+    stale: 'Hace tiempo que no registras un periodo, así que estas fechas son menos fiables.',
   },
 }
 
