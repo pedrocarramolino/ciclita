@@ -31,7 +31,15 @@ export function StatsScreen() {
 
   return (
     <main className="mx-auto w-full max-w-md space-y-4 px-4 pt-6 pb-4">
-      <h1 className="text-2xl font-extrabold">{s.title}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-extrabold">{s.title}</h1>
+        <a
+          href="#/report"
+          className="inline-flex min-h-11 items-center rounded-full border border-line bg-surface px-4 text-sm font-bold text-primary"
+        >
+          {t.report.open}
+        </a>
+      </div>
 
       {p.isIrregular && (
         <section

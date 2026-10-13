@@ -5,7 +5,9 @@ import {
   DEFAULT_CYCLE_LENGTH,
   DEFAULT_PERIOD_LENGTH,
   fertileWindowFor,
+  MAX_MARGIN,
   predict,
+  predictionMargin,
 } from './prediction'
 
 const TODAY = '2026-10-13'
@@ -74,7 +76,7 @@ describe('predict · con un solo ciclo', () => {
     expect(p.cycleSource).toBe('history')
     expect(p.variation).toBeNull()
     expect(p.isIrregular).toBe(false)
-    expect(p.nextPeriods[0]).toEqual({ start: '2026-11-02', end: '2026-11-06' })
+    expect(p.nextPeriods[0]).toMatchObject({ start: '2026-11-02', end: '2026-11-06', margin: 0 })
   })
 })
 
@@ -91,9 +93,9 @@ describe('predict · ciclos regulares', () => {
 
   it('predice los próximos 3 periodos', () => {
     expect(p.nextPeriods).toEqual([
-      { start: '2026-10-31', end: '2026-11-04' },
-      { start: '2026-11-28', end: '2026-12-02' },
-      { start: '2026-12-26', end: '2026-12-30' },
+      { start: '2026-10-31', end: '2026-11-04', margin: 0, earliestStart: '2026-10-31', latestStart: '2026-10-31' },
+      { start: '2026-11-28', end: '2026-12-02', margin: 0, earliestStart: '2026-11-28', latestStart: '2026-11-28' },
+      { start: '2026-12-26', end: '2026-12-30', margin: 0, earliestStart: '2026-12-26', latestStart: '2026-12-26' },
     ])
   })
 
@@ -102,6 +104,9 @@ describe('predict · ciclos regulares', () => {
       start: '2026-10-12',
       ovulation: '2026-10-17',
       end: '2026-10-18',
+      // Ciclos regulares: sin margen, la ventana "posible" coincide con la estimada.
+      possibleStart: '2026-10-12',
+      possibleEnd: '2026-10-18',
     })
     expect(p.fertileWindows).toHaveLength(3)
   })
@@ -181,5 +186,49 @@ describe('fertileWindowFor', () => {
     expect(w.ovulation).toBe('2026-10-05')
     expect(w.start).toBe('2026-10-06')
     expect(w.end).toBe('2026-10-06')
+  })
+})
+
+describe('predict · margen de la previsión', () => {
+  it('sin al menos 3 ciclos no hay margen', () => {
+    expect(predictionMargin([28, 35], 1)).toBe(0)
+  })
+
+  it('con ciclos regulares el margen es 0', () => {
+    expect(predictionMargin([28, 28, 28, 28], 1)).toBe(0)
+  })
+
+  it('crece para los periodos más lejanos y tiene un máximo', () => {
+    const cycles = [24, 35, 28, 31] // desviación típica ≈ 4
+    expect(predictionMargin(cycles, 1)).toBe(4)
+    expect(predictionMargin(cycles, 3)).toBe(MAX_MARGIN) // 4·√3 ≈ 7 → tope
+    expect(predictionMargin([20, 45, 22, 44], 1)).toBe(MAX_MARGIN)
+  })
+
+  it('con ciclos irregulares cada previsión lleva su intervalo', () => {
+    // Ciclos de 24, 35, 28 y 31 días (media 30, margen ±4). Último inicio el 3/10.
+    const periods = periodsFrom(startsWithCycles('2026-10-03', [24, 35, 28, 31]))
+    const p = predict({ periods, today: TODAY })
+    expect(p.nextPeriods[0]).toMatchObject({
+      start: '2026-11-02',
+      margin: 4,
+      earliestStart: '2026-10-29',
+      latestStart: '2026-11-06',
+    })
+    expect(p.nextPeriods[1].margin).toBeGreaterThan(p.nextPeriods[0].margin)
+  })
+
+  it('el intervalo nunca empieza antes de hoy', () => {
+    // Previsto en 2 días con margen ±4: lo más pronto es hoy.
+    const periods = periodsFrom(startsWithCycles('2026-09-15', [24, 35, 28, 31]))
+    const p = predict({ periods, today: TODAY })
+    expect(p.nextPeriods[0].earliestStart).toBe(TODAY)
+  })
+
+  it('la ventana fértil "posible" se amplía con el margen', () => {
+    const periods = periodsFrom(startsWithCycles('2026-10-03', [24, 35, 28, 31]))
+    const w = predict({ periods, today: TODAY }).fertileWindows[0]
+    expect(w.possibleStart < w.start).toBe(true)
+    expect(w.possibleEnd > w.end).toBe(true)
   })
 })

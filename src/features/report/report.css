@@ -1,0 +1,108 @@
+/*
+ * Estilos del informe para el médico. Se usan en la app y se incrustan tal cual en el
+ * archivo HTML descargable, así que no dependen de Tailwind ni de las variables del
+ * tema: el informe es siempre una "hoja" blanca con texto oscuro, apta para imprimir.
+ */
+.rpt {
+  background: #fff;
+  color: #1f1a1d;
+  font-family: 'Nunito Variable', ui-rounded, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 28px 24px;
+  border-radius: 16px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.rpt h1 {
+  font-size: 22px;
+  margin: 0;
+  font-weight: 800;
+}
+.rpt h2 {
+  font-size: 16px;
+  margin: 22px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #b5503f;
+  font-weight: 800;
+  break-after: avoid;
+}
+.rpt .rpt-meta {
+  color: #5c4a54;
+  margin: 4px 0 0;
+}
+.rpt .rpt-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 10px 0 0;
+}
+.rpt table {
+  width: 100%;
+  border-collapse: collapse;
+  break-inside: auto;
+}
+.rpt tr {
+  break-inside: avoid;
+}
+.rpt th,
+.rpt td {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid #e6dcdf;
+  vertical-align: top;
+}
+.rpt th {
+  color: #5c4a54;
+  font-weight: 700;
+  font-size: 12px;
+}
+.rpt td.num,
+.rpt th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.rpt .rpt-summary th {
+  width: 55%;
+  font-size: 14px;
+  color: #1f1a1d;
+  font-weight: 600;
+}
+.rpt .rpt-alert {
+  background: #fbeeee;
+  border-left: 4px solid #9f2d2d;
+  padding: 8px 12px;
+  margin-top: 10px;
+}
+.rpt .rpt-empty {
+  color: #5c4a54;
+  font-style: italic;
+}
+.rpt .rpt-footer {
+  margin-top: 24px;
+  padding-top: 10px;
+  border-top: 1px solid #e6dcdf;
+  color: #5c4a54;
+  font-size: 12px;
+}
+
+/* Impresión: solo se imprime el informe, sin la interfaz de la app. */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  .no-print,
+  nav,
+  .splash {
+    display: none !important;
+  }
+  .rpt {
+    padding: 0;
+    max-width: none;
+    border-radius: 0;
+    box-shadow: none !important;
+  }
+}

@@ -13,7 +13,7 @@ export function BottomNav({ route, onNavigate }: { route: Route; onNavigate: (r:
   return (
     <nav
       aria-label={t.nav.label}
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+      className="no-print fixed inset-x-0 bottom-0 z-10 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
     >
       <ul className="mx-auto flex max-w-md">
         {ITEMS.map((it) => {

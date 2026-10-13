@@ -50,6 +50,12 @@ export function DataSection() {
         >
           {s.exportCSV}
         </Button>
+        <a
+          href="#/report"
+          className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-line bg-surface px-6 py-3 font-bold text-ink hover:bg-surface-soft"
+        >
+          {t.report.open}
+        </a>
         <Button variant="secondary" onClick={() => fileRef.current?.click()}>
           {s.import}
         </Button>

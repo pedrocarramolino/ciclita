@@ -21,14 +21,17 @@ const stats = preloadable(() => import('./features/stats/StatsScreen').then((m) 
 const settingsScreen = preloadable(() =>
   import('./features/settings/SettingsScreen').then((m) => m.SettingsScreen),
 )
+const reportScreen = preloadable(() => import('./features/report/ReportScreen').then((m) => m.ReportScreen))
 const StatsScreen = stats.Component
+const ReportScreen = reportScreen.Component
 const SettingsScreen = settingsScreen.Component
 
 /** Precarga las pantallas diferidas cuando la app queda libre tras abrirse. */
 function usePreloadScreens(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return
-    const preload = () => void Promise.all([stats.preload(), settingsScreen.preload()]).catch(() => {})
+    const preload = () =>
+      void Promise.all([stats.preload(), settingsScreen.preload(), reportScreen.preload()]).catch(() => {})
     if ('requestIdleCallback' in window) {
       const id = requestIdleCallback(preload, { timeout: 3000 })
       return () => cancelIdleCallback(id)
@@ -144,6 +147,11 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
         {route === 'stats' && (
           <Suspense fallback={null}>
             <StatsScreen />
+          </Suspense>
+        )}
+        {route === 'report' && (
+          <Suspense fallback={null}>
+            <ReportScreen />
           </Suspense>
         )}
         {route === 'settings' && (

@@ -4,7 +4,7 @@ import { startTransition, useCallback, useEffect, useState } from 'react'
  * Navegación mínima basada en el hash (#/calendar). Funciona en cualquier
  * hosting estático sin reglas de reescritura y respeta el botón "atrás".
  */
-export const ROUTES = ['home', 'calendar', 'stats', 'settings'] as const
+export const ROUTES = ['home', 'calendar', 'stats', 'settings', 'report'] as const
 export type Route = (typeof ROUTES)[number]
 
 function read(): Route {

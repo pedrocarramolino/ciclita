@@ -5,12 +5,30 @@ function rangeDates({ start, end }: DateRange): ISODate[] {
   return Array.from({ length: diffDays(start, end) + 1 }, (_, i) => addDays(start, i))
 }
 
-/** Fechas de los periodos previstos y de las ventanas fértiles, para pintar el calendario. */
+/**
+ * Fechas de los periodos previstos y de las ventanas fértiles, para pintar el
+ * calendario. "Posibles" son los días que solo entran por el margen de la previsión.
+ */
 export function predictionDates(p: Prediction) {
+  const predicted = new Set(p.nextPeriods.flatMap(rangeDates))
+  const fertile = new Set(p.fertileWindows.flatMap(rangeDates))
+  const possiblePeriod = new Set(
+    p.nextPeriods
+      .flatMap((r) => rangeDates({ start: r.earliestStart, end: addDays(r.latestStart, diffDays(r.start, r.end)) }))
+      .filter((d) => !predicted.has(d)),
+  )
+  const possibleFertile = new Set(
+    p.fertileWindows
+      .flatMap((w) => rangeDates({ start: w.possibleStart, end: w.possibleEnd }))
+      .filter((d) => !fertile.has(d) && !predicted.has(d) && !possiblePeriod.has(d)),
+  )
   return {
-    predicted: new Set(p.nextPeriods.flatMap(rangeDates)),
-    fertile: new Set(p.fertileWindows.flatMap(rangeDates)),
+    predicted,
+    fertile,
     ovulation: new Set(p.fertileWindows.map((w) => w.ovulation)),
+    possiblePeriod,
+    possibleFertile,
+    hasMargin: p.nextPeriods.some((r) => r.margin > 0),
   }
 }
 

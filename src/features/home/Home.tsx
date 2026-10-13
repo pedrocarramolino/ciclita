@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { endPeriod, startPeriod } from '../../db/repo'
-import { diffDays, formatLong, formatRange, today as todayISO } from '../../domain/dates'
+import { diffDays, formatDayMonth, formatLong, formatRange, today as todayISO } from '../../domain/dates'
 import type { Prediction, Source } from '../../domain/prediction'
 import { t } from '../../i18n/es'
 import { usePrediction } from '../../usePrediction'
@@ -27,6 +27,11 @@ export function Home() {
         <CycleRing p={p} />
         <h1 className="mt-5 text-2xl leading-tight font-extrabold">{headline(p)}</h1>
         {s.kind === 'noData' && <p className="mt-2 text-muted">{h.noDataHint}</p>}
+        {s.kind === 'upcoming' && p.nextPeriods[0]?.margin > 0 && (
+          <p className="mt-2 text-sm font-semibold">
+            {h.between(formatDayMonth(p.nextPeriods[0].earliestStart), formatDayMonth(p.nextPeriods[0].latestStart))}
+          </p>
+        )}
         {(s.kind === 'upcoming' || s.kind === 'late') && (
           <p className="mt-2 font-semibold text-muted">{h.cycleDay(s.cycleDay)}</p>
         )}
@@ -139,9 +144,14 @@ function Upcoming({ p }: { p: Prediction }) {
       </h2>
       <ul className="mt-3 space-y-2">
         {p.nextPeriods.map((r) => (
-          <li key={r.start} className="flex items-center justify-between gap-3 rounded-2xl bg-rose-soft px-4 py-3">
-            <span className="font-bold">{formatRange(r.start, r.end)}</span>
-            <span className="shrink-0 text-sm text-muted">{h.inDays(diffDays(today, r.start))}</span>
+          <li key={r.start} className="rounded-2xl bg-rose-soft px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="font-bold">{formatRange(r.start, r.end)}</span>
+              <span className="shrink-0 text-sm text-muted">{h.inDays(diffDays(today, r.start))}</span>
+            </div>
+            {r.margin > 0 && (
+              <p className="mt-0.5 text-xs text-muted">{h.startWindow(formatDayMonth(r.earliestStart), formatDayMonth(r.latestStart), r.margin)}</p>
+            )}
           </li>
         ))}
       </ul>
@@ -154,6 +164,11 @@ function Upcoming({ p }: { p: Prediction }) {
             </span>
             <span className="shrink-0 text-sm text-muted">{h.inDays(diffDays(today, nextFertile.start))}</span>
           </p>
+          {(nextFertile.possibleStart !== nextFertile.start || nextFertile.possibleEnd !== nextFertile.end) && (
+            <p className="mt-1 px-1 text-xs text-muted">
+              {h.fertileWindowWide(formatRange(nextFertile.possibleStart, nextFertile.possibleEnd))}
+            </p>
+          )}
         </>
       )}
     </section>

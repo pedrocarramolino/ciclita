@@ -16,6 +16,8 @@ interface DayState {
   isPredicted: boolean
   isFertile: boolean
   isOvulation: boolean
+  isPossiblePeriod: boolean
+  isPossibleFertile: boolean
   isLogged: boolean
 }
 
@@ -51,6 +53,8 @@ export function CalendarScreen() {
       isPredicted: !isPeriod && !!predicted?.predicted.has(date),
       isFertile: !isPeriod && !!predicted?.fertile.has(date),
       isOvulation: !isPeriod && !!predicted?.ovulation.has(date),
+      isPossiblePeriod: !isPeriod && !!predicted?.possiblePeriod.has(date),
+      isPossibleFertile: !isPeriod && !!predicted?.possibleFertile.has(date),
       isLogged: !!data?.logged.has(date),
     }
   }
@@ -126,7 +130,7 @@ export function CalendarScreen() {
       </div>
 
       <p className="mt-3 text-center text-sm text-muted">{c.hint}</p>
-      <Legend />
+      <Legend withMargin={!!predicted?.hasMargin} />
 
       {selected && <DaySheet date={selected} onClose={() => setSelected(null)} />}
     </main>
@@ -139,8 +143,10 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
   if (s.isToday) parts.push(c.todayMark)
   if (s.isPeriod) parts.push(c.period)
   if (s.isPredicted) parts.push(c.predicted)
+  if (s.isPossiblePeriod) parts.push(c.possiblePeriod)
   if (s.isOvulation) parts.push(c.ovulation)
   else if (s.isFertile) parts.push(c.fertile)
+  else if (s.isPossibleFertile) parts.push(c.possibleFertile)
   if (s.isLogged) parts.push(c.logged)
 
   const look = s.isPeriod
@@ -150,8 +156,12 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
       : s.isOvulation
         ? 'bg-accent text-surface'
         : s.isFertile
-        ? 'bg-lavender-soft text-ink'
-        : 'text-ink hover:bg-surface-soft'
+          ? 'bg-lavender-soft text-ink'
+          : s.isPossiblePeriod
+            ? 'border-2 border-dotted border-primary/60 text-ink'
+            : s.isPossibleFertile
+              ? 'border border-dotted border-accent/60 bg-lavender-soft/40 text-ink'
+              : 'text-ink hover:bg-surface-soft'
 
   return (
     <button
@@ -176,7 +186,7 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
   )
 }
 
-function Legend() {
+function Legend({ withMargin }: { withMargin: boolean }) {
   const c = t.calendar
   const item = (swatch: string, label: string) => (
     <li className="flex items-center gap-2">
@@ -191,6 +201,8 @@ function Legend() {
         {item('border-2 border-dashed border-primary', c.predicted)}
         {item('bg-lavender-soft', c.fertile)}
         {item('bg-accent', c.ovulation)}
+        {withMargin && item('border-2 border-dotted border-primary/60', c.possiblePeriod)}
+        {withMargin && item('border border-dotted border-accent/60 bg-lavender-soft/40', c.possibleFertile)}
         {item('outline-2 outline-offset-1 outline-ink', c.todayMark)}
         <li className="flex items-center gap-2">
           <span aria-hidden="true" className="grid size-5 place-items-center">
@@ -200,6 +212,7 @@ function Legend() {
         </li>
       </ul>
       <p className="mt-3 text-xs text-muted">{c.estimatesNote}</p>
+      {withMargin && <p className="mt-1 text-xs text-muted">{c.marginNote}</p>}
     </section>
   )
 }

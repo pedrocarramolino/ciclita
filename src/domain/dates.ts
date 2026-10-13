@@ -33,10 +33,16 @@ const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1)
 const LONG = new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' })
 const DAY_MONTH = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long' })
 const MONTH_YEAR = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' })
+const FULL_DATE = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long', year: 'numeric' })
 
 /** "Martes, 13 de octubre" */
 export function formatLong(s: ISODate): string {
   return capitalize(LONG.format(parseISODate(s)))
+}
+
+/** "13 de octubre de 2026" */
+export function formatFullDate(s: ISODate): string {
+  return FULL_DATE.format(parseISODate(s))
 }
 
 /** "13 de octubre" */

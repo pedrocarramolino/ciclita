@@ -12,6 +12,9 @@
  *  - Ovulación estimada: 14 días antes del inicio del siguiente periodo (la fase
  *    lútea es la más estable del ciclo).
  *  - Ventana fértil estimada: de 5 días antes de la ovulación al día siguiente.
+ *  - Margen: si los ciclos varían, cada previsión lleva un intervalo ("podría empezar
+ *    entre el 3 y el 7"), calculado con la desviación típica de los últimos ciclos. El
+ *    margen crece para los periodos más lejanos y amplía también la ventana fértil.
  */
 import type { Period } from '../db/db'
 import { addDays, diffDays, type ISODate } from './dates'
@@ -25,6 +28,9 @@ export const HISTORY_SIZE = 6
 export const IRREGULAR_VARIATION = 7
 export const PREDICTED_PERIODS = 3
 export const LUTEAL_PHASE = 14
+/** Ciclos mínimos para estimar un margen, y margen máximo en días. */
+export const MIN_CYCLES_FOR_MARGIN = 3
+export const MAX_MARGIN = 6
 
 /**
  * Ciclos fuera de este rango se ignoran en las medias: casi siempre son
@@ -41,8 +47,19 @@ export interface DateRange {
   end: ISODate
 }
 
+export interface PredictedPeriod extends DateRange {
+  /** Margen en días (0 si los ciclos son regulares o no hay datos suficientes). */
+  margin: number
+  /** Intervalo en el que podría empezar: start ± margin (nunca antes de hoy). */
+  earliestStart: ISODate
+  latestStart: ISODate
+}
+
 export interface FertileWindow extends DateRange {
   ovulation: ISODate
+  /** Ventana ampliada con el margen: días en los que también podrías ser fértil. */
+  possibleStart: ISODate
+  possibleEnd: ISODate
 }
 
 export type CycleStatus =
@@ -64,8 +81,8 @@ export interface Prediction {
   variation: number | null
   isIrregular: boolean
   lastStart: ISODate | null
-  /** Próximos periodos estimados. */
-  nextPeriods: DateRange[]
+  /** Próximos periodos estimados, con su margen. */
+  nextPeriods: PredictedPeriod[]
   /** Ventanas fértiles estimadas del ciclo actual y los siguientes. */
   fertileWindows: FertileWindow[]
   /** Hace más de un ciclo que no se registra ningún periodo. */
@@ -108,6 +125,7 @@ export function fertileWindowFor(
   cycleStart: ISODate,
   nextStart: ISODate,
   periodLength: number,
+  margin = 0,
 ): FertileWindow {
   const ovulation = addDays(nextStart, -LUTEAL_PHASE)
   let start = addDays(ovulation, -5)
@@ -115,7 +133,24 @@ export function fertileWindowFor(
   const afterPeriod = addDays(cycleStart, periodLength)
   if (start < afterPeriod) start = afterPeriod
   const end = addDays(ovulation, 1)
-  return { start: start > end ? end : start, end, ovulation }
+  const safeStart = start > end ? end : start
+  // Con margen, la ovulación podría adelantarse o retrasarse esos días.
+  let possibleStart = addDays(safeStart, -margin)
+  if (possibleStart < afterPeriod) possibleStart = afterPeriod
+  if (possibleStart > safeStart) possibleStart = safeStart
+  return { start: safeStart, end, ovulation, possibleStart, possibleEnd: addDays(end, margin) }
+}
+
+/**
+ * Margen (± días) para el k-ésimo próximo periodo (k = 1, 2, 3): desviación típica de
+ * los últimos ciclos, que crece con la raíz de k (la incertidumbre se acumula).
+ * Sin al menos 3 ciclos no se estima (0).
+ */
+export function predictionMargin(recentCycles: number[], k: number): number {
+  if (recentCycles.length < MIN_CYCLES_FOR_MARGIN) return 0
+  const avg = recentCycles.reduce((a, b) => a + b, 0) / recentCycles.length
+  const sd = Math.sqrt(recentCycles.reduce((a, x) => a + (x - avg) ** 2, 0) / recentCycles.length)
+  return Math.min(MAX_MARGIN, Math.round(sd * Math.sqrt(k)))
 }
 
 export function predict(input: PredictionInput): Prediction {
@@ -191,20 +226,33 @@ export function predict(input: PredictionInput): Prediction {
   }
 
   // 4. Próximos 3 periodos y sus ventanas fértiles.
-  const nextPeriods: DateRange[] = []
+  const nextPeriods: PredictedPeriod[] = []
   for (let i = 0; i < PREDICTED_PERIODS; i++) {
     const start = addDays(firstNext, i * cycleLength)
-    nextPeriods.push({ start, end: addDays(start, periodLength - 1) })
+    const margin = predictionMargin(recentCycles, i + 1)
+    let earliestStart = addDays(start, -margin)
+    // Si el periodo aún no ha llegado, no puede empezar antes de hoy.
+    if (!inPeriodToday && earliestStart < today) earliestStart = today
+    if (earliestStart > start) earliestStart = start
+    nextPeriods.push({
+      start,
+      end: addDays(start, periodLength - 1),
+      margin,
+      earliestStart,
+      latestStart: addDays(start, margin),
+    })
   }
 
   const fertileWindows: FertileWindow[] = []
   // Ventana del ciclo actual (no aplica si ya vamos con retraso: la ovulación ya pasó o se desconoce).
   if (!late) {
-    fertileWindows.push(fertileWindowFor(currentCycleStart, nextPeriods[0].start, periodLength))
+    fertileWindows.push(
+      fertileWindowFor(currentCycleStart, nextPeriods[0].start, periodLength, nextPeriods[0].margin),
+    )
   }
   for (let i = 0; i < nextPeriods.length - 1; i++) {
     fertileWindows.push(
-      fertileWindowFor(nextPeriods[i].start, nextPeriods[i + 1].start, periodLength),
+      fertileWindowFor(nextPeriods[i].start, nextPeriods[i + 1].start, periodLength, nextPeriods[i + 1].margin),
     )
   }
 
