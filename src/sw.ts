@@ -33,7 +33,7 @@ interface PushPayload {
 }
 
 self.addEventListener('push', (event) => {
-  let data: PushPayload = { title: 'Ciclo', body: 'Tienes un recordatorio.' }
+  let data: PushPayload = { title: 'Ciclita', body: 'Tienes un recordatorio.' }
   try {
     data = { ...data, ...(event.data?.json() as PushPayload) }
   } catch {
@@ -43,8 +43,8 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(data.title, {
       body: data.body,
       tag: data.tag,
-      icon: '/pwa-192x192.png',
-      badge: '/badge-96.png',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/badge-96.png',
       data: { url: data.url ?? '/' },
     }),
   )

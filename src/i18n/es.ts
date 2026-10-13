@@ -1,6 +1,6 @@
 /** Textos en español. Estructura preparada para añadir más idiomas. */
 export const es = {
-  appName: 'Ciclo',
+  appName: 'Ciclita',
   legal: 'Esta app no es un método anticonceptivo ni sustituye el consejo médico.',
   common: {
     next: 'Continuar',
@@ -152,7 +152,7 @@ export const es = {
     manual: 'Usa la opción «Instalar app» o «Añadir a pantalla de inicio» del menú de tu navegador.',
   },
   notifications: {
-    discreetTitle: 'Ciclo',
+    discreetTitle: 'Ciclita',
     discreet: {
       period: 'Tienes un aviso pendiente. Abre la app para verlo.',
       daily: 'Es un buen momento para tu registro de hoy.',

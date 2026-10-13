@@ -1,4 +1,4 @@
-# Ciclo · Registro menstrual
+# Ciclita · Registro menstrual
 
 Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma rápida y privada: calendario, registro diario, predicciones, estadísticas y recordatorios. Se instala en el móvil como una app más y funciona sin conexión.
 
@@ -42,7 +42,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 ```
 api/                 Funciones de Vercel: vapid, subscription (alta/baja), deliver (llamada por QStash)
 server/              Lógica del servidor de avisos (testeable, sin dependencias de red)
-public/              Iconos y logo (logo.svg es la fuente de los iconos)
+public/icons/        Iconos de Ciclita (PWA, maskable, iPhone, favicon) e icono de notificaciones
 scripts/             Generación del icono monocromo de notificaciones
 src/
   domain/            Lógica pura: predicciones, periodos, estadísticas, copias de seguridad, fechas
@@ -86,7 +86,7 @@ Otros comandos:
 | `npm run build` | Comprobación de tipos y build de producción en `dist/` |
 | `npm run preview` | Sirve el build (con las mismas cabeceras de seguridad que Vercel) para probar la PWA y el modo offline |
 | `npm run lint` | Linter (oxlint) |
-| `npm run icons` | Regenera los iconos a partir de `public/logo.svg` |
+| `npm run icons` | Regenera el icono monocromo de notificaciones (`public/icons/badge-96.png`) |
 
 ## Desplegar en Vercel con Upstash
 

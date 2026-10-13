@@ -20,10 +20,12 @@ export default defineConfig({
       injectRegister: false,
       // La nueva versión se activa cuando la usuaria lo confirma (no recarga en mitad de un registro).
       registerType: 'prompt',
+      // Los iconos ya entran por globPatterns; así no se duplican en la precarga.
+      includeManifestIcons: false,
       manifest: {
         id: '/',
-        name: 'Ciclo · Registro menstrual',
-        short_name: 'Ciclo',
+        name: 'Ciclita · Registro menstrual',
+        short_name: 'Ciclita',
         description: 'Registro menstrual privado: tus datos se quedan en tu dispositivo.',
         lang: 'es',
         dir: 'ltr',
@@ -34,20 +36,21 @@ export default defineConfig({
         theme_color: CREAM,
         categories: ['health', 'lifestyle', 'medical'],
         icons: [
-          { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
-          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icons/maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: 'icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'icons/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         ],
         shortcuts: [
-          { name: 'Registrar hoy', short_name: 'Registrar', url: '/#/home', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
-          { name: 'Calendario', url: '/#/calendar', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
+          { name: 'Registrar hoy', short_name: 'Registrar', url: '/#/home', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
+          { name: 'Calendario', url: '/#/calendar', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
         ],
       },
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        // Para español basta con los subconjuntos latinos de la fuente.
-        globIgnores: ['**/nunito-{cyrillic,cyrillic-ext,vietnamese}-*'],
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // icon-1024 es para tiendas y redes: no hace falta en el dispositivo.
+        globIgnores: ['icons/icon-1024.png', '**/nunito-{cyrillic,cyrillic-ext,vietnamese}-*'],
       },
       devOptions: { enabled: true, type: 'module' },
     }),

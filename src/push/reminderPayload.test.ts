@@ -17,8 +17,8 @@ describe('buildReminders', () => {
 
   it('diario y píldora con su hora; en modo discreto, textos neutros', () => {
     const r = buildReminders(s({ dailyEnabled: true, pillEnabled: true, pillTime: '08:15' }), upcoming)
-    expect(r.daily).toMatchObject({ time: '21:00', title: 'Ciclo' })
-    expect(r.pill).toMatchObject({ time: '08:15', title: 'Ciclo' })
+    expect(r.daily).toMatchObject({ time: '21:00', title: 'Ciclita' })
+    expect(r.pill).toMatchObject({ time: '08:15', title: 'Ciclita' })
     expect(JSON.stringify(r)).not.toMatch(/píldora|periodo/i)
   })
 

@@ -67,9 +67,8 @@ export function Onboarding() {
 
       {step === 0 && (
         <section className="flex flex-1 flex-col pt-8">
-          <div className="mx-auto grid size-24 place-items-center rounded-full bg-rose-soft text-primary">
-            <Icon name="drop" className="size-12" />
-          </div>
+          <img src="/icons/icon.svg" alt="" width={96} height={96} className="mx-auto size-24 rounded-[28%] shadow-sm" />
+          <p className="mt-4 text-center text-lg font-extrabold tracking-wide text-primary">{t.appName}</p>
           <h1 ref={headingRef} tabIndex={-1} className="mt-6 text-center text-3xl font-extrabold">
             {o.welcomeTitle}
           </h1>
