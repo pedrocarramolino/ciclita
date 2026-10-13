@@ -15,9 +15,9 @@ export const es = {
       'Registra tu periodo, tus síntomas y cómo te sientes en pocos toques, y conoce mejor tus patrones.',
     privacyTitle: 'Privado de verdad',
     privacyPoints: [
-      'Tus datos se guardan solo en este dispositivo.',
-      'Sin cuentas, sin servidores, sin analítica ni rastreadores.',
-      'Puedes exportarlos o borrarlos cuando quieras.',
+      'Tus registros se guardan solo en este dispositivo.',
+      'Sin cuentas, sin analítica ni rastreadores. Solo si activas recordatorios se usa un servidor para enviártelos.',
+      'Puedes exportar o borrar tus datos cuando quieras.',
     ],
     start: 'Empezar',
     lastPeriodTitle: '¿Cuándo empezó tu último periodo?',
@@ -67,15 +67,30 @@ export const es = {
     remindersDenied:
       'Las notificaciones están bloqueadas. Puedes activarlas en los ajustes del navegador o del sistema para esta app.',
     remindersHow:
-      'Los avisos se generan en tu dispositivo, sin servidor. Llegan mientras la app está abierta o en segundo plano; si el sistema la cierra del todo, se mostrarán al volver a abrirla. En iPhone, instala la app en la pantalla de inicio (iOS 16.4 o posterior) para recibirlos.',
+      'Para que los avisos lleguen aunque la app esté cerrada, se programan en un servidor (Upstash). En iPhone, instala la app en la pantalla de inicio (iOS 16.4 o posterior) para recibirlos.',
+    remindersDataTitle: '¿Qué datos se envían?',
+    remindersData:
+      'Qué se envía al servidor al activar un recordatorio: la suscripción de notificaciones de este navegador, tu zona horaria y, por cada aviso, su hora y su texto (con "Notificaciones discretas", textos neutros). Con el aviso de periodo se envían también las fechas en que debe sonar. Tus registros, síntomas y notas nunca salen del dispositivo. Al desactivar todos los recordatorios o borrar tus datos, se elimina lo enviado.',
+    pushSynced: 'Recordatorios activos en el servidor.',
+    pushSyncing: 'Sincronizando…',
+    pushErrorTitle: 'No se pudieron programar los recordatorios',
+    pushRetry: 'Reintentar',
+    allowNotifications: 'Permitir notificaciones',
+    pushErrors: {
+      network: 'No hay conexión con el servidor de avisos.',
+      notConfigured: 'El servidor de avisos no está configurado todavía.',
+      server: 'El servidor de avisos ha devuelto un error.',
+      sw: 'El service worker no está disponible. Recarga la app.',
+      permission: 'Falta el permiso de notificaciones.',
+    },
     periodReminder: 'Aviso antes del próximo periodo',
     daysBefore: 'Días de antelación',
     dailyReminder: 'Recordatorio diario para registrar',
-    dailyHint: 'No se envía si ya has registrado algo ese día.',
     pillReminder: 'Recordatorio de píldora anticonceptiva',
     time: 'Hora',
     discreet: 'Notificaciones discretas',
-    discreetHint: 'Textos neutros que no mencionan el periodo ni la píldora en la pantalla de bloqueo.',
+    discreetHint:
+      'Textos neutros que no mencionan el periodo ni la píldora, ni en la pantalla de bloqueo ni en el servidor.',
     test: 'Probar notificación',
     testBody: 'Así se verán tus recordatorios.',
     security: 'Privacidad y seguridad',
@@ -115,7 +130,7 @@ export const es = {
     deleteConfirm: 'Borrar definitivamente',
     about: 'Acerca de',
     aboutBody:
-      'Sin cuentas, sin servidores, sin analítica ni rastreadores. Ningún dato sale de tu dispositivo salvo que tú lo exportes.',
+      'Sin cuentas, sin analítica ni rastreadores. Tus registros nunca salen de tu dispositivo salvo que tú los exportes. Los recordatorios, si los activas, se programan en un servidor (Upstash) con su hora y su texto.',
     saved: 'Guardado',
   },
   notifications: {

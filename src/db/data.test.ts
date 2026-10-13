@@ -24,15 +24,25 @@ async function seed(d: AppDB) {
     { date: '2026-09-15', mood: 'calm', notes: 'Todo bien', updatedAt: 2 },
   ])
   await d.symptoms.add({ name: 'Migraña', builtin: false })
-  await setSettings({ cycleLength: 29, theme: 'dark', pinHash: 'hash-secreto', onboardingDone: true }, d)
+  await setSettings(
+    {
+      cycleLength: 29,
+      theme: 'dark',
+      pinHash: 'hash-secreto',
+      onboardingDone: true,
+      pushDevice: { id: 'id-dispositivo', secret: 'secreto-push' },
+    },
+    d,
+  )
 }
 
 describe('exportar / importar', () => {
-  it('JSON: restaura periodos, registros, síntomas y ajustes, pero no el PIN', async () => {
+  it('JSON: restaura periodos, registros, síntomas y ajustes, pero no el PIN ni las credenciales push', async () => {
     const a = await freshDB()
     await seed(a)
     const json = await exportJSON(a)
     expect(json).not.toContain('hash-secreto')
+    expect(json).not.toContain('secreto-push')
 
     const b = await freshDB()
     await setSettings({ pinHash: 'pin-de-b' }, b)

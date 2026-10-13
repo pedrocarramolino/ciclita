@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secretos y configuración local de Vercel
+.env
+.env.*
+!.env.example
+.vercel

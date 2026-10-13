@@ -11,7 +11,8 @@ export async function exportJSON(database: AppDB = db): Promise<string> {
     database.symptoms.toArray(),
     getSettings(database),
   ])
-  const { reminderLog: _l, pinFailures: _f, pinLockedUntil: _u, ...rest } = settings
+  // Datos internos y credenciales del servidor de avisos no se exportan.
+  const { pushDevice: _d, pushSync: _s, pushError: _e, pinFailures: _f, pinLockedUntil: _u, ...rest } = settings
   const backup = buildBackup({
     periods,
     days,
@@ -49,7 +50,7 @@ async function replaceAll(
     const existing = new Set((await database.symptoms.toArray()).map((s) => s.name.toLowerCase()))
     const fresh = [...new Set(symptoms)].filter((s) => !existing.has(s.toLowerCase()))
     await database.symptoms.bulkAdd(fresh.map((name) => ({ name, builtin: false })))
-    await setSettings({ ...settings, onboardingDone: true, reminderLog: {} }, database)
+    await setSettings({ ...settings, onboardingDone: true }, database)
   })
 }
 

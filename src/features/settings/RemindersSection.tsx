@@ -2,21 +2,32 @@ import { useId, useState } from 'react'
 import { Button } from '../../components/Button'
 import { NumberStepper } from '../../components/NumberStepper'
 import { Switch } from '../../components/Switch'
-import { setSettings, type ReminderSettings } from '../../db/settings'
-import { permission, requestPermission, runReminders, showNotification } from '../../notifications/notify'
+import { setSettings, type Settings, type ReminderSettings } from '../../db/settings'
+import { permission, requestPermission, showTestNotification, syncPush } from '../../push/pushClient'
 import { t } from '../../i18n/es'
+import { usePrediction } from '../../usePrediction'
 import { Row, Section } from './Section'
 
-export function RemindersSection({ reminders }: { reminders: ReminderSettings }) {
+export function RemindersSection({ settings }: { settings: Settings }) {
+  const { reminders, pushError, pushSync } = settings
   const [perm, setPerm] = useState(permission)
+  const [busy, setBusy] = useState(false)
+  const prediction = usePrediction()
   const s = t.settings
   const ids = { period: useId(), daily: useId(), pill: useId(), discreet: useId() }
 
+  // La sincronización con el servidor la hace usePushSync (App) al cambiar los ajustes.
   const update = async (patch: Partial<ReminderSettings>) => {
     const turningOn = Object.entries(patch).some(([k, v]) => k.endsWith('Enabled') && v === true)
     if (turningOn && perm === 'default') setPerm(await requestPermission())
     await setSettings({ reminders: { ...reminders, ...patch } })
-    void runReminders()
+  }
+
+  const retry = async () => {
+    setBusy(true)
+    if (permission() === 'default') setPerm(await requestPermission())
+    await syncPush(prediction ?? null, { force: true })
+    setBusy(false)
   }
 
   if (perm === 'unsupported') {
@@ -28,9 +39,15 @@ export function RemindersSection({ reminders }: { reminders: ReminderSettings })
   }
 
   const blocked = perm === 'denied'
+  const anyOn = reminders.periodEnabled || reminders.dailyEnabled || reminders.pillEnabled
 
   return (
     <Section title={s.reminders} hint={s.remindersHow}>
+      <details className="rounded-2xl bg-lavender-soft px-4 py-2 text-sm">
+        <summary className="min-h-9 cursor-pointer py-1 font-bold">{s.remindersDataTitle}</summary>
+        <p className="pb-2">{s.remindersData}</p>
+      </details>
+
       {blocked && (
         <p role="alert" className="rounded-2xl bg-rose-soft p-3 text-sm">
           {s.remindersDenied}
@@ -41,7 +58,7 @@ export function RemindersSection({ reminders }: { reminders: ReminderSettings })
         <Switch
           labelledBy={ids.period}
           checked={reminders.periodEnabled}
-          disabled={blocked}
+          disabled={blocked && !reminders.periodEnabled}
           onChange={(v) => void update({ periodEnabled: v })}
         />
       </Row>
@@ -57,11 +74,11 @@ export function RemindersSection({ reminders }: { reminders: ReminderSettings })
         />
       )}
 
-      <Row id={ids.daily} label={s.dailyReminder} hint={s.dailyHint}>
+      <Row id={ids.daily} label={s.dailyReminder}>
         <Switch
           labelledBy={ids.daily}
           checked={reminders.dailyEnabled}
-          disabled={blocked}
+          disabled={blocked && !reminders.dailyEnabled}
           onChange={(v) => void update({ dailyEnabled: v })}
         />
       </Row>
@@ -73,7 +90,7 @@ export function RemindersSection({ reminders }: { reminders: ReminderSettings })
         <Switch
           labelledBy={ids.pill}
           checked={reminders.pillEnabled}
-          disabled={blocked}
+          disabled={blocked && !reminders.pillEnabled}
           onChange={(v) => void update({ pillEnabled: v })}
         />
       </Row>
@@ -89,11 +106,29 @@ export function RemindersSection({ reminders }: { reminders: ReminderSettings })
         />
       </Row>
 
+      {anyOn && !blocked && (
+        <div role="status" aria-live="polite">
+          {pushError ? (
+            <div className="rounded-2xl bg-rose-soft p-3 text-sm">
+              <p className="font-bold">{s.pushErrorTitle}</p>
+              <p>{pushError}</p>
+              <Button variant="secondary" className="mt-2 min-h-11" disabled={busy} onClick={() => void retry()}>
+                {busy ? s.pushSyncing : perm === 'default' ? s.allowNotifications : s.pushRetry}
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm font-bold">{pushSync ? s.pushSynced : s.pushSyncing}</p>
+          )}
+        </div>
+      )}
+
       {perm === 'granted' && (
         <Button
           variant="secondary"
           className="w-full"
-          onClick={() => void showNotification(reminders.discreet ? t.notifications.discreetTitle : t.appName, s.testBody, 'ciclo-test')}
+          onClick={() =>
+            void showTestNotification(reminders.discreet ? t.notifications.discreetTitle : t.appName, s.testBody)
+          }
         >
           {s.test}
         </Button>

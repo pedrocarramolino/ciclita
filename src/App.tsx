@@ -7,8 +7,9 @@ import { Home } from './features/home/Home'
 import { LockScreen } from './features/lock/LockScreen'
 import { Onboarding } from './features/onboarding/Onboarding'
 import { SettingsScreen } from './features/settings/SettingsScreen'
-import { useReminderScheduler } from './notifications/useReminderScheduler'
+import { usePushSync } from './push/usePushSync'
 import { useHashRoute } from './useHashRoute'
+import { usePrediction } from './usePrediction'
 
 // Recharts pesa bastante: la pantalla de estadísticas se carga solo cuando se abre.
 const StatsScreen = lazy(() =>
@@ -63,7 +64,8 @@ export default function App() {
   const [route, navigate] = useHashRoute()
   const [locked, unlock] = useAppLock(settings?.pinHash)
   useTheme(settings?.theme)
-  useReminderScheduler(!!settings?.onboardingDone)
+  const prediction = usePrediction()
+  usePushSync(settings?.onboardingDone ? settings.reminders : undefined, prediction)
 
   if (!settings) return null // cargando IndexedDB
   if (locked) return <LockScreen onUnlock={unlock} />

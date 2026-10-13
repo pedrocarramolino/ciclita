@@ -17,8 +17,20 @@ export interface Settings {
   pinFailures: number
   pinLockedUntil: number
   reminders: ReminderSettings
-  /** Última vez que se mostró cada recordatorio (para no repetirlo). */
-  reminderLog: ReminderLog
+  /**
+   * Credenciales de este dispositivo en el servidor de notificaciones (Upstash).
+   * Se generan al activar el primer recordatorio; nunca se exportan.
+   */
+  pushDevice: PushDevice | null
+  /** Último contenido sincronizado con el servidor y cuándo. */
+  pushSync: { payload: string; at: number } | null
+  /** Último error al sincronizar los recordatorios (null = todo bien). */
+  pushError: string | null
+}
+
+export interface PushDevice {
+  id: string
+  secret: string
 }
 
 export interface ReminderSettings {
@@ -31,13 +43,6 @@ export interface ReminderSettings {
   pillTime: string
   /** Textos neutros que no revelan el motivo en la pantalla de bloqueo. */
   discreet: boolean
-}
-
-export interface ReminderLog {
-  /** Inicio previsto del periodo sobre el que ya se avisó. */
-  period?: ISODate
-  daily?: ISODate
-  pill?: ISODate
 }
 
 export const DEFAULT_REMINDERS: ReminderSettings = {
@@ -60,7 +65,9 @@ export const DEFAULT_SETTINGS: Settings = {
   pinFailures: 0,
   pinLockedUntil: 0,
   reminders: DEFAULT_REMINDERS,
-  reminderLog: {},
+  pushDevice: null,
+  pushSync: null,
+  pushError: null,
 }
 
 export async function getSettings(database: AppDB = db): Promise<Settings> {

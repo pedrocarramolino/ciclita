@@ -96,7 +96,7 @@ export function SettingsScreen() {
         </div>
       </Section>
 
-      <RemindersSection reminders={settings.reminders} />
+      <RemindersSection settings={settings} />
       <PinSection pinHash={settings.pinHash} />
       <DataSection />
 
