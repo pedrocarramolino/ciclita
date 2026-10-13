@@ -1,3 +1,4 @@
+import { ECDH } from 'node:crypto'
 import type { Message, PeriodReminder, RegisterInput, Reminders, TimedReminder } from './types.js'
 
 export class ValidationError extends Error {}
@@ -17,6 +18,26 @@ const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 
 function text(v: unknown, field: string): string {
   if (typeof v !== 'string' || !v.trim() || v.length > MAX_TEXT) fail(`${field} no válido`)
   return v.trim()
+}
+
+function fromBase64Url(s: string): Buffer | null {
+  return /^[A-Za-z0-9_-]+=*$/.test(s) ? Buffer.from(s, 'base64url') : null
+}
+
+/**
+ * Claves de la suscripción push: p256dh debe ser un punto válido de la curva P-256
+ * (65 bytes) y auth un secreto de 16 bytes. Si no, el cifrado del push fallaría siempre.
+ */
+export function isValidPushKeys(p256dh: string, auth: string): boolean {
+  const pub = fromBase64Url(p256dh)
+  const secret = fromBase64Url(auth)
+  if (!pub || pub.length !== 65 || !secret || secret.length !== 16) return false
+  try {
+    ECDH.convertKey(pub, 'prime256v1')
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function isValidTimezone(tz: string): boolean {
@@ -70,7 +91,13 @@ export function validateRegister(raw: unknown): RegisterInput {
     fail('subscription.endpoint no válido')
   }
   if (url.protocol !== 'https:' || String(endpoint).length > 1000) fail('subscription.endpoint no válido')
-  if (typeof keys.p256dh !== 'string' || typeof keys.auth !== 'string' || keys.p256dh.length > 200 || keys.auth.length > 100) {
+  if (
+    typeof keys.p256dh !== 'string' ||
+    typeof keys.auth !== 'string' ||
+    keys.p256dh.length > 200 ||
+    keys.auth.length > 100 ||
+    !isValidPushKeys(keys.p256dh, keys.auth)
+  ) {
     fail('subscription.keys no válidas')
   }
 

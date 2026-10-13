@@ -54,8 +54,10 @@ export function upstash() {
           await webpush.sendNotification(subscription, JSON.stringify(payload), { TTL: ttl, urgency: 'normal' })
           return { gone: false }
         } catch (e) {
-          const status = (e as { statusCode?: number }).statusCode
-          if (status === 404 || status === 410) return { gone: true }
+          const { statusCode, code } = e as { statusCode?: number; code?: string }
+          // 404/410: la suscripción ya no existe. Error de cifrado: claves inservibles.
+          // En ambos casos reintentar no sirve, así que se trata como suscripción caducada.
+          if (statusCode === 404 || statusCode === 410 || code?.startsWith('ERR_CRYPTO')) return { gone: true }
           throw e
         }
       },

@@ -1,3 +1,4 @@
+import { createECDH, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { AuthError, deliver, register, unregister, type Deps } from './service.js'
 import type { DeliverMessage, DeviceRecord, PushPayload, RegisterInput } from './types.js'
@@ -5,7 +6,13 @@ import { validateRegister, ValidationError } from './validate.js'
 
 const ID = '0f8b7c1e-2d3a-4b5c-8d9e-0a1b2c3d4e5f'
 const SECRET = 'a'.repeat(43)
-const SUB = { endpoint: 'https://fcm.googleapis.com/fcm/send/abc', keys: { p256dh: 'p'.repeat(87), auth: 'x'.repeat(22) } }
+// Claves válidas generadas para los tests (P-256 + 16 bytes de auth).
+const ecdh = createECDH('prime256v1')
+ecdh.generateKeys()
+const SUB = {
+  endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
+  keys: { p256dh: ecdh.getPublicKey().toString('base64url'), auth: randomBytes(16).toString('base64url') },
+}
 
 interface Published {
   id: string
@@ -176,6 +183,8 @@ describe('validateRegister', () => {
     ['deviceId', { ...valid, deviceId: '../../x' }],
     ['secret corto', { ...valid, secret: 'abc' }],
     ['endpoint http', { ...valid, subscription: { ...SUB, endpoint: 'http://evil.test/x' } }],
+    ['clave p256dh inventada', { ...valid, subscription: { ...SUB, keys: { ...SUB.keys, p256dh: 'B' + 'x'.repeat(86) } } }],
+    ['auth de longitud incorrecta', { ...valid, subscription: { ...SUB, keys: { ...SUB.keys, auth: 'y'.repeat(10) } } }],
     ['zona horaria', { ...valid, timezone: 'Marte/Olympus' }],
     ['hora', { ...valid, reminders: { daily: { time: '25:00', title: 'T', body: 'B' } } }],
     ['texto largo', { ...valid, reminders: { pill: { time: '08:00', title: 'T', body: 'x'.repeat(500) } } }],
