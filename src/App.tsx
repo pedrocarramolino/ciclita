@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { BottomNav } from './components/BottomNav'
+import { Splash } from './components/Splash'
 import { UpdatePrompt } from './components/UpdatePrompt'
 import { getSettings, type Theme } from './db/settings'
 import { CalendarScreen } from './features/calendar/CalendarScreen'
@@ -94,6 +95,8 @@ export default function App() {
     <>
       {screen}
       <UpdatePrompt />
+      {/* Animación de apertura: tapa la carga inicial y se desvanece. */}
+      <Splash ready={!!settings} />
     </>
   )
 }
