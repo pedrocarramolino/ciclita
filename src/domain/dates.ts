@@ -27,6 +27,29 @@ export function addDays(s: ISODate, n: number): ISODate {
   return toISODate(d)
 }
 
+const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1)
+
+/** "Martes, 13 de octubre" */
+export function formatLong(s: ISODate): string {
+  return capitalize(
+    new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'long' }).format(
+      parseISODate(s),
+    ),
+  )
+}
+
+/** "13 de octubre" */
+export function formatDayMonth(s: ISODate): string {
+  return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'long' }).format(parseISODate(s))
+}
+
+/** "Octubre de 2026" */
+export function formatMonthYear(year: number, month: number): string {
+  return capitalize(
+    new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' }).format(new Date(year, month, 1)),
+  )
+}
+
 /** Días enteros de `a` a `b` (positivo si b es posterior). */
 export function diffDays(a: ISODate, b: ISODate): number {
   const ms = parseISODate(b).getTime() - parseISODate(a).getTime()

@@ -7,6 +7,14 @@ const PATHS = {
   calendar: 'M4 6h16v15H4zM4 10h16M8 3v4M16 3v4',
   check: 'M5 12l5 5L20 7',
   arrowLeft: 'M15 18l-6-6 6-6',
+  chevronLeft: 'M15 18l-6-6 6-6',
+  chevronRight: 'M9 6l6 6-6 6',
+  home: 'M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z',
+  chart: 'M4 20h16M7 16v-5M12 16V7M17 16v-8',
+  settings:
+    'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
+  x: 'M6 6l12 12M18 6L6 18',
+  plus: 'M12 5v14M5 12h14',
 } as const
 
 export type IconName = keyof typeof PATHS
