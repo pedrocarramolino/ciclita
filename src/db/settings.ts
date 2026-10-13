@@ -1,6 +1,7 @@
 import { db, type AppDB } from './db'
 import type { ISODate } from '../domain/dates'
 import type { ContraceptionMethod } from '../domain/reminderEvents'
+import type { AppMode } from '../domain/modes'
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -20,6 +21,10 @@ export interface Settings {
   reminders: ReminderSettings
   /** Datos opcionales que se muestran en el registro diario. */
   tracking: TrackingSettings
+  /** Modo de la app: ciclo menstrual, embarazo o perimenopausia. */
+  mode: AppMode
+  /** Embarazo: primer día de la última regla (base de las semanas y la fecha de parto). */
+  pregnancyStart: ISODate | null
   /**
    * Credenciales de este dispositivo en el servidor de notificaciones (Upstash).
    * Se generan al activar el primer recordatorio; nunca se exportan.
@@ -92,6 +97,8 @@ export const DEFAULT_SETTINGS: Settings = {
   pinLockedUntil: 0,
   reminders: DEFAULT_REMINDERS,
   tracking: DEFAULT_TRACKING,
+  mode: 'cycle',
+  pregnancyStart: null,
   pushDevice: null,
   pushSync: null,
   pushError: null,

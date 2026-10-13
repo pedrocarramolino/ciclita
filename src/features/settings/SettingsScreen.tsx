@@ -10,6 +10,7 @@ import { PinSection } from './PinSection'
 import { RemindersSection } from './RemindersSection'
 import { Section } from './Section'
 import { TrackingSection } from './TrackingSection'
+import { ModeSection } from './ModeSection'
 
 const THEMES: Theme[] = ['system', 'light', 'dark']
 
@@ -62,6 +63,8 @@ export function SettingsScreen() {
           {t.common.dontKnow}
         </button>
       </Section>
+
+      <ModeSection settings={settings} />
 
       <TrackingSection tracking={settings.tracking} />
 

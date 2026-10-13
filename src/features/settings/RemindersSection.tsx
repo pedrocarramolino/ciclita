@@ -70,6 +70,12 @@ export function RemindersSection({ settings }: { settings: Settings }) {
         </p>
       )}
 
+      {settings.mode !== 'cycle' && (
+        <p className="rounded-2xl bg-lavender-soft p-3 text-sm">
+          {settings.mode === 'pregnancy' ? t.modes.pregnancyPaused : t.modes.otherModePaused}
+        </p>
+      )}
+
       <Row id={ids.period} label={s.periodReminder}>
         <Switch
           labelledBy={ids.period}

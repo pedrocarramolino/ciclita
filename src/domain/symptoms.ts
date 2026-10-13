@@ -58,6 +58,18 @@ export const DEFAULT_FREQUENT = [
   'Antojos',
 ]
 
+/** Habituales en la perimenopausia. */
+export const PERIMENOPAUSE_FREQUENT = [
+  'Sofocos',
+  'Sudores nocturnos',
+  'Insomnio',
+  'Cansancio',
+  'Dolor articular',
+  'Sequedad vaginal',
+  'Dificultad para concentrarse',
+  'Dolor de cabeza',
+]
+
 /** Busca un síntoma del catálogo sin distinguir mayúsculas ni tildes. */
 export function findCatalogSymptom(name: string): string | undefined {
   const key = normalize(name)
@@ -69,18 +81,19 @@ export const normalize = (s: string) =>
     .trim()
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    // Quita las marcas diacríticas (tildes) que deja normalize('NFD').
+    .replace(/\p{Diacritic}/gu, '')
 
 /**
  * Síntomas más registrados (máx. `limit`), completados con los habituales si hay pocos
  * datos. Incluye los personalizados que se usen.
  */
-export function frequentSymptoms(days: DayLog[], limit = 8): string[] {
+export function frequentSymptoms(days: DayLog[], limit = 8, defaults: string[] = DEFAULT_FREQUENT): string[] {
   const counts = new Map<string, number>()
   for (const d of days) for (const s of d.symptoms ?? []) counts.set(s, (counts.get(s) ?? 0) + 1)
   const used = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'es')).map(([s]) => s)
   const out = used.slice(0, limit)
-  for (const s of DEFAULT_FREQUENT) {
+  for (const s of defaults) {
     if (out.length >= limit) break
     if (!out.includes(s)) out.push(s)
   }

@@ -34,7 +34,15 @@ export interface ImportSummary {
 }
 
 /** Ajustes que se pueden restaurar desde una copia (nunca el PIN ni datos internos). */
-const RESTORABLE: (keyof Settings)[] = ['cycleLength', 'periodLength', 'theme', 'reminders', 'tracking']
+const RESTORABLE: (keyof Settings)[] = [
+  'cycleLength',
+  'periodLength',
+  'theme',
+  'reminders',
+  'tracking',
+  'mode',
+  'pregnancyStart',
+]
 
 async function replaceAll(
   database: AppDB,

@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db/db'
+import { getSettings } from '../../db/settings'
 import { formatDayMonth, today } from '../../domain/dates'
 import {
   CHART_CYCLES,
@@ -17,6 +18,7 @@ const TOP_SYMPTOMS = 8
 
 export function StatsScreen() {
   const p = usePrediction()
+  const mode = useLiveQuery(() => getSettings().then((x) => x.mode))
   const data = useLiveQuery(async () => {
     const [periods, days] = await Promise.all([db.periods.toArray(), db.days.toArray()])
     return { periods, days }
@@ -41,7 +43,7 @@ export function StatsScreen() {
         </a>
       </div>
 
-      {p.isIrregular && (
+      {p.isIrregular && mode !== 'perimenopause' && (
         <section
           role="note"
           aria-labelledby="irregular-title"

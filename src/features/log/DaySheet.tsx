@@ -19,7 +19,13 @@ import {
   WEIGHT_RANGE,
 } from '../../domain/options'
 import { getSettings } from '../../db/settings'
-import { DEFAULT_FREQUENT, findCatalogSymptom, frequentSymptoms, SYMPTOM_CATALOG } from '../../domain/symptoms'
+import {
+  DEFAULT_FREQUENT,
+  findCatalogSymptom,
+  frequentSymptoms,
+  PERIMENOPAUSE_FREQUENT,
+  SYMPTOM_CATALOG,
+} from '../../domain/symptoms'
 
 /** Hoja modal con el registro de un día. Usa <dialog> nativo (foco atrapado, Escape cierra). */
 export function DaySheet({ date, onClose }: { date: ISODate; onClose: () => void }) {
@@ -122,7 +128,11 @@ function DayFormView({
     const all = await db.symptoms.toArray()
     return all.filter((s) => !s.builtin && !findCatalogSymptom(s.name)).map((s) => s.name)
   }) ?? []
-  const frequent = useLiveQuery(async () => frequentSymptoms(await db.days.toArray())) ?? DEFAULT_FREQUENT
+  const frequent =
+    useLiveQuery(async () => {
+      const [days, settings] = await Promise.all([db.days.toArray(), getSettings()])
+      return frequentSymptoms(days, 8, settings.mode === 'perimenopause' ? PERIMENOPAUSE_FREQUENT : DEFAULT_FREQUENT)
+    }) ?? DEFAULT_FREQUENT
   const selectedCount = form.symptoms?.length ?? 0
   // Si hay algo marcado que no está entre los más usados, el catálogo se abre solo.
   const openCatalog = (form.symptoms ?? []).some((s) => !frequent.includes(s))

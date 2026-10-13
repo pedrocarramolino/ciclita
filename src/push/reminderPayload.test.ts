@@ -57,3 +57,16 @@ describe('buildReminders · recordatorios con fecha', () => {
     expect(JSON.stringify(r.events)).not.toMatch(/anillo|fértil|mama/i)
   })
 })
+
+describe('buildReminders · modos', () => {
+  it('en embarazo o perimenopausia no se programan avisos de periodo ni de ventana fértil', () => {
+    const r = s({ periodEnabled: true, fertileEnabled: true, dailyEnabled: true })
+    for (const mode of ['pregnancy', 'perimenopause'] as const) {
+      const out = buildReminders(r, upcoming, '2026-10-20', mode)
+      expect(out.period).toBeUndefined()
+      expect(out.events).toBeUndefined()
+      expect(out.daily).toBeDefined() // el resto sigue funcionando
+    }
+    expect(buildReminders(r, upcoming, '2026-10-20', 'cycle').period).toBeDefined()
+  })
+})

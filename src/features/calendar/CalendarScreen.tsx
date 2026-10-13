@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { db } from '../../db/db'
+import { getSettings } from '../../db/settings'
 import { monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
 import { formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
@@ -41,7 +42,12 @@ export function CalendarScreen() {
   }, [first, last, today])
 
   const prediction = usePrediction()
-  const predicted = useMemo(() => prediction && predictionDates(prediction), [prediction])
+  const mode = useLiveQuery(() => getSettings().then((s) => s.mode))
+  // En embarazo y perimenopausia no se marcan periodos previstos ni ventana fértil.
+  const predicted = useMemo(
+    () => (prediction && mode === 'cycle' ? predictionDates(prediction) : undefined),
+    [prediction, mode],
+  )
 
   const stateOf = (date: ISODate): DayState => {
     const isPeriod = !!data?.periodDays.has(date)
@@ -130,7 +136,7 @@ export function CalendarScreen() {
       </div>
 
       <p className="mt-3 text-center text-sm text-muted">{c.hint}</p>
-      <Legend withMargin={!!predicted?.hasMargin} />
+      <Legend withMargin={!!predicted?.hasMargin} withPredictions={mode === 'cycle'} />
 
       {selected && <DaySheet date={selected} onClose={() => setSelected(null)} />}
     </main>
@@ -186,7 +192,7 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
   )
 }
 
-function Legend({ withMargin }: { withMargin: boolean }) {
+function Legend({ withMargin, withPredictions }: { withMargin: boolean; withPredictions: boolean }) {
   const c = t.calendar
   const item = (swatch: string, label: string) => (
     <li className="flex items-center gap-2">
@@ -198,9 +204,9 @@ function Legend({ withMargin }: { withMargin: boolean }) {
     <section aria-label={c.legend} className="mt-4 mb-4 rounded-2xl bg-surface p-4">
       <ul className="grid grid-cols-2 gap-3 text-sm">
         {item('bg-primary', c.period)}
-        {item('border-2 border-dashed border-primary', c.predicted)}
-        {item('bg-lavender-soft', c.fertile)}
-        {item('bg-accent', c.ovulation)}
+        {withPredictions && item('border-2 border-dashed border-primary', c.predicted)}
+        {withPredictions && item('bg-lavender-soft', c.fertile)}
+        {withPredictions && item('bg-accent', c.ovulation)}
         {withMargin && item('border-2 border-dotted border-primary/60', c.possiblePeriod)}
         {withMargin && item('border border-dotted border-accent/60 bg-lavender-soft/40', c.possibleFertile)}
         {item('outline-2 outline-offset-1 outline-ink', c.todayMark)}
@@ -211,7 +217,11 @@ function Legend({ withMargin }: { withMargin: boolean }) {
           {c.logged}
         </li>
       </ul>
-      <p className="mt-3 text-xs text-muted">{c.estimatesNote}</p>
+      {withPredictions ? (
+        <p className="mt-3 text-xs text-muted">{c.estimatesNote}</p>
+      ) : (
+        <p className="mt-3 text-xs text-muted">{c.noPredictionsNote}</p>
+      )}
       {withMargin && <p className="mt-1 text-xs text-muted">{c.marginNote}</p>}
     </section>
   )

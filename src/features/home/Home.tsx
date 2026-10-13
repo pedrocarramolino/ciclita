@@ -7,22 +7,37 @@ import type { Prediction, Source } from '../../domain/prediction'
 import { t } from '../../i18n/es'
 import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
+import { db } from '../../db/db'
+import { getSettings } from '../../db/settings'
+import { perimenopauseInfo, pregnancyInfo } from '../../domain/modes'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
 
 export function Home() {
   const p = usePrediction()
+  const modeData = useLiveQuery(async () => {
+    const [settings, periods] = await Promise.all([getSettings(), db.periods.toArray()])
+    return { mode: settings.mode, pregnancyStart: settings.pregnancyStart, periods }
+  })
   const [logOpen, setLogOpen] = useState(false)
   const today = todayISO()
   const h = t.home
 
-  if (!p) return null
+  if (!p || !modeData) return null
   const s = p.status
   const inPeriod = s.kind === 'period'
   const ongoing = s.kind === 'period' && s.ongoing
+  const mode = modeData.mode
+  const pregnancy = mode === 'pregnancy' && modeData.pregnancyStart ? pregnancyInfo(modeData.pregnancyStart, today) : null
 
   return (
     <main className="mx-auto w-full max-w-md space-y-4 px-4 pt-6 pb-4">
       <p className="text-sm font-bold text-muted">{h.todayIs(formatLong(today).toLowerCase())}</p>
 
+      {pregnancy && <PregnancyHero info={pregnancy} />}
+      {mode === 'perimenopause' && <PerimenopauseHero info={perimenopauseInfo(modeData.periods, today)} prediction={p} />}
+
+      {mode === 'cycle' && (
       <section aria-live="polite" className="rounded-3xl bg-surface p-6 text-center shadow-sm">
         <CycleRing p={p} />
         <h1 className="mt-5 text-2xl leading-tight font-extrabold">{headline(p)}</h1>
@@ -43,9 +58,10 @@ export function Home() {
         )}
         {s.kind === 'late' && <p className="mt-3 text-sm text-muted">{h.lateHint}</p>}
       </section>
+      )}
 
       <div className="grid gap-3">
-        {ongoing ? (
+        {mode === 'pregnancy' ? null : ongoing ? (
           <Button className="min-h-16 w-full text-lg" onClick={() => void endPeriod()}>
             {h.ended}
           </Button>
@@ -63,13 +79,13 @@ export function Home() {
         </Button>
       </div>
 
-      {p.nextPeriods.length > 0 && <Upcoming p={p} />}
-      <CycleSummary p={p} />
+      {mode === 'cycle' && p.nextPeriods.length > 0 && <Upcoming p={p} />}
+      {mode !== 'pregnancy' && <CycleSummary p={p} />}
 
       <p role="note" className="rounded-2xl bg-lavender-soft px-4 py-3 text-sm">
         <span aria-hidden="true">ⓘ </span>
-        {h.estimates}
-        {p.stale && <> {h.stale}</>}
+        {mode === 'pregnancy' ? t.modes.pregnancy.note : mode === 'perimenopause' ? t.modes.perimenopause.note : h.estimates}
+        {mode === 'cycle' && p.stale && <> {h.stale}</>}
       </p>
 
       {logOpen && <DaySheet date={today} onClose={() => setLogOpen(false)} />}

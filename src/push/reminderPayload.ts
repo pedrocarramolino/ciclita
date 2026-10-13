@@ -5,6 +5,7 @@
 import type { ReminderSettings } from '../db/settings'
 import { addDays, today as todayISO, type ISODate } from '../domain/dates'
 import { buildEventReminders } from '../domain/reminderEvents'
+import type { AppMode } from '../domain/modes'
 import type { Prediction } from '../domain/prediction'
 import { t } from '../i18n/es'
 
@@ -39,7 +40,10 @@ export function buildReminders(
   r: ReminderSettings,
   prediction: Prediction | null,
   today: ISODate = todayISO(),
+  mode: AppMode = 'cycle',
 ): RemindersPayload {
+  // En embarazo y perimenopausia no hay previsiones fiables de periodo ni de fertilidad.
+  if (mode !== 'cycle') r = { ...r, periodEnabled: false, fertileEnabled: false }
   const n = t.notifications
   const title = (kind: 'daily' | 'pill' | 'period') => (r.discreet ? n.discreetTitle : n.titles[kind])
   const out: RemindersPayload = {}

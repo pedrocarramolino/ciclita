@@ -127,7 +127,7 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
   const [locked, unlock] = useAppLock(settings?.pinHash, startUnlocked)
   useTheme(settings?.theme)
   const prediction = usePrediction()
-  usePushSync(settings?.onboardingDone ? settings.reminders : undefined, prediction)
+  usePushSync(settings?.onboardingDone ? settings.reminders : undefined, prediction, settings?.mode)
   usePreloadScreens(!!settings?.onboardingDone)
 
   let screen: ReactNode

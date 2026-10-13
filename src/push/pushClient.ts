@@ -102,7 +102,7 @@ export async function unregisterPush(device: PushDevice | null): Promise<void> {
  */
 export async function syncPush(prediction: Prediction | null, opts: { force?: boolean } = {}): Promise<void> {
   const settings: Settings = await getSettings()
-  const reminders = buildReminders(settings.reminders, prediction)
+  const reminders = buildReminders(settings.reminders, prediction, undefined, settings.mode)
 
   try {
     if (!hasReminders(reminders)) {

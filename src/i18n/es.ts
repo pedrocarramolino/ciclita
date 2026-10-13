@@ -174,6 +174,41 @@ export const es = {
     ],
     manual: 'Usa la opción «Instalar app» o «Añadir a pantalla de inicio» del menú de tu navegador.',
   },
+  modes: {
+    title: 'Modo de la app',
+    hint: 'Adapta la pantalla de inicio, el calendario y los avisos a tu momento vital.',
+    options: {
+      cycle: { label: 'Ciclo menstrual', hint: 'Previsiones de periodo y ventana fértil.' },
+      pregnancy: { label: 'Embarazo', hint: 'Semanas de embarazo y fecha probable de parto. Se pausan las previsiones del ciclo.' },
+      perimenopause: {
+        label: 'Perimenopausia',
+        hint: 'Para ciclos cada vez más irregulares: días desde el último periodo y síntomas de esta etapa.',
+      },
+    },
+    pregnancyStartLabel: 'Primer día de la última regla',
+    pregnancyStartHint: 'Si te han dado la fecha probable de parto, puedes indicarla en su lugar.',
+    dueDateLabel: 'Fecha probable de parto',
+    pregnancyPaused: 'En modo embarazo no se envían avisos de periodo ni de ventana fértil.',
+    otherModePaused: 'En este modo no se envían avisos de periodo ni de ventana fértil.',
+    pregnancy: {
+      weekShort: (n: number) => `S${n}`,
+      headline: (w: number, d: number) =>
+        `${w} ${w === 1 ? 'semana' : 'semanas'}${d ? ` y ${d} ${d === 1 ? 'día' : 'días'}` : ''} de embarazo`,
+      trimester: (n: number) => `${n}.º trimestre`,
+      dueDate: (d: string) => `Fecha probable de parto: ${d}`,
+      daysLeft: (n: number) => (n === 0 ? 'Es hoy' : `Faltan ${n} ${n === 1 ? 'día' : 'días'}`),
+      daysPast: (n: number) => `Han pasado ${n} ${n === 1 ? 'día' : 'días'} desde la fecha probable`,
+      note: 'Las semanas y la fecha probable de parto son una estimación a partir de la última regla. Tu equipo médico puede ajustarlas con las ecografías.',
+    },
+    perimenopause: {
+      daysSince: (n: number) =>
+        n === 0 ? 'Tu último periodo empezó hoy' : `${n} ${n === 1 ? 'día' : 'días'} desde tu último periodo`,
+      periodsLastYear: (n: number) => `${n} ${n === 1 ? 'periodo' : 'periodos'} en los últimos 12 meses`,
+      twelveMonths:
+        'Han pasado 12 meses o más sin periodo. Esto suele considerarse el inicio de la menopausia: coméntalo con tu profesional sanitario.',
+      note: 'En la perimenopausia los ciclos varían mucho, por eso no se muestran previsiones. Registrar tus periodos y síntomas te ayudará a hablar de ellos en consulta.',
+    },
+  },
   tracking: {
     title: 'Qué registras',
     hint: 'Datos opcionales para el registro diario. Actívalos solo si te resultan útiles.',
@@ -358,6 +393,7 @@ export const es = {
     fertile: 'Ventana fértil estimada',
     ovulation: 'Ovulación estimada',
     estimatesNote: 'Los periodos previstos, la ventana fértil y la ovulación son estimaciones.',
+    noPredictionsNote: 'En el modo actual no se muestran periodos previstos ni ventana fértil.',
     possiblePeriod: 'Periodo posible',
     possibleFertile: 'Fértil posible',
     marginNote:

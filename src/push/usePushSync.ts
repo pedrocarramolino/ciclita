@@ -7,10 +7,14 @@ import { syncPush } from './pushClient'
  * Mantiene sincronizados los recordatorios con el servidor: al abrir la app y cada
  * vez que cambian los ajustes de recordatorios o el próximo periodo previsto.
  */
-export function usePushSync(reminders: ReminderSettings | undefined, prediction: Prediction | undefined) {
+export function usePushSync(
+  reminders: ReminderSettings | undefined,
+  prediction: Prediction | undefined,
+  mode?: string,
+) {
   const key =
     reminders && prediction
-      ? JSON.stringify([reminders, prediction.nextPeriods, prediction.fertileWindows, prediction.status.kind])
+      ? JSON.stringify([reminders, mode, prediction.nextPeriods, prediction.fertileWindows, prediction.status.kind])
       : null
 
   useEffect(() => {
