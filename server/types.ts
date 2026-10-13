@@ -35,14 +35,26 @@ export interface PeriodReminder {
   bodies: string[]
 }
 
+/**
+ * Recordatorio en una fecha concreta (anticonceptivos con pauta, ventana fértil,
+ * autoexploración...). El dispositivo calcula las próximas fechas y su texto.
+ */
+export interface EventReminder extends Message {
+  /** YYYY-MM-DD */
+  date: string
+  /** HH:MM en la zona horaria del dispositivo */
+  time: string
+}
+
 export interface Reminders {
   daily?: TimedReminder
   pill?: TimedReminder
   period?: PeriodReminder
+  events?: EventReminder[]
 }
 
 export type ReminderKind = keyof Reminders
-export const REMINDER_KINDS: ReminderKind[] = ['daily', 'pill', 'period']
+export const REMINDER_KINDS: ReminderKind[] = ['daily', 'pill', 'period', 'events']
 
 export interface RegisterInput {
   deviceId: string
@@ -76,6 +88,8 @@ export interface DeliverMessage {
   deviceId: string
   kind: ReminderKind
   version: string
+  /** Para los recordatorios con fecha: instante (ms) al que corresponde el aviso. */
+  at?: number
 }
 
 export interface PushPayload extends Message {

@@ -20,7 +20,12 @@ export async function POST(request: Request) {
   let msg: DeliverMessage
   try {
     msg = JSON.parse(body)
-    if (typeof msg.deviceId !== 'string' || typeof msg.version !== 'string' || !REMINDER_KINDS.includes(msg.kind)) {
+    if (
+      typeof msg.deviceId !== 'string' ||
+      typeof msg.version !== 'string' ||
+      !REMINDER_KINDS.includes(msg.kind) ||
+      (msg.at !== undefined && typeof msg.at !== 'number')
+    ) {
       throw new Error()
     }
   } catch {

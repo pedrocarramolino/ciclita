@@ -42,3 +42,18 @@ describe('buildReminders', () => {
     expect(buildReminders(s({ periodEnabled: true }), null).period).toBeUndefined()
   })
 })
+
+describe('buildReminders · recordatorios con fecha', () => {
+  const ring = { contraception: { method: 'ring' as const, start: '2026-10-01', time: '21:00' } }
+
+  it('incluye la pauta del anticonceptivo con su texto', () => {
+    const r = buildReminders(s({ ...ring, discreet: false }), upcoming, '2026-10-20')
+    expect(r.events?.[0]).toEqual({ date: '2026-10-22', time: '21:00', title: 'Anillo', body: 'Hoy toca retirar el anillo vaginal (semana de descanso).' })
+    expect(hasReminders(r)).toBe(true)
+  })
+
+  it('en modo discreto no dice de qué se trata', () => {
+    const r = buildReminders(s({ ...ring, fertileEnabled: true, breastExamEnabled: true }), upcoming, '2026-10-20')
+    expect(JSON.stringify(r.events)).not.toMatch(/anillo|fértil|mama/i)
+  })
+})

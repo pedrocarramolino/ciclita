@@ -3,7 +3,8 @@
  * Función pura para poder probarla.
  */
 import type { ReminderSettings } from '../db/settings'
-import { addDays, type ISODate } from '../domain/dates'
+import { addDays, today as todayISO, type ISODate } from '../domain/dates'
+import { buildEventReminders } from '../domain/reminderEvents'
 import type { Prediction } from '../domain/prediction'
 import { t } from '../i18n/es'
 
@@ -20,13 +21,25 @@ export interface PeriodReminder {
   bodies: string[]
 }
 
+export interface EventReminder {
+  date: ISODate
+  time: string
+  title: string
+  body: string
+}
+
 export interface RemindersPayload {
   daily?: TimedReminder
   pill?: TimedReminder
   period?: PeriodReminder
+  events?: EventReminder[]
 }
 
-export function buildReminders(r: ReminderSettings, prediction: Prediction | null): RemindersPayload {
+export function buildReminders(
+  r: ReminderSettings,
+  prediction: Prediction | null,
+  today: ISODate = todayISO(),
+): RemindersPayload {
   const n = t.notifications
   const title = (kind: 'daily' | 'pill' | 'period') => (r.discreet ? n.discreetTitle : n.titles[kind])
   const out: RemindersPayload = {}
@@ -51,7 +64,16 @@ export function buildReminders(r: ReminderSettings, prediction: Prediction | nul
       ),
     }
   }
+
+  // Recordatorios con fecha: anticonceptivo con pauta, ventana fértil, autoexploración.
+  const events = buildEventReminders(r, prediction, today).map((e) => ({
+    date: e.date,
+    time: e.time,
+    title: r.discreet ? n.discreetTitle : n.events[e.type].title,
+    body: r.discreet ? n.discreet.event : n.events[e.type].body,
+  }))
+  if (events.length) out.events = events
   return out
 }
 
-export const hasReminders = (p: RemindersPayload) => !!(p.daily || p.pill || p.period)
+export const hasReminders = (p: RemindersPayload) => !!(p.daily || p.pill || p.period || p.events?.length)

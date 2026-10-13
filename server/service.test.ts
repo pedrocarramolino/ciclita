@@ -81,7 +81,7 @@ describe('register / unregister', () => {
     expect(f.published).toEqual([
       {
         id: 'msg-1',
-        message: { deviceId: ID, kind: 'daily', version: 'v1' },
+        message: { deviceId: ID, kind: 'daily', version: 'v1', at: Date.parse('2026-10-27T20:00:00Z') },
         at: '2026-10-27T20:00:00.000Z', // 21:00 en Madrid (UTC+1)
         dedupId: expect.stringContaining('v1'),
       },
@@ -179,6 +179,47 @@ describe('deliver', () => {
     const f = fakeDeps()
     expect(await deliver(f.deps, { deviceId: ID, kind: 'daily', version: 'v1' })).toBe('removed')
     expect(f.published).toEqual([])
+  })
+})
+
+describe('recordatorios con fecha', () => {
+  const EVENTS = {
+    events: [
+      { date: '2026-10-28', time: '09:00', title: 'Ciclita', body: 'Retira el anillo' },
+      { date: '2026-11-04', time: '09:00', title: 'Ciclita', body: 'Coloca un anillo nuevo' },
+      { date: '2026-11-04', time: '09:00', title: 'Ciclita', body: 'Autoexploración' },
+      { date: '2026-10-01', time: '09:00', title: 'Ciclita', body: 'Ya pasado' },
+    ],
+  }
+
+  it('programa el más próximo que aún no ha pasado', async () => {
+    const f = fakeDeps('2026-10-27T08:00:00Z')
+    await register(f.deps, input(EVENTS))
+    expect(f.published).toHaveLength(1)
+    expect(f.published[0]).toMatchObject({ message: { kind: 'events' }, at: '2026-10-28T08:00:00.000Z' })
+  })
+
+  it('envía todos los de ese instante y encadena el siguiente', async () => {
+    const f = fakeDeps('2026-10-27T08:00:00Z')
+    await register(f.deps, input(EVENTS))
+
+    f.setNow('2026-10-28T08:00:02Z')
+    expect(await deliver(f.deps, f.published[0].message)).toBe('sent')
+    expect(f.sent.map((p) => p.body)).toEqual(['Retira el anillo'])
+    expect(f.published.at(-1)).toMatchObject({ at: '2026-11-04T08:00:00.000Z' })
+
+    f.setNow('2026-11-04T08:00:01Z')
+    expect(await deliver(f.deps, f.published.at(-1)!.message)).toBe('sent')
+    expect(f.sent.map((p) => p.body)).toEqual(['Retira el anillo', 'Coloca un anillo nuevo', 'Autoexploración'])
+    // Ya no queda ninguno: no se publica nada más.
+    expect(f.records.get(ID)?.jobs.events?.messageId).toBeUndefined()
+  })
+
+  it('valida fechas, horas y número máximo', () => {
+    const base = input({})
+    expect(() => validateRegister({ ...base, reminders: { events: [{ date: '28/10', time: '09:00', title: 'T', body: 'B' }] } })).toThrow(ValidationError)
+    expect(() => validateRegister({ ...base, reminders: { events: Array(31).fill(EVENTS.events[0]) } })).toThrow(ValidationError)
+    expect(validateRegister({ ...base, reminders: EVENTS }).reminders.events).toHaveLength(4)
   })
 })
 

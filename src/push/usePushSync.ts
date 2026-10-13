@@ -8,7 +8,10 @@ import { syncPush } from './pushClient'
  * vez que cambian los ajustes de recordatorios o el próximo periodo previsto.
  */
 export function usePushSync(reminders: ReminderSettings | undefined, prediction: Prediction | undefined) {
-  const key = reminders && prediction ? JSON.stringify([reminders, prediction.nextPeriods[0], prediction.status.kind]) : null
+  const key =
+    reminders && prediction
+      ? JSON.stringify([reminders, prediction.nextPeriods, prediction.fertileWindows, prediction.status.kind])
+      : null
 
   useEffect(() => {
     if (!key || !prediction) return

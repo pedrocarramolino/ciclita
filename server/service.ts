@@ -12,7 +12,7 @@
  *     que aún lleguen se ignoran (y además se intentan cancelar).
  */
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
-import { localDate, nextOccurrence } from './time.js'
+import { localDate, nextOccurrence, zonedToUtc } from './time.js'
 import {
   REMINDER_KINDS,
   type DeliverMessage,
@@ -76,25 +76,39 @@ function secretMatches(secret: string, hash: string): boolean {
 const daysBetween = (a: string, b: string) =>
   Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000)
 
-/** Hora local a la que debe sonar cada tipo de recordatorio. */
-function fireTime(kind: ReminderKind, reminders: Reminders): string | null {
+/** Instante de cada recordatorio con fecha, en UTC. */
+const eventInstant = (e: { date: string; time: string }, timezone: string) => zonedToUtc(e.date, e.time, timezone)
+
+/**
+ * Cuándo debe sonar a continuación cada tipo de recordatorio (o null si ya no queda
+ * nada pendiente). Los diarios, a su hora; el de periodo, a las 9:00; los de fecha,
+ * en la más próxima de su lista.
+ */
+export function nextFireAt(kind: ReminderKind, reminders: Reminders, timezone: string, now: Date): Date | null {
+  if (kind === 'events') {
+    const upcoming = (reminders.events ?? [])
+      .map((e) => eventInstant(e, timezone))
+      .filter((d) => d > now)
+      .sort((a, b) => a.getTime() - b.getTime())
+    return upcoming[0] ?? null
+  }
   const r = reminders[kind]
   if (!r) return null
-  return kind === 'period' ? PERIOD_CHECK_TIME : (r as { time: string }).time
+  const time = kind === 'period' ? PERIOD_CHECK_TIME : (r as { time: string }).time
+  return nextOccurrence(time, timezone, now)
 }
 
-/** Publica el siguiente mensaje de un recordatorio y devuelve su Job. */
+/** Publica el siguiente mensaje de un recordatorio (si queda alguno) y devuelve su Job. */
 async function scheduleNext(
   deps: Deps,
   deviceId: string,
   kind: ReminderKind,
-  time: string,
-  timezone: string,
+  at: Date | null,
   version: string,
 ): Promise<Job> {
-  const at = nextOccurrence(time, timezone, deps.now())
+  if (!at) return { version }
   const messageId = await deps.scheduler.publishAt(
-    { deviceId, kind, version },
+    { deviceId, kind, version, at: at.getTime() },
     at,
     `ciclita-${deviceId}-${kind}-${version}-${at.getTime()}`,
   )
@@ -122,9 +136,9 @@ export async function register(deps: Deps, input: RegisterInput): Promise<void> 
 
   const jobs: DeviceRecord['jobs'] = {}
   for (const kind of REMINDER_KINDS) {
-    const time = fireTime(kind, input.reminders)
-    if (!time) continue
-    jobs[kind] = await scheduleNext(deps, input.deviceId, kind, time, input.timezone, newVersion())
+    if (!input.reminders[kind]) continue
+    const at = nextFireAt(kind, input.reminders, input.timezone, deps.now())
+    jobs[kind] = await scheduleNext(deps, input.deviceId, kind, at, newVersion())
   }
   // Los mensajes anteriores quedan obsoletos por la nueva versión; además se cancelan.
   await cancelJobs(deps, existing?.jobs).catch(() => {})
@@ -170,6 +184,7 @@ export async function deliver(deps: Deps, msg: DeliverMessage): Promise<DeliverR
   const r = record.reminders
   const today = localDate(deps.now(), record.timezone)
   let payload: PushPayload | null = null
+  const extra: PushPayload[] = []
   let ttl = 4 * 3600
   let continueChain = true
 
@@ -186,20 +201,31 @@ export async function deliver(deps: Deps, msg: DeliverMessage): Promise<DeliverR
   } else if ((msg.kind === 'daily' || msg.kind === 'pill') && r[msg.kind]) {
     const { title, body } = r[msg.kind]!
     payload = { title, body, tag: `ciclita-${msg.kind}`, url: '/#/home' }
+  } else if (msg.kind === 'events' && r.events && msg.at !== undefined) {
+    // Todos los recordatorios con fecha que caen en este mismo instante.
+    const due = r.events.filter((e) => Math.abs(eventInstant(e, record.timezone).getTime() - msg.at!) < 60_000)
+    due.forEach((e, i) => {
+      const p = { title: e.title, body: e.body, tag: `ciclita-event-${e.date}-${i}`, url: '/#/home' }
+      if (i === 0) payload = p
+      else extra.push(p)
+    })
+    ttl = 12 * 3600
   }
 
   // 1) Programar el siguiente (idempotente gracias a dedupId si QStash reintenta).
   const next: Job = continueChain
-    ? await scheduleNext(deps, msg.deviceId, msg.kind, fireTime(msg.kind, r)!, record.timezone, job.version)
+    ? await scheduleNext(deps, msg.deviceId, msg.kind, nextFireAt(msg.kind, r, record.timezone, deps.now()), job.version)
     : { version: job.version }
   const updated: DeviceRecord = { ...record, jobs: { ...record.jobs, [msg.kind]: next } }
 
   // 2) Enviar el push de hoy, si toca.
   if (payload) {
-    const { gone } = await deps.pusher.send(record.subscription, payload, ttl)
-    if (gone) {
-      await removeDevice(deps, msg.deviceId, updated)
-      return 'removed'
+    for (const p of [payload, ...extra]) {
+      const { gone } = await deps.pusher.send(record.subscription, p, ttl)
+      if (gone) {
+        await removeDevice(deps, msg.deviceId, updated)
+        return 'removed'
+      }
     }
     if (msg.kind === 'period') updated.periodSentFor = r.period!.until
   }

@@ -1,5 +1,5 @@
 import { ECDH } from 'node:crypto'
-import type { Message, PeriodReminder, RegisterInput, Reminders, TimedReminder } from './types.js'
+import type { EventReminder, Message, PeriodReminder, RegisterInput, Reminders, TimedReminder } from './types.js'
 
 export class ValidationError extends Error {}
 
@@ -87,6 +87,20 @@ function period(v: unknown): PeriodReminder | undefined {
   }
 }
 
+/** Máximo de recordatorios con fecha por dispositivo. */
+export const MAX_EVENTS = 30
+
+function events(v: unknown): EventReminder[] | undefined {
+  if (v === undefined || v === null) return undefined
+  if (!Array.isArray(v) || v.length > MAX_EVENTS) fail('events no válido')
+  return v.map((e, i) => {
+    if (!isObj(e)) fail(`events[${i}] no válido`)
+    if (typeof e.date !== 'string' || !DATE_RE.test(e.date)) fail(`events[${i}].date no válido`)
+    if (typeof e.time !== 'string' || !TIME_RE.test(e.time)) fail(`events[${i}].time no válido`)
+    return { date: e.date, time: e.time, ...message(e, `events[${i}]`) }
+  })
+}
+
 /** Valida el cuerpo de registro de un dispositivo. Lanza ValidationError. */
 export function validateRegister(raw: unknown): RegisterInput {
   if (!isObj(raw)) fail('Cuerpo no válido')
@@ -123,6 +137,8 @@ export function validateRegister(raw: unknown): RegisterInput {
   if (daily) r.daily = daily
   if (pill) r.pill = pill
   if (per) r.period = per
+  const ev = events(reminders.events)
+  if (ev?.length) r.events = ev
 
   return {
     deviceId: deviceId.toLowerCase(),

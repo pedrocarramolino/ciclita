@@ -1,5 +1,6 @@
 import { db, type AppDB } from './db'
 import type { ISODate } from '../domain/dates'
+import type { ContraceptionMethod } from '../domain/reminderEvents'
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -45,6 +46,12 @@ export interface ReminderSettings {
   pillTime: string
   /** Textos neutros que no revelan el motivo en la pantalla de bloqueo. */
   discreet: boolean
+  /** Aviso el día antes de la ventana fértil prevista. */
+  fertileEnabled: boolean
+  /** Autoexploración de mama, una semana después de cada periodo. */
+  breastExamEnabled: boolean
+  /** Anticonceptivo con pauta (anillo, parche, inyección) y su fecha de inicio. */
+  contraception: { method: ContraceptionMethod; start: ISODate | null; time: string }
 }
 
 export interface TrackingSettings {
@@ -69,6 +76,9 @@ export const DEFAULT_REMINDERS: ReminderSettings = {
   pillEnabled: false,
   pillTime: '22:00',
   discreet: true,
+  fertileEnabled: false,
+  breastExamEnabled: false,
+  contraception: { method: 'none', start: null, time: '09:00' },
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -93,7 +103,11 @@ export async function getSettings(database: AppDB = db): Promise<Settings> {
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
-    reminders: { ...DEFAULT_REMINDERS, ...stored.reminders },
+    reminders: {
+      ...DEFAULT_REMINDERS,
+      ...stored.reminders,
+      contraception: { ...DEFAULT_REMINDERS.contraception, ...stored.reminders?.contraception },
+    },
     tracking: { ...DEFAULT_TRACKING, ...stored.tracking },
   }
 }
