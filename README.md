@@ -92,8 +92,8 @@ Otros comandos:
 
 1. **Sube el repositorio** a GitHub/GitLab e impórtalo en Vercel (detecta Vite solo; las funciones de `api/` se despliegan automáticamente).
 2. **Crea en Upstash**:
-   - una base de datos **Redis** → copia `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`;
-   - en **QStash** → copia `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY` y `QSTASH_NEXT_SIGNING_KEY`.
+   - una base de datos **Redis** → copia `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` (o conéctala desde Vercel → *Storage*, que crea `KV_REST_API_URL`/`KV_REST_API_TOKEN`; la app acepta ambos nombres);
+   - en **QStash** → copia `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` y, si tu cuenta está en una región concreta, `QSTASH_URL`. Puedes reutilizar el mismo QStash de otro proyecto: las programaciones de Ciclita llevan el prefijo `ciclo-`.
 3. **Genera las claves VAPID** (una sola vez; si las cambias, las suscripciones existentes dejan de valer):
    ```bash
    npx web-push generate-vapid-keys
