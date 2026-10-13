@@ -29,21 +29,22 @@ export function upstash() {
       },
     },
     scheduler: {
-      upsert: async (scheduleId, cron, message) => {
-        await qstash.schedules.create({
-          scheduleId,
-          cron,
-          destination: `${env.APP_URL}/api/deliver`,
-          body: JSON.stringify(message),
-          headers: { 'Content-Type': 'application/json' },
+      // Mensajes diferidos (no "schedules": el plan gratuito de QStash solo permite 10).
+      publishAt: async (message, at, dedupId) => {
+        const res = await qstash.publishJSON({
+          url: `${env.APP_URL}/api/deliver`,
+          body: message,
+          notBefore: Math.floor(at.getTime() / 1000),
+          deduplicationId: dedupId,
           retries: 3,
         })
+        return 'messageId' in res ? res.messageId : undefined
       },
-      remove: async (scheduleId) => {
+      cancel: async (messageId) => {
         try {
-          await qstash.schedules.delete(scheduleId)
+          await qstash.messages.cancel(messageId)
         } catch {
-          // No existe: nada que borrar.
+          // Ya entregado o inexistente: nada que cancelar.
         }
       },
     },

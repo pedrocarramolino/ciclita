@@ -93,18 +93,18 @@ Otros comandos:
 1. **Sube el repositorio** a GitHub/GitLab e impórtalo en Vercel (detecta Vite solo; las funciones de `api/` se despliegan automáticamente).
 2. **Crea en Upstash**:
    - una base de datos **Redis** → copia `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` (o conéctala desde Vercel → *Storage*, que crea `KV_REST_API_URL`/`KV_REST_API_TOKEN`; la app acepta ambos nombres);
-   - en **QStash** → copia `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` y, si tu cuenta está en una región concreta, `QSTASH_URL`. Puedes reutilizar el mismo QStash de otro proyecto: las programaciones de Ciclita llevan el prefijo `ciclo-`.
+   - en **QStash** → copia `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` y, si tu cuenta está en una región concreta, `QSTASH_URL`. Puedes reutilizar el mismo QStash de otro proyecto: Ciclita no usa *schedules*, solo mensajes diferidos.
 3. **Genera las claves VAPID** (una sola vez; si las cambias, las suscripciones existentes dejan de valer):
    ```bash
    npx web-push generate-vapid-keys
    ```
 4. En Vercel → *Project → Settings → Environment Variables*, añade las variables de [`.env.example`](.env.example): las cinco de Upstash, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` (`mailto:tu-correo`). `APP_URL` solo hace falta si usas un dominio propio.
 5. **Despliega** (o vuelve a desplegar tras añadir las variables).
-6. Comprueba: `https://tu-app.vercel.app/api/vapid` debe devolver `{"key": "..."}`. Después activa un recordatorio en *Ajustes* y pulsa *Probar notificación*; en la consola de QStash verás las programaciones (`ciclo-<id>-daily`, etc.).
+6. Comprueba: `https://tu-app.vercel.app/api/vapid` debe devolver `{"key": "..."}`. Después activa un recordatorio en *Ajustes* y pulsa *Probar notificación*; en la consola de QStash (*Messages*) verás el mensaje pendiente para la hora del recordatorio.
 
-**Cómo funcionan los avisos:** al activar un recordatorio, la app registra el dispositivo en `PUT /api/subscription`; el servidor guarda los datos en Redis y crea una programación cron en QStash por recordatorio, en la zona horaria del dispositivo (el aviso de periodo se comprueba cada día a las 9:00 y se envía una sola vez). A su hora, QStash llama a `/api/deliver` (que solo acepta peticiones firmadas por QStash) y este envía el Web Push.
+**Cómo funcionan los avisos:** al activar un recordatorio, la app registra el dispositivo en `PUT /api/subscription`. El servidor guarda los datos en Redis y publica en QStash **un mensaje diferido** para la próxima hora de cada recordatorio, en la zona horaria del dispositivo (el aviso de periodo se comprueba a las 9:00 y se envía una sola vez). A esa hora, QStash llama a `/api/deliver` (que solo acepta peticiones firmadas por QStash), que envía el Web Push y publica el mensaje del día siguiente. Cada programación lleva una versión: al cambiar o desactivar un recordatorio, los mensajes antiguos se cancelan o se ignoran.
 
-Ten en cuenta los límites de tu plan de QStash: cada recordatorio activo es una programación por dispositivo y, como mucho, 3 mensajes al día por dispositivo.
+No se usan *schedules* de QStash (el plan gratuito solo permite 10 por cuenta), así que el número de dispositivos no está limitado por ellos. Cada recordatorio activo consume 1 mensaje al día por dispositivo (como mucho 3), dentro del cupo diario de QStash.
 
 La app también puede desplegarse en cualquier hosting estático (`dist/`), pero entonces los recordatorios no funcionarán.
 

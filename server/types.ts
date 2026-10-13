@@ -52,11 +52,20 @@ export interface RegisterInput {
   reminders: Reminders
 }
 
+/** Mensaje programado pendiente de un recordatorio. */
+export interface Job {
+  /** Cambia cada vez que se reprograma: los mensajes con otra versión se ignoran. */
+  version: string
+  /** Id del mensaje en QStash (para cancelarlo al cambiar o borrar). */
+  messageId?: string
+}
+
 export interface DeviceRecord {
   secretHash: string
   subscription: PushSubscriptionJSON
   timezone: string
   reminders: Reminders
+  jobs: Partial<Record<ReminderKind, Job>>
   /** Inicio previsto del periodo sobre el que ya se avisó (para no repetir). */
   periodSentFor?: string
   updatedAt: number
@@ -66,6 +75,7 @@ export interface DeviceRecord {
 export interface DeliverMessage {
   deviceId: string
   kind: ReminderKind
+  version: string
 }
 
 export interface PushPayload extends Message {

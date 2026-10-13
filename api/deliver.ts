@@ -4,7 +4,7 @@ import { REMINDER_KINDS, type DeliverMessage } from '../server/types.js'
 import { upstash } from '../server/upstash.js'
 
 /**
- * Destino de las programaciones de QStash. Solo acepta peticiones firmadas por
+ * Destino de los mensajes diferidos de QStash. Solo acepta peticiones firmadas por
  * QStash; cualquier otra recibe 401.
  */
 export async function POST(request: Request) {
@@ -20,7 +20,9 @@ export async function POST(request: Request) {
   let msg: DeliverMessage
   try {
     msg = JSON.parse(body)
-    if (typeof msg.deviceId !== 'string' || !REMINDER_KINDS.includes(msg.kind)) throw new Error()
+    if (typeof msg.deviceId !== 'string' || typeof msg.version !== 'string' || !REMINDER_KINDS.includes(msg.kind)) {
+      throw new Error()
+    }
   } catch {
     // 200 para que QStash no reintente un mensaje que nunca será válido.
     return json({ result: 'invalid' })
