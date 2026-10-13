@@ -2,9 +2,9 @@
  * Copias de seguridad: exportar e importar en JSON (copia completa) y CSV
  * (un registro por día, legible en una hoja de cálculo).
  */
-import type { DayLog, Flow, Period } from '../db/db'
+import type { DayLog, Flow, Mucus, Period, Sex } from '../db/db'
 import { diffDays, type ISODate } from './dates'
-import { MOOD_OPTIONS, FLOW_OPTIONS } from './options'
+import { FLOW_OPTIONS, MOOD_OPTIONS, MUCUS_OPTIONS, SEX_OPTIONS, TEMPERATURE_RANGE, WEIGHT_RANGE } from './options'
 
 export const BACKUP_APP = 'ciclita'
 /** Identificador de las copias hechas antes del cambio de nombre (se siguen aceptando). */
@@ -26,6 +26,10 @@ export class BackupError extends Error {}
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const FLOWS = new Set<Flow>(['spotting', 'light', 'medium', 'heavy'])
+const MUCUS = new Set<Mucus>(MUCUS_OPTIONS.map((o) => o.value))
+const SEXES = new Set<Sex>(SEX_OPTIONS.map((o) => o.value))
+const inRange = (v: unknown, r: { min: number; max: number }) =>
+  typeof v === 'number' && Number.isFinite(v) && v >= r.min && v <= r.max ? Math.round(v * 100) / 100 : undefined
 const isDate = (v: unknown): v is ISODate => typeof v === 'string' && DATE_RE.test(v)
 const optStr = (v: unknown, max: number) =>
   typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : undefined
@@ -62,6 +66,10 @@ function sanitizeDay(raw: unknown): DayLog | null {
     pain,
     medication: optStr(d.medication, 200),
     notes: optStr(d.notes, 2000),
+    temperature: inRange(d.temperature, TEMPERATURE_RANGE),
+    mucus: MUCUS.has(d.mucus as Mucus) ? (d.mucus as Mucus) : undefined,
+    sex: SEXES.has(d.sex as Sex) ? (d.sex as Sex) : undefined,
+    weight: inRange(d.weight, WEIGHT_RANGE),
     updatedAt: typeof d.updatedAt === 'number' ? d.updatedAt : Date.now(),
   }
 }
@@ -106,10 +114,28 @@ export function parseBackup(text: string): Backup {
 // ---------- CSV ----------
 
 const SEP = ';' // Excel en español usa ';' como separador de columnas.
-export const CSV_HEADER = ['fecha', 'periodo', 'flujo', 'sintomas', 'animo', 'dolor', 'medicacion', 'notas']
+export const CSV_HEADER = [
+  'fecha',
+  'periodo',
+  'flujo',
+  'sintomas',
+  'animo',
+  'dolor',
+  'medicacion',
+  'notas',
+  'temperatura',
+  'moco',
+  'relaciones',
+  'peso',
+]
 
 const flowLabel = (f?: Flow) => FLOW_OPTIONS.find((o) => o.value === f)?.label ?? ''
 const moodLabel = (m?: string) => MOOD_OPTIONS.find((o) => o.value === m)?.label ?? ''
+const mucusLabel = (m?: Mucus) => MUCUS_OPTIONS.find((o) => o.value === m)?.label ?? ''
+const sexLabel = (s?: Sex) => SEX_OPTIONS.find((o) => o.value === s)?.label ?? ''
+// Decimales con coma, como espera Excel en español.
+const decimal = (n?: number) => (n === undefined ? '' : String(n).replace('.', ','))
+const parseNum = (s: string) => (s === '' ? undefined : Number(s.replace(',', '.')))
 const norm = (s: string) => s.trim().toLowerCase()
 
 /**
@@ -136,6 +162,10 @@ export function toCSV(periodDays: Set<ISODate>, days: DayLog[]): string {
       d?.pain === undefined ? '' : String(d.pain),
       d?.medication ?? '',
       d?.notes ?? '',
+      decimal(d?.temperature),
+      mucusLabel(d?.mucus),
+      sexLabel(d?.sex),
+      decimal(d?.weight),
     ]
       .map(csvCell)
       .join(SEP)
@@ -222,8 +252,24 @@ export function parseCSV(text: string): CSVImport {
       pain: painRaw === '' ? undefined : Number(painRaw),
       medication: get(r, 'medicacion'),
       notes: get(r, 'notas'),
+      temperature: parseNum(get(r, 'temperatura')),
+      mucus: MUCUS_OPTIONS.find((o) => norm(o.label) === norm(get(r, 'moco')))?.value,
+      sex: SEX_OPTIONS.find((o) => norm(o.label) === norm(get(r, 'relaciones')))?.value,
+      weight: parseNum(get(r, 'peso')),
     })
-    if (day && (day.flow || day.symptoms || day.mood || day.pain !== undefined || day.medication || day.notes)) {
+    const hasData =
+      day &&
+      (day.flow ||
+        day.symptoms ||
+        day.mood ||
+        day.pain !== undefined ||
+        day.medication ||
+        day.notes ||
+        day.temperature !== undefined ||
+        day.mucus ||
+        day.sex ||
+        day.weight !== undefined)
+    if (day && hasData) {
       days.push(day)
     }
   }

@@ -17,6 +17,8 @@ export interface Settings {
   pinFailures: number
   pinLockedUntil: number
   reminders: ReminderSettings
+  /** Datos opcionales que se muestran en el registro diario. */
+  tracking: TrackingSettings
   /**
    * Credenciales de este dispositivo en el servidor de notificaciones (Upstash).
    * Se generan al activar el primer recordatorio; nunca se exportan.
@@ -45,6 +47,20 @@ export interface ReminderSettings {
   discreet: boolean
 }
 
+export interface TrackingSettings {
+  temperature: boolean
+  mucus: boolean
+  sex: boolean
+  weight: boolean
+}
+
+export const DEFAULT_TRACKING: TrackingSettings = {
+  temperature: false,
+  mucus: false,
+  sex: false,
+  weight: false,
+}
+
 export const DEFAULT_REMINDERS: ReminderSettings = {
   periodEnabled: false,
   periodDaysBefore: 2,
@@ -65,6 +81,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pinFailures: 0,
   pinLockedUntil: 0,
   reminders: DEFAULT_REMINDERS,
+  tracking: DEFAULT_TRACKING,
   pushDevice: null,
   pushSync: null,
   pushError: null,
@@ -77,6 +94,7 @@ export async function getSettings(database: AppDB = db): Promise<Settings> {
     ...DEFAULT_SETTINGS,
     ...stored,
     reminders: { ...DEFAULT_REMINDERS, ...stored.reminders },
+    tracking: { ...DEFAULT_TRACKING, ...stored.tracking },
   }
 }
 

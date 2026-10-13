@@ -11,7 +11,11 @@ function isEmpty(f: DayForm): boolean {
     !f.mood &&
     f.pain === undefined &&
     !f.medication?.trim() &&
-    !f.notes?.trim()
+    !f.notes?.trim() &&
+    f.temperature === undefined &&
+    !f.mucus &&
+    !f.sex &&
+    f.weight === undefined
   )
 }
 

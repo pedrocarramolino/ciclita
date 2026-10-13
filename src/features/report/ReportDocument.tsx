@@ -171,6 +171,49 @@ export function ReportDocument({ report: r, name }: { report: Report; name?: str
         <p className="rpt-empty">{R.noMedication}</p>
       )}
 
+      {r.fertility && (
+        <>
+          <h2>{R.fertilityTitle}</h2>
+          <table className="rpt-summary">
+            <tbody>
+              {r.fertility.temperature && (
+                <tr>
+                  <th scope="row">{R.temperatureRow(r.fertility.temperature.count)}</th>
+                  <td className="num">
+                    {R.temperatureRange(r.fertility.temperature.min, r.fertility.temperature.max)}
+                  </td>
+                </tr>
+              )}
+              {r.fertility.mucusDays > 0 && (
+                <tr>
+                  <th scope="row">{R.mucusRow}</th>
+                  <td className="num">{R.days(r.fertility.mucusDays)}</td>
+                </tr>
+              )}
+              {r.fertility.sex.protected + r.fertility.sex.unprotected > 0 && (
+                <tr>
+                  <th scope="row">{R.sexRow}</th>
+                  <td className="num">{R.sexValue(r.fertility.sex.protected, r.fertility.sex.unprotected)}</td>
+                </tr>
+              )}
+              {r.fertility.weight && (
+                <tr>
+                  <th scope="row">{R.weightRow}</th>
+                  <td className="num">
+                    {R.weightValue(
+                      r.fertility.weight.first,
+                      r.fertility.weight.last,
+                      formatFullDate(r.fertility.weight.firstDate),
+                      formatFullDate(r.fertility.weight.lastDate),
+                    )}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </>
+      )}
+
       {r.notes.length > 0 && (
         <>
           <h2>{R.notesTitle}</h2>

@@ -9,6 +9,7 @@ import { InstallSection } from './InstallSection'
 import { PinSection } from './PinSection'
 import { RemindersSection } from './RemindersSection'
 import { Section } from './Section'
+import { TrackingSection } from './TrackingSection'
 
 const THEMES: Theme[] = ['system', 'light', 'dark']
 
@@ -61,6 +62,8 @@ export function SettingsScreen() {
           {t.common.dontKnow}
         </button>
       </Section>
+
+      <TrackingSection tracking={settings.tracking} />
 
       <Section title={s.appearance}>
         <fieldset>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { DayLog, Period } from '../db/db'
-import { BackupError, buildBackup, parseBackup, parseCSV, parseCSVRows, toCSV } from './backup'
+import { BackupError, buildBackup, CSV_HEADER, parseBackup, parseCSV, parseCSVRows, toCSV } from './backup'
 import { periodDateSet } from './periods'
 
 const periods: Period[] = [
@@ -65,9 +65,10 @@ describe('CSV', () => {
 
   it('exporta cabecera, una fila por día y escapa correctamente', () => {
     const rows = parseCSVRows(csv)
-    expect(rows[0]).toEqual(['fecha', 'periodo', 'flujo', 'sintomas', 'animo', 'dolor', 'medicacion', 'notas'])
+    expect(rows[0]).toEqual(CSV_HEADER)
+    expect(CSV_HEADER.slice(-4)).toEqual(['temperatura', 'moco', 'relaciones', 'peso'])
     expect(rows).toHaveLength(1 + 3 + 2 + 2) // cabecera + periodo 1 + periodo 2 + 2 días sueltos
-    expect(rows[1]).toEqual(['2026-09-01', 'sí', 'Abundante', 'Dolor abdominal, Cansancio', '', '7', '', ''])
+    expect(rows[1]).toEqual(['2026-09-01', 'sí', 'Abundante', 'Dolor abdominal, Cansancio', '', '7', '', '', '', '', '', ''])
     const notes = rows.find((r) => r[0] === '2026-09-15')!
     expect(notes[4]).toBe('Calma')
     expect(notes[7]).toBe('Notas con "comillas"; punto y coma\ny salto')
@@ -97,5 +98,33 @@ describe('CSV', () => {
 
   it('rechaza un CSV sin la cabecera esperada', () => {
     expect(() => parseCSV('a;b\n1;2')).toThrow(BackupError)
+  })
+})
+
+describe('datos de fertilidad', () => {
+  const fertile: DayLog = { date: '2026-09-14', temperature: 36.55, mucus: 'eggwhite', sex: 'unprotected', weight: 62.5, updatedAt: 1 }
+
+  it('CSV: se exportan con coma decimal y vuelven intactos', () => {
+    const csv = toCSV(new Set(), [fertile])
+    expect(parseCSVRows(csv)[1].slice(-4)).toEqual(['36,55', 'Clara de huevo', 'Sin protección', '62,5'])
+    const { updatedAt: _u, ...expected } = fertile
+    expect(parseCSV(csv).days[0]).toMatchObject(expected)
+  })
+
+  it('JSON: se conservan y se descartan valores imposibles', () => {
+    const b = parseBackup(
+      JSON.stringify({
+        app: 'ciclita',
+        version: 1,
+        days: [fertile, { date: '2026-09-15', temperature: 80, weight: -3, mucus: 'raro', sex: 'quizá', updatedAt: 1 }],
+      }),
+    )
+    expect(b.days[0]).toMatchObject({ temperature: 36.55, mucus: 'eggwhite', sex: 'unprotected', weight: 62.5 })
+    expect(b.days[1]).toMatchObject({ temperature: undefined, weight: undefined, mucus: undefined, sex: undefined })
+  })
+
+  it('un CSV antiguo sin las columnas nuevas se sigue importando', () => {
+    const old = ['fecha;periodo;flujo;sintomas;animo;dolor;medicacion;notas', '2026-01-01;sí;Ligero;;;;;', ''].join('\r\n')
+    expect(parseCSV(old).periods).toEqual([{ startDate: '2026-01-01', endDate: '2026-01-01' }])
   })
 })

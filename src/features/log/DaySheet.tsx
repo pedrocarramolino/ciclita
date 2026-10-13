@@ -9,7 +9,16 @@ import { addCustomSymptom, saveDay, type DayForm } from '../../db/repo'
 import { formatLong, today, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
 import { t } from '../../i18n/es'
-import { FLOW_OPTIONS, MOOD_OPTIONS } from '../../domain/options'
+import {
+  FLOW_OPTIONS,
+  MOOD_OPTIONS,
+  MUCUS_OPTIONS,
+  parseDecimal,
+  SEX_OPTIONS,
+  TEMPERATURE_RANGE,
+  WEIGHT_RANGE,
+} from '../../domain/options'
+import { getSettings } from '../../db/settings'
 
 /** Hoja modal con el registro de un día. Usa <dialog> nativo (foco atrapado, Escape cierra). */
 export function DaySheet({ date, onClose }: { date: ISODate; onClose: () => void }) {
@@ -96,7 +105,16 @@ function DayFormView({
     pain: initial?.pain,
     medication: initial?.medication ?? '',
     notes: initial?.notes ?? '',
+    temperature: initial?.temperature,
+    mucus: initial?.mucus,
+    sex: initial?.sex,
+    weight: initial?.weight,
   }))
+  // Texto de los campos numéricos (admiten coma decimal); el número se valida al escribir.
+  const toText = (n?: number) => (n === undefined ? '' : String(n).replace('.', ','))
+  const [tempText, setTempText] = useState(() => toText(initial?.temperature))
+  const [weightText, setWeightText] = useState(() => toText(initial?.weight))
+  const tracking = useLiveQuery(() => getSettings().then((s) => s.tracking))
   const [newSymptom, setNewSymptom] = useState('')
   const [saving, setSaving] = useState(false)
   const symptoms = useLiveQuery(() => db.symptoms.toArray()) ?? []
@@ -116,6 +134,9 @@ function DayFormView({
     if (name && !form.symptoms?.includes(name)) set('symptoms', [...(form.symptoms ?? []), name])
     setNewSymptom('')
   }
+
+  const tempInvalid = tempText.trim() !== '' && form.temperature === undefined
+  const weightInvalid = weightText.trim() !== '' && form.weight === undefined
 
   const save = async () => {
     setSaving(true)
@@ -257,6 +278,106 @@ function DayFormView({
           </div>
         </section>
 
+        {/* Fertilidad (opcional: Ajustes → Qué registras) */}
+        {tracking && (tracking.temperature || tracking.mucus || tracking.sex || tracking.weight) && (
+          <section aria-labelledby="sec-fertility" className="space-y-4">
+            <h3 id="sec-fertility" className="font-bold">
+              {l.fertilityTitle}
+            </h3>
+            {tracking.temperature && (
+              <div>
+                <label htmlFor="temperature" className="mb-1 block text-sm font-bold text-muted">
+                  {l.temperature}
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="temperature"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    value={tempText}
+                    placeholder={l.temperaturePlaceholder}
+                    aria-describedby="temperature-hint"
+                    aria-invalid={tempInvalid}
+                    onChange={(e) => {
+                      setTempText(e.target.value)
+                      set('temperature', parseDecimal(e.target.value, TEMPERATURE_RANGE) ?? undefined)
+                    }}
+                    className="min-h-12 w-32 rounded-2xl border border-line bg-surface px-4 text-lg"
+                  />
+                  <span className="text-muted">°C</span>
+                </div>
+                <p id="temperature-hint" className={`mt-1 text-xs ${tempInvalid ? 'font-bold text-danger' : 'text-muted'}`}>
+                  {tempInvalid ? l.temperatureInvalid : l.temperatureHint}
+                </p>
+              </div>
+            )}
+            {tracking.mucus && (
+              <fieldset>
+                <legend className="mb-2 text-sm font-bold text-muted">{l.mucus}</legend>
+                <div className="flex flex-wrap gap-2">
+                  {MUCUS_OPTIONS.map((o) => (
+                    <Chip
+                      key={o.value}
+                      selected={form.mucus === o.value}
+                      onClick={() => set('mucus', form.mucus === o.value ? undefined : o.value)}
+                    >
+                      {o.label}
+                    </Chip>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+            {tracking.sex && (
+              <fieldset>
+                <legend className="mb-2 text-sm font-bold text-muted">{l.sex}</legend>
+                <div className="flex flex-wrap gap-2">
+                  {SEX_OPTIONS.map((o) => (
+                    <Chip
+                      key={o.value}
+                      selected={form.sex === o.value}
+                      onClick={() => set('sex', form.sex === o.value ? undefined : o.value)}
+                    >
+                      {o.label}
+                    </Chip>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+            {tracking.weight && (
+              <div>
+                <label htmlFor="weight" className="mb-1 block text-sm font-bold text-muted">
+                  {l.weight}
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="weight"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    value={weightText}
+                    placeholder={l.weightPlaceholder}
+                    aria-invalid={weightInvalid}
+                    aria-describedby={weightInvalid ? 'weight-error' : undefined}
+                    onChange={(e) => {
+                      setWeightText(e.target.value)
+                      set('weight', parseDecimal(e.target.value, WEIGHT_RANGE) ?? undefined)
+                    }}
+                    className="min-h-12 w-32 rounded-2xl border border-line bg-surface px-4 text-lg"
+                  />
+                  <span className="text-muted">kg</span>
+                </div>
+                {weightInvalid && (
+                  <p id="weight-error" className="mt-1 text-xs font-bold text-danger">
+                    {l.weightInvalid}
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+        {tracking && !tracking.temperature && !tracking.mucus && !tracking.sex && !tracking.weight && (
+          <p className="text-xs text-muted">{l.moreFieldsHint}</p>
+        )}
+
         {/* Medicación y notas */}
         <div>
           <label htmlFor="medication" className="mb-2 block font-bold">
@@ -286,7 +407,7 @@ function DayFormView({
         </div>
       </div>
       <footer className="border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <Button className="w-full" disabled={saving} onClick={save}>
+        <Button className="w-full" disabled={saving || tempInvalid || weightInvalid} onClick={save}>
           {l.save}
         </Button>
       </footer>

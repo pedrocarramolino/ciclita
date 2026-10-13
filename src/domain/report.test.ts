@@ -63,6 +63,23 @@ describe('buildReport', () => {
     ])
   })
 
+  it('resume los datos de fertilidad y peso, solo si los hay', () => {
+    expect(r.fertility).toBeNull()
+    const extra: DayLog[] = [
+      ...days,
+      { date: '2026-09-01', temperature: 36.4, weight: 63, mucus: 'creamy', updatedAt: 0 },
+      { date: '2026-09-08', temperature: 36.8, sex: 'unprotected', updatedAt: 0 },
+      { date: '2026-09-20', sex: 'protected', weight: 62.2, updatedAt: 0 },
+    ]
+    const f = buildReport(periods, extra, prediction, { months: 3, includeNotes: false }, TODAY).fertility
+    expect(f).toEqual({
+      temperature: { count: 2, min: 36.4, max: 36.8 },
+      sex: { protected: 1, unprotected: 1 },
+      mucusDays: 1,
+      weight: { first: 63, last: 62.2, firstDate: '2026-09-01', lastDate: '2026-09-20' },
+    })
+  })
+
   it('"todo" empieza en el primer dato registrado', () => {
     const all = buildReport(periods, days, prediction, { months: 'all', includeNotes: false }, TODAY)
     expect(all.from).toBe('2026-02-01')

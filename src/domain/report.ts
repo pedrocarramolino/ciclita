@@ -36,6 +36,13 @@ export interface Report {
   pain: { daysWithPain: number; average: number; max: number; severeDays: number } | null
   symptoms: { name: string; count: number; topPhase: Phase | null }[]
   medication: { name: string; count: number; last: ISODate }[]
+  /** Datos opcionales de fertilidad y peso; null si no hay ninguno en el intervalo. */
+  fertility: {
+    temperature: { count: number; min: number; max: number } | null
+    sex: { protected: number; unprotected: number }
+    mucusDays: number
+    weight: { first: number; last: number; firstDate: ISODate; lastDate: ISODate } | null
+  } | null
   notes: { date: ISODate; text: string }[]
 }
 
@@ -106,6 +113,31 @@ export function buildReport(
 
   const lastStart = periods.map((p) => p.startDate).sort().at(-1) ?? null
 
+  const sorted = [...rangeDays].sort((a, b) => a.date.localeCompare(b.date))
+  const temps = sorted.flatMap((d) => (d.temperature === undefined ? [] : [d.temperature]))
+  const weights = sorted.filter((d) => d.weight !== undefined)
+  const sex = {
+    protected: rangeDays.filter((d) => d.sex === 'protected').length,
+    unprotected: rangeDays.filter((d) => d.sex === 'unprotected').length,
+  }
+  const mucusDays = rangeDays.filter((d) => d.mucus).length
+  const hasFertility = temps.length > 0 || weights.length > 0 || sex.protected + sex.unprotected > 0 || mucusDays > 0
+  const fertility = hasFertility
+    ? {
+        temperature: temps.length ? { count: temps.length, min: Math.min(...temps), max: Math.max(...temps) } : null,
+        sex,
+        mucusDays,
+        weight: weights.length
+          ? {
+              first: weights[0].weight!,
+              last: weights.at(-1)!.weight!,
+              firstDate: weights[0].date,
+              lastDate: weights.at(-1)!.date,
+            }
+          : null,
+      }
+    : null
+
   return {
     generatedOn: today,
     from,
@@ -126,6 +158,7 @@ export function buildReport(
     pain,
     symptoms,
     medication: [...meds.values()].sort((a, b) => b.count - a.count || b.last.localeCompare(a.last)),
+    fertility,
     notes,
   }
 }

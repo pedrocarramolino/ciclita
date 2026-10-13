@@ -10,6 +10,8 @@ export interface Period {
 }
 
 export type Flow = 'spotting' | 'light' | 'medium' | 'heavy'
+export type Mucus = 'dry' | 'sticky' | 'creamy' | 'watery' | 'eggwhite'
+export type Sex = 'protected' | 'unprotected'
 
 /** Registro diario. Todos los campos son opcionales. */
 export interface DayLog {
@@ -21,6 +23,12 @@ export interface DayLog {
   pain?: number
   medication?: string
   notes?: string
+  /** Temperatura basal en °C (opcional, ver Ajustes → Qué registras). */
+  temperature?: number
+  mucus?: Mucus
+  sex?: Sex
+  /** Peso en kg. */
+  weight?: number
   updatedAt: number
 }
 

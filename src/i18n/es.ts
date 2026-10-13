@@ -156,6 +156,16 @@ export const es = {
     ],
     manual: 'Usa la opción «Instalar app» o «Añadir a pantalla de inicio» del menú de tu navegador.',
   },
+  tracking: {
+    title: 'Qué registras',
+    hint: 'Datos opcionales para el registro diario. Actívalos solo si te resultan útiles.',
+    items: {
+      temperature: { label: 'Temperatura basal', hint: 'Ayuda a confirmar la ovulación si la tomas cada mañana.' },
+      mucus: { label: 'Moco cervical', hint: 'Cambia a lo largo del ciclo y es más abundante cerca de la ovulación.' },
+      sex: { label: 'Relaciones sexuales', hint: 'Con o sin protección.' },
+      weight: { label: 'Peso', hint: 'En kilos.' },
+    },
+  },
   report: {
     title: 'Informe para tu médico',
     open: 'Informe para tu médico',
@@ -210,6 +220,18 @@ export const es = {
     colLast: 'Última vez',
     noMedication: 'No hay medicación registrada en este periodo.',
     notesTitle: 'Notas',
+    fertilityTitle: 'Fertilidad y peso',
+    temperatureRow: (n: number) => `Temperatura basal (${n} ${n === 1 ? 'registro' : 'registros'})`,
+    temperatureRange: (min: number, max: number) =>
+      `${min.toLocaleString('es')}–${max.toLocaleString('es')} °C`,
+    mucusRow: 'Días con moco cervical registrado',
+    sexRow: 'Relaciones sexuales',
+    sexValue: (p: number, u: number) => `${p} con protección · ${u} sin protección`,
+    weightRow: 'Peso',
+    weightValue: (a: number, b: number, da: string, db: string) =>
+      a === b && da === db
+        ? `${a.toLocaleString('es')} kg (${da})`
+        : `${a.toLocaleString('es')} kg (${da}) → ${b.toLocaleString('es')} kg (${db})`,
     footer:
       'Informe elaborado a partir de los registros de la propia persona en la app Ciclita. Las fechas previstas son estimaciones. No es un diagnóstico ni sustituye la valoración médica.',
   },
@@ -330,6 +352,17 @@ export const es = {
     medicationPlaceholder: 'Por ejemplo, ibuprofeno 400 mg',
     notes: 'Notas',
     save: 'Guardar',
+    fertilityTitle: 'Fertilidad',
+    temperature: 'Temperatura basal',
+    temperaturePlaceholder: 'p. ej. 36,55',
+    temperatureHint: 'Al despertar, antes de levantarte.',
+    temperatureInvalid: 'Introduce una temperatura entre 34 y 42 °C.',
+    mucus: 'Moco cervical',
+    sex: 'Relaciones sexuales',
+    weight: 'Peso',
+    weightPlaceholder: 'p. ej. 62,5',
+    weightInvalid: 'Introduce un peso entre 20 y 400 kg.',
+    moreFieldsHint: 'Puedes registrar también temperatura basal, moco cervical, relaciones sexuales o peso activándolos en Ajustes → Qué registras.',
   },
   home: {
     todayIs: (date: string) => `Hoy, ${date}`,
