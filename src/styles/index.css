@@ -24,6 +24,7 @@
   --lavender: #b9a7d6;
   --lavender-soft: #e9e2f4;
   --focus: #7a4fb0;
+  --chart-bar: #b5503f;
   color-scheme: light;
 }
 
@@ -42,6 +43,7 @@
   --lavender: #a993cc;
   --lavender-soft: #3b2f52;
   --focus: #d7c3f5;
+  --chart-bar: #d9705c;
   color-scheme: dark;
 }
 

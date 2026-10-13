@@ -1,11 +1,16 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BottomNav } from './components/BottomNav'
 import { getSettings, type Theme } from './db/settings'
 import { CalendarScreen } from './features/calendar/CalendarScreen'
 import { Home } from './features/home/Home'
 import { Onboarding } from './features/onboarding/Onboarding'
 import { useHashRoute } from './useHashRoute'
+
+// Recharts pesa bastante: la pantalla de estadísticas se carga solo cuando se abre.
+const StatsScreen = lazy(() =>
+  import('./features/stats/StatsScreen').then((m) => ({ default: m.StatsScreen })),
+)
 
 /** Aplica el tema en <html>; en "automático" sigue al sistema. */
 function useTheme(theme: Theme | undefined) {
@@ -33,6 +38,11 @@ export default function App() {
     <div className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))]">
       {route === 'home' && <Home />}
       {route === 'calendar' && <CalendarScreen />}
+      {route === 'stats' && (
+        <Suspense fallback={null}>
+          <StatsScreen />
+        </Suspense>
+      )}
       <BottomNav route={route} onNavigate={navigate} />
     </div>
   )

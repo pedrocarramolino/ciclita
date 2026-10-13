@@ -5,6 +5,7 @@ import type { Route } from '../useHashRoute'
 const ITEMS: { route: Route; icon: IconName; label: string }[] = [
   { route: 'home', icon: 'home', label: t.nav.home },
   { route: 'calendar', icon: 'calendar', label: t.nav.calendar },
+  { route: 'stats', icon: 'chart', label: t.nav.stats },
 ]
 
 export function BottomNav({ route, onNavigate }: { route: Route; onNavigate: (r: Route) => void }) {
