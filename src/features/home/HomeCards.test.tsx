@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { db } from '../../db/db'
 import { getSettings, setSettings } from '../../db/settings'
 import { addDays, today } from '../../domain/dates'
-import { BackupNudgeCard } from './BackupNudgeCard'
+import { Home } from './Home'
 import { PillCard } from './PillCard'
 
 const pillOn = (start: string, pack: 21 | 24 | 28 = 21) =>
@@ -51,11 +51,11 @@ describe('Píldora de hoy', () => {
   })
 })
 
-describe('Aviso de copia de seguridad', () => {
+describe('Aviso de copia de seguridad (en el inicio)', () => {
   it('aparece tras un mes de datos sin copia y "Más tarde" lo oculta', async () => {
     await db.periods.add({ startDate: addDays(today(), -40), endDate: addDays(today(), -36) })
     const user = userEvent.setup()
-    render(<BackupNudgeCard />)
+    render(<Home />)
 
     expect(await screen.findByRole('heading', { name: 'Haz una copia de seguridad' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Más tarde' }))
@@ -66,8 +66,24 @@ describe('Aviso de copia de seguridad', () => {
   it('no aparece con una copia reciente', async () => {
     await db.periods.add({ startDate: addDays(today(), -40), endDate: addDays(today(), -36) })
     await setSettings({ lastBackup: addDays(today(), -5) })
-    const { container } = render(<BackupNudgeCard />)
-    await new Promise((r) => setTimeout(r, 50))
-    expect(container).toBeEmptyDOMElement()
+    render(<Home />)
+    await screen.findByRole('button', { name: 'Registrar hoy' })
+    expect(screen.queryByRole('heading', { name: 'Haz una copia de seguridad' })).toBeNull()
+  })
+
+  it('solo se ve una pregunta a la vez: primero "¿Ha terminado tu periodo?"', async () => {
+    // Sin copia desde hace más de un mes y un periodo en curso desde hace 9 días.
+    await db.periods.bulkAdd([
+      { startDate: addDays(today(), -45), endDate: addDays(today(), -41) },
+      { startDate: addDays(today(), -8), endDate: null },
+    ])
+    const user = userEvent.setup()
+    render(<Home />)
+    expect(await screen.findByRole('heading', { name: '¿Ha terminado tu periodo?' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Haz una copia de seguridad' })).toBeNull()
+
+    // Al responder, sale la siguiente.
+    await user.click(screen.getByRole('button', { name: 'Todavía no' }))
+    expect(await screen.findByRole('heading', { name: 'Haz una copia de seguridad' })).toBeInTheDocument()
   })
 })

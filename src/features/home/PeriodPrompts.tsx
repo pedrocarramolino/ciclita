@@ -1,11 +1,10 @@
-import { useLiveQuery } from 'dexie-react-hooks'
 import { useId, useState } from 'react'
 import { Button } from '../../components/Button'
-import { db, type Period } from '../../db/db'
+import type { Period } from '../../db/db'
 import { endPeriod } from '../../db/repo'
 import { getSettings, setSettings } from '../../db/settings'
 import { addDays, formatDayMonth, type ISODate } from '../../domain/dates'
-import { periodEndQuestion } from '../../domain/periods'
+import type { PeriodEndQuestion } from '../../domain/periods'
 import type { Prediction } from '../../domain/prediction'
 import { t } from '../../i18n'
 import { openCalendarAt } from '../calendar/calendarFocus'
@@ -19,24 +18,19 @@ const SNOOZE_DAYS = 2
  * (para poder deshacer).
  */
 export function PeriodEndPrompt({
-  periodLength,
+  question: q,
   today,
   onEnded,
 }: {
-  periodLength: number
+  question: PeriodEndQuestion
   today: ISODate
   onEnded: (prev: Period[]) => void
 }) {
   const [picking, setPicking] = useState(false)
   const inputId = useId()
-  const q = useLiveQuery(async () => {
-    const [periods, settings] = await Promise.all([db.periods.toArray(), getSettings()])
-    return periodEndQuestion(periods, periodLength, today, settings.periodEndSnooze)
-  }, [periodLength, today])
   const [day, setDay] = useState<ISODate | null>(null)
   const p = t.periodEnd
 
-  if (!q) return null
   const yesterday = addDays(today, -1)
   const end = (date: ISODate) => void endPeriod(date).then(onEnded)
 

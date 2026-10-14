@@ -14,6 +14,8 @@ import { getSettings, setSettings } from '../../db/settings'
 import { perimenopauseInfo, pregnancyInfo } from '../../domain/modes'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { BackupNudgeCard } from './BackupNudgeCard'
+import { backupNudge } from '../../domain/backupNudge'
+import { periodEndQuestion } from '../../domain/periods'
 import { PillCard } from './PillCard'
 import { MissedPeriodPrompt, PeriodEndPrompt } from './PeriodPrompts'
 import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
@@ -29,18 +31,36 @@ const LATE_TEST_DAYS = 7
 /** Última acción que se puede deshacer desde el aviso flotante. */
 interface Undoable {
   message: string
-  undo: () => Promise<void>
+  /** Sin `undo`, el aviso solo informa. */
+  undo?: () => Promise<void>
 }
 
 export function Home() {
   const p = usePrediction()
+  const today = todayISO()
+  const periodLength = p?.periodLength
   const modeData = useLiveQuery(async () => {
-    const [settings, periods] = await Promise.all([getSettings(), db.periods.toArray()])
-    return { mode: settings.mode, pregnancyStart: settings.pregnancyStart, periods }
-  })
+    const [settings, periods, firstDay] = await Promise.all([
+      getSettings(),
+      db.periods.toArray(),
+      db.days.orderBy('date').first(),
+    ])
+    const oldest = [periods.map((x) => x.startDate).sort()[0], firstDay?.date].filter((d): d is string => !!d).sort()[0]
+    return {
+      mode: settings.mode,
+      pregnancyStart: settings.pregnancyStart,
+      periods,
+      periodEnd: periodLength ? periodEndQuestion(periods, periodLength, today, settings.periodEndSnooze) : null,
+      backup: backupNudge({
+        oldestData: oldest ?? null,
+        lastBackup: settings.lastBackup,
+        snoozedOn: settings.backupSnoozedOn,
+        today,
+      }),
+    }
+  }, [periodLength, today])
   const [undo, setUndo] = useState<Undoable | null>(null)
   const [logOpen, setLogOpen] = useState(false)
-  const today = todayISO()
   const h = t.home
   const undoPeriods = (message: string) => (prev: Period[]) => setUndo({ message, undo: () => restorePeriods(prev) })
 
@@ -107,14 +127,14 @@ export function Home() {
       </section>
       )}
 
-      {mode !== 'pregnancy' && (
-        <PeriodEndPrompt
-          periodLength={p.periodLength}
-          today={today}
-          onEnded={undoPeriods(h.endedToast)}
-        />
-      )}
-      {mode === 'cycle' && <MissedPeriodPrompt prediction={p} />}
+      {/* Una sola pregunta a la vez, la más importante; las demás salen después. */}
+      {mode !== 'pregnancy' && modeData.periodEnd ? (
+        <PeriodEndPrompt question={modeData.periodEnd} today={today} onEnded={undoPeriods(h.endedToast)} />
+      ) : mode === 'cycle' && p.suspectedMissed.length ? (
+        <MissedPeriodPrompt prediction={p} />
+      ) : modeData.backup ? (
+        <BackupNudgeCard nudge={modeData.backup} onSaved={() => setUndo({ message: t.backupNudge.done })} />
+      ) : null}
 
       <div className="grid gap-3">
         {mode === 'pregnancy' ? null : ongoing ? (
@@ -139,7 +159,6 @@ export function Home() {
       </div>
 
       {mode !== 'pregnancy' && <PillCard />}
-      <BackupNudgeCard />
 
       {mode === 'cycle' && p.nextPeriods.length > 0 && <Upcoming p={p} />}
       {mode !== 'pregnancy' && <CycleSummary p={p} />}
@@ -155,10 +174,13 @@ export function Home() {
         <UndoToast
           message={undo.message}
           onClose={() => setUndo(null)}
-          onUndo={() => {
-            setUndo(null)
-            void undo.undo()
-          }}
+          onUndo={
+            undo.undo &&
+            (() => {
+              setUndo(null)
+              void undo.undo?.()
+            })
+          }
         />
       )}
     </main>
