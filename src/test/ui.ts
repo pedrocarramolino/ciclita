@@ -30,8 +30,8 @@ if (!window.matchMedia) {
 window.scrollTo = () => {}
 
 // Las gráficas miden su contenedor con ResizeObserver (en jsdom el ancho es 0).
-if (!('ResizeObserver' in window)) {
-  window.ResizeObserver = class {
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}
