@@ -30,6 +30,13 @@ import {
   type RoutineReminder,
 } from './types.js'
 
+/**
+ * Lo más lejos que se programa un mensaje. QStash (plan gratuito) no admite diferirlos
+ * más de 7 días: los avisos más lejanos (envase nuevo de la píldora, revisión médica,
+ * semana de descanso...) se alcanzan con mensajes "despertador" intermedios.
+ */
+export const MAX_DELAY_MS = 6 * 86_400_000
+
 /** Hora local a la que se comprueba el aviso de periodo. */
 export const PERIOD_CHECK_TIME = '09:00'
 /** Los dispositivos sin actividad se borran solos tras este tiempo. */
@@ -142,6 +149,16 @@ async function scheduleNext(
   version: string,
 ): Promise<Job> {
   if (!at) return { version }
+  const limit = deps.now().getTime() + MAX_DELAY_MS
+  if (at.getTime() > limit) {
+    const wakeAt = new Date(limit)
+    const messageId = await deps.scheduler.publishAt(
+      { deviceId, kind, version, at: limit, wake: true },
+      wakeAt,
+      `ciclita-${deviceId}-${kind}-${version}-wake-${limit}`,
+    )
+    return { version, messageId }
+  }
   const messageId = await deps.scheduler.publishAt(
     { deviceId, kind, version, at: at.getTime() },
     at,
@@ -225,7 +242,9 @@ export async function deliver(deps: Deps, msg: DeliverMessage): Promise<DeliverR
   let continueChain = true
 
   let sentFor: string | undefined
-  if (msg.kind === 'period' && r.period) {
+  if (msg.wake) {
+    // Despertador: solo se reprograma (hacia el aviso real o el siguiente despertador).
+  } else if (msg.kind === 'period' && r.period) {
     const windows = periodWindows(r.period)
     // El intervalo en curso o el siguiente.
     const w = windows.find((x) => today <= x.until)

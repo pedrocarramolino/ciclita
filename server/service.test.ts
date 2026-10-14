@@ -1,6 +1,6 @@
 import { createECDH, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { AuthError, deliver, isPillDay, QuotaError, register, unregister, type Deps } from './service.js'
+import { AuthError, deliver, isPillDay, MAX_DELAY_MS, QuotaError, register, unregister, type Deps } from './service.js'
 import type { DeliverMessage, DeviceRecord, PushPayload, RegisterInput } from './types.js'
 import { isPushServiceUrl, validateRegister, ValidationError } from './validate.js'
 
@@ -37,6 +37,8 @@ function fakeDeps(nowISO = '2026-10-27T08:00:00Z') {
     },
     scheduler: {
       publishAt: async (message, at, dedupId) => {
+        // Como QStash (plan gratuito): no se puede diferir un mensaje más de 7 días.
+        if (at.getTime() - now.getTime() > 7 * 86_400_000) throw new Error('quota maxDelay exceeded')
         const id = `msg-${published.length + 1}`
         published.push({ id, message, at: at.toISOString(), dedupId })
         return id
@@ -60,6 +62,13 @@ function fakeDeps(nowISO = '2026-10-27T08:00:00Z') {
     sent,
     setGone: (g: boolean) => (gone = g),
     setNow: (iso: string) => (now = new Date(iso)),
+    /** Entrega los mensajes "despertador" pendientes hasta llegar a un aviso real. */
+    async followWakes() {
+      for (let i = 0; i < 20 && published.at(-1)?.message.wake; i++) {
+        now = new Date(published.at(-1)!.at)
+        expect(await deliver(deps, published.at(-1)!.message)).toBe('skipped')
+      }
+    },
   }
 }
 
@@ -259,6 +268,7 @@ describe('recordatorios con fecha', () => {
     f.setNow('2026-10-28T08:00:02Z')
     expect(await deliver(f.deps, f.published[0].message)).toBe('sent')
     expect(f.sent.map((p) => p.body)).toEqual(['Retira el anillo'])
+    await f.followWakes()
     expect(f.published.at(-1)).toMatchObject({ at: '2026-11-04T08:00:00.000Z' })
 
     f.setNow('2026-11-04T08:00:01Z')
@@ -273,6 +283,37 @@ describe('recordatorios con fecha', () => {
     expect(() => validateRegister({ ...base, reminders: { events: [{ date: '28/10', time: '09:00', title: 'T', body: 'B' }] } })).toThrow(ValidationError)
     expect(() => validateRegister({ ...base, reminders: { events: Array(31).fill(EVENTS.events[0]) } })).toThrow(ValidationError)
     expect(validateRegister({ ...base, reminders: EVENTS }).reminders.events).toHaveLength(4)
+  })
+})
+
+describe('avisos a más de 7 días (límite de QStash)', () => {
+  const FAR = { events: [{ date: '2026-11-20', time: '09:00', title: 'Píldora', body: 'Mañana empiezas un envase nuevo' }] }
+
+  it('programa despertadores intermedios que no envían nada y llegan al aviso real', async () => {
+    const f = fakeDeps('2026-10-27T08:00:00Z')
+    await register(f.deps, input(FAR))
+    expect(f.published[0]).toMatchObject({ message: { kind: 'events', wake: true } })
+    expect(Date.parse(f.published[0].at) - Date.parse('2026-10-27T08:00:00Z')).toBe(MAX_DELAY_MS)
+
+    // Se van encadenando despertadores sin enviar nada hasta el día del aviso.
+    await f.followWakes()
+    expect(f.sent).toHaveLength(0)
+    expect(f.published.at(-1)).toMatchObject({ at: '2026-11-20T08:00:00.000Z' })
+    expect(f.published.at(-1)!.message.wake).toBeUndefined()
+
+    f.setNow('2026-11-20T08:00:01Z')
+    expect(await deliver(f.deps, f.published.at(-1)!.message)).toBe('sent')
+    expect(f.sent.map((p) => p.body)).toEqual(['Mañana empiezas un envase nuevo'])
+  })
+
+  it('la píldora con 7 días de descanso tampoco supera el límite', async () => {
+    // Último día activo de un envase 21 + 7: el siguiente aviso es dentro de 8 días.
+    const f = fakeDeps('2026-10-21T20:30:00Z') // 22:30 en Madrid: la de hoy ya pasó
+    await register(f.deps, input({ pill: { time: '22:00', title: 'Ciclita', body: 'Píldora', pack: { active: 21, start: '2026-10-01' } } }))
+    expect(f.published[0].message.wake).toBe(true)
+    await f.followWakes()
+    expect(f.published.at(-1)?.at).toBe('2026-10-29T21:00:00.000Z')
+    expect(f.sent).toHaveLength(0)
   })
 })
 
@@ -346,8 +387,9 @@ describe('píldora con días de descanso', () => {
   it('al programar se salta la semana de descanso', async () => {
     const f = fakeDeps('2026-10-21T21:00:00Z') // 21 oct, 23:00 en Madrid: ya pasó la de hoy
     await register(f.deps, input(PILL))
+    await f.followWakes()
     // 29 oct a las 22:00 en Madrid (ya en horario de invierno, UTC+1).
-    expect(f.published[0]).toMatchObject({ message: { kind: 'pill' }, at: '2026-10-29T21:00:00.000Z' })
+    expect(f.published.at(-1)).toMatchObject({ message: { kind: 'pill' }, at: '2026-10-29T21:00:00.000Z' })
   })
 
   it('el último día activo envía y encadena el primero del envase siguiente', async () => {
@@ -356,6 +398,7 @@ describe('píldora con días de descanso', () => {
     expect(f.published[0].at).toBe('2026-10-21T20:00:00.000Z')
     f.setNow('2026-10-21T20:00:01Z')
     expect(await deliver(f.deps, f.published[0].message)).toBe('sent')
+    await f.followWakes()
     expect(f.published.at(-1)?.at).toBe('2026-10-29T21:00:00.000Z')
   })
 

@@ -137,6 +137,11 @@ export interface DeliverMessage {
   version: string
   /** Para los recordatorios con fecha: instante (ms) al que corresponde el aviso. */
   at?: number
+  /**
+   * Mensaje "despertador": el aviso real está a más días de los que QStash deja
+   * diferir un mensaje. No se envía nada; solo se vuelve a programar el siguiente.
+   */
+  wake?: boolean
 }
 
 export interface PushPayload extends Message {

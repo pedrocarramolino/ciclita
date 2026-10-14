@@ -24,7 +24,8 @@ export async function POST(request: Request) {
       typeof msg.deviceId !== 'string' ||
       typeof msg.version !== 'string' ||
       !REMINDER_KINDS.includes(msg.kind) ||
-      (msg.at !== undefined && typeof msg.at !== 'number')
+      (msg.at !== undefined && typeof msg.at !== 'number') ||
+      (msg.wake !== undefined && typeof msg.wake !== 'boolean')
     ) {
       throw new Error()
     }
