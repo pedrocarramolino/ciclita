@@ -94,9 +94,8 @@ export function Onboarding() {
       {current === 'welcome' && (
         <section className="flex flex-1 flex-col pt-8">
           <img src="/icons/icon.svg" alt="" width={96} height={96} className="mx-auto size-24 rounded-[28%] shadow-sm" />
-          <p className="mt-4 text-center text-lg font-extrabold tracking-wide text-primary">{t.appName}</p>
-          <h1 ref={headingRef} tabIndex={-1} className="mt-6 text-center text-3xl font-extrabold">
-            {o.welcomeTitle}
+          <h1 ref={headingRef} tabIndex={-1} className="mt-4 text-center text-3xl font-extrabold tracking-wide text-primary">
+            {t.appName}
           </h1>
           <p className="mt-3 text-center text-lg text-muted">{o.welcomeBody}</p>
 

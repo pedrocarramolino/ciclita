@@ -16,7 +16,6 @@ export const en: Messages = {
   },
   onboarding: {
     stepOf: (n, total) => `Step ${n} of ${total}`,
-    welcomeTitle: 'Your cycle, your way',
     welcomeBody: 'Log your period, symptoms and how you feel in a few taps, and get to know your patterns.',
     privacyTitle: 'Truly private',
     privacyPoints: [

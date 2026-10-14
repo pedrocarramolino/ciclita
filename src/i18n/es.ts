@@ -17,7 +17,6 @@ export const es = {
   },
   onboarding: {
     stepOf: (n: number, total: number) => `Paso ${n} de ${total}`,
-    welcomeTitle: 'Tu ciclo, a tu manera',
     welcomeBody:
       'Registra tu periodo, tus síntomas y cómo te sientes en pocos toques, y conoce mejor tus patrones.',
     privacyTitle: 'Privado de verdad',
