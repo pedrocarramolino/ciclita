@@ -5,7 +5,8 @@
  *  - la suscripción Web Push del navegador,
  *  - la zona horaria,
  *  - los recordatorios activos con su hora y su texto,
- *  - para el aviso de periodo, el intervalo de fechas en que debe sonar.
+ *  - para el aviso de periodo, el intervalo de fechas en que debe sonar,
+ *  - para la píldora, opcionalmente, el envase (para no avisar en los días de descanso).
  * No hay cuentas: cada dispositivo se identifica con un id aleatorio y un secreto
  * que solo conoce ese dispositivo (en Redis se guarda su hash).
  */
@@ -46,9 +47,22 @@ export interface EventReminder extends Message {
   time: string
 }
 
+/**
+ * Envase de la píldora en ciclos de 28 días: `active` días de píldora a partir de
+ * `start` (YYYY-MM-DD, primer día de un envase) y el resto de descanso.
+ */
+export interface PillPack {
+  active: number
+  start: string
+}
+
+export interface PillReminder extends TimedReminder {
+  pack?: PillPack
+}
+
 export interface Reminders {
   daily?: TimedReminder
-  pill?: TimedReminder
+  pill?: PillReminder
   period?: PeriodReminder
   events?: EventReminder[]
 }

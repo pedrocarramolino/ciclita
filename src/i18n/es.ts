@@ -135,7 +135,7 @@ export const es = {
       'Para que los avisos lleguen aunque la app esté cerrada, se programan en un servidor (Upstash). En iPhone, instala la app en la pantalla de inicio (iOS 16.4 o posterior) para recibirlos.',
     remindersDataTitle: '¿Qué datos se envían?',
     remindersData:
-      'Qué se envía al servidor al activar un recordatorio: la suscripción de notificaciones de este navegador, tu zona horaria y, por cada aviso, su hora y su texto (con "Notificaciones discretas", textos neutros). Con los avisos de periodo, ventana fértil, autoexploración y anticonceptivos se envían también las fechas en que deben sonar. Tus registros, síntomas y notas nunca salen del dispositivo. Al desactivar todos los recordatorios o borrar tus datos, se elimina lo enviado.',
+      'Qué se envía al servidor al activar un recordatorio: la suscripción de notificaciones de este navegador, tu zona horaria y, por cada aviso, su hora y su texto (con "Notificaciones discretas", textos neutros). Con los avisos de periodo, ventana fértil, autoexploración y anticonceptivos se envían también las fechas en que deben sonar, y con el de la píldora, el tipo de envase y su primer día (para saltar los días de descanso). Tus registros, síntomas y notas nunca salen del dispositivo. Al desactivar todos los recordatorios o borrar tus datos, se elimina lo enviado.',
     pushSynced: 'Recordatorios activos en el servidor.',
     pushSyncing: 'Sincronizando…',
     pushErrorTitle: 'No se pudieron programar los recordatorios',
@@ -152,6 +152,8 @@ export const es = {
     daysBefore: 'Días de antelación',
     dailyReminder: 'Recordatorio diario para registrar',
     pillReminder: 'Recordatorio de píldora anticonceptiva',
+    pillSkipsBreak: 'No sonará en los días de descanso de tu envase.',
+    pillBreakHint: 'Para que no suene en los días de descanso, indica tu envase en Qué registras → Píldora anticonceptiva.',
     fertileReminder: 'Aviso de ventana fértil',
     fertileReminderHint: 'El día antes de la ventana fértil estimada, a las 9:00.',
     breastReminder: 'Autoexploración de mama',

@@ -16,6 +16,17 @@ export interface PillConfig {
   start: ISODate
 }
 
+/**
+ * Envase que se envía con el recordatorio de la píldora para que no suene en los días
+ * de descanso. Solo si se registra la píldora con su envase y este tiene descanso.
+ */
+export function reminderPillPack(
+  tracking: boolean,
+  pill: { pack: PillPack; start: ISODate | null },
+): { active: number; start: ISODate } | undefined {
+  return tracking && pill.start && pill.pack < CYCLE ? { active: pill.pack, start: pill.start } : undefined
+}
+
 export interface PillDay {
   /** Día del envase, 1–28. */
   day: number

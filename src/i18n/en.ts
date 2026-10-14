@@ -162,7 +162,7 @@ export const en: Messages = {
       'So reminders arrive even when the app is closed, they are scheduled on a server (Upstash). On iPhone, install the app on your home screen (iOS 16.4 or later) to receive them.',
     remindersDataTitle: 'What data is sent?',
     remindersData:
-      'What is sent to the server when you turn on a reminder: this browser\'s notification subscription, your time zone and, for each reminder, its time and text (neutral texts with "Discreet notifications"). The period, fertile window, self-exam and contraceptive reminders also send the dates they should go off. Your logs, symptoms and notes never leave the device. When you turn off all reminders or delete your data, what was sent is deleted.',
+      'What is sent to the server when you turn on a reminder: this browser\'s notification subscription, your time zone and, for each reminder, its time and text (neutral texts with "Discreet notifications"). The period, fertile window, self-exam and contraceptive reminders also send the dates they should go off, and the pill reminder sends the pack type and its first day (to skip break days). Your logs, symptoms and notes never leave the device. When you turn off all reminders or delete your data, what was sent is deleted.',
     pushSynced: 'Reminders active on the server.',
     pushSyncing: 'Syncing…',
     pushErrorTitle: "Reminders couldn't be scheduled",
@@ -179,6 +179,8 @@ export const en: Messages = {
     daysBefore: 'Days in advance',
     dailyReminder: 'Daily reminder to log',
     pillReminder: 'Birth control pill reminder',
+    pillSkipsBreak: "It won't go off on your pack's break days.",
+    pillBreakHint: "So it doesn't go off on break days, set your pack in What you track → Birth control pill.",
     fertileReminder: 'Fertile window reminder',
     fertileReminderHint: 'The day before the estimated fertile window, at 9:00.',
     breastReminder: 'Breast self-exam',

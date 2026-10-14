@@ -1,6 +1,6 @@
 import { createECDH, randomBytes } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { AuthError, deliver, QuotaError, register, unregister, type Deps } from './service.js'
+import { AuthError, deliver, isPillDay, QuotaError, register, unregister, type Deps } from './service.js'
 import type { DeliverMessage, DeviceRecord, PushPayload, RegisterInput } from './types.js'
 import { isPushServiceUrl, validateRegister, ValidationError } from './validate.js'
 
@@ -220,6 +220,52 @@ describe('recordatorios con fecha', () => {
     expect(() => validateRegister({ ...base, reminders: { events: [{ date: '28/10', time: '09:00', title: 'T', body: 'B' }] } })).toThrow(ValidationError)
     expect(() => validateRegister({ ...base, reminders: { events: Array(31).fill(EVENTS.events[0]) } })).toThrow(ValidationError)
     expect(validateRegister({ ...base, reminders: EVENTS }).reminders.events).toHaveLength(4)
+  })
+})
+
+describe('píldora con días de descanso', () => {
+  // Envase 21 + 7 que empezó el 1 de octubre: descanso del 22 al 28 de octubre.
+  const PILL = { pill: { time: '22:00', title: 'Píldora', body: 'Tómala', pack: { active: 21, start: '2026-10-01' } } }
+
+  it('isPillDay sigue los ciclos de 28 días', () => {
+    const pack = { active: 21, start: '2026-10-01' }
+    expect(isPillDay('2026-10-21', pack)).toBe(true)
+    expect(isPillDay('2026-10-22', pack)).toBe(false)
+    expect(isPillDay('2026-10-28', pack)).toBe(false)
+    expect(isPillDay('2026-10-29', pack)).toBe(true)
+    expect(isPillDay('2026-09-30', pack)).toBe(false) // antes del inicio: día 28 del envase anterior
+  })
+
+  it('al programar se salta la semana de descanso', async () => {
+    const f = fakeDeps('2026-10-21T21:00:00Z') // 21 oct, 23:00 en Madrid: ya pasó la de hoy
+    await register(f.deps, input(PILL))
+    // 29 oct a las 22:00 en Madrid (ya en horario de invierno, UTC+1).
+    expect(f.published[0]).toMatchObject({ message: { kind: 'pill' }, at: '2026-10-29T21:00:00.000Z' })
+  })
+
+  it('el último día activo envía y encadena el primero del envase siguiente', async () => {
+    const f = fakeDeps('2026-10-20T21:00:00Z')
+    await register(f.deps, input(PILL))
+    expect(f.published[0].at).toBe('2026-10-21T20:00:00.000Z')
+    f.setNow('2026-10-21T20:00:01Z')
+    expect(await deliver(f.deps, f.published[0].message)).toBe('sent')
+    expect(f.published.at(-1)?.at).toBe('2026-10-29T21:00:00.000Z')
+  })
+
+  it('un mensaje que cae en descanso no avisa', async () => {
+    const f = fakeDeps('2026-10-20T21:00:00Z')
+    await register(f.deps, input(PILL))
+    f.setNow('2026-10-23T20:00:01Z')
+    expect(await deliver(f.deps, f.published[0].message)).toBe('skipped')
+    expect(f.sent).toEqual([])
+  })
+
+  it('valida el envase', () => {
+    const base = input({})
+    const bad = (pack: unknown) => () => validateRegister({ ...base, reminders: { pill: { ...PILL.pill, pack } } })
+    expect(bad({ active: 0, start: '2026-10-01' })).toThrow(ValidationError)
+    expect(bad({ active: 21, start: '1/10/2026' })).toThrow(ValidationError)
+    expect(validateRegister({ ...base, reminders: PILL }).reminders.pill?.pack).toEqual(PILL.pill.pack)
   })
 })
 

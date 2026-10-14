@@ -33,7 +33,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 | --- | --- |
 | Periodos, registros diarios, síntomas, notas, ajustes, PIN (hash PBKDF2) | **Solo en el dispositivo** (IndexedDB) |
 | Idioma elegido | En el dispositivo (localStorage), sin cifrar, para mostrar la pantalla del PIN en ese idioma |
-| Suscripción push del navegador, zona horaria, hora y texto de cada recordatorio activo y, para los avisos de periodo, ventana fértil, autoexploración y anticonceptivos, las fechas en que deben sonar | Servidor (Upstash Redis + QStash), **solo si se activa algún recordatorio** |
+| Suscripción push del navegador, zona horaria, hora y texto de cada recordatorio activo y, para los avisos de periodo, ventana fértil, autoexploración y anticonceptivos, las fechas en que deben sonar; para la píldora, el tipo de envase y su primer día (para no avisar en los días de descanso) | Servidor (Upstash Redis + QStash), **solo si se activa algún recordatorio** |
 
 - Sin cuentas, sin analítica ni rastreadores. La fuente tipográfica está incluida en la app (no se carga de Google Fonts).
 - Cada dispositivo se identifica en el servidor con un id aleatorio y un secreto (en Redis solo se guarda su hash). Los registros caducan a los 90 días sin actividad.

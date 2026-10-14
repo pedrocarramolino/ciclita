@@ -16,6 +16,7 @@ import { localDate, nextOccurrence, zonedToUtc } from './time.js'
 import {
   REMINDER_KINDS,
   type DeliverMessage,
+  type PillPack,
   type DeviceRecord,
   type Job,
   type PushPayload,
@@ -95,7 +96,19 @@ export function nextFireAt(kind: ReminderKind, reminders: Reminders, timezone: s
   const r = reminders[kind]
   if (!r) return null
   const time = kind === 'period' ? PERIOD_CHECK_TIME : (r as { time: string }).time
-  return nextOccurrence(time, timezone, now)
+  let at = nextOccurrence(time, timezone, now)
+  // Píldora: se saltan los días de descanso del envase (como mucho 27 seguidos).
+  const pack = kind === 'pill' ? reminders.pill?.pack : undefined
+  for (let i = 0; pack && i < 28 && !isPillDay(localDate(at, timezone), pack); i++) {
+    at = nextOccurrence(time, timezone, at)
+  }
+  return at
+}
+
+/** El día `ymd` toca píldora según el envase (ciclos de 28 días desde `start`). */
+export function isPillDay(ymd: string, pack: PillPack): boolean {
+  const diff = daysBetween(pack.start, ymd)
+  return (((diff % 28) + 28) % 28) < pack.active
 }
 
 /** Publica el siguiente mensaje de un recordatorio (si queda alguno) y devuelve su Job. */
@@ -200,7 +213,9 @@ export async function deliver(deps: Deps, msg: DeliverMessage): Promise<DeliverR
     if (today >= r.period.until) continueChain = false
   } else if ((msg.kind === 'daily' || msg.kind === 'pill') && r[msg.kind]) {
     const { title, body } = r[msg.kind]!
-    payload = { title, body, tag: `ciclita-${msg.kind}`, url: '/#/home' }
+    // Por si llega un mensaje programado antes de cambiar el envase: en descanso no se avisa.
+    const pack = msg.kind === 'pill' ? r.pill?.pack : undefined
+    if (!pack || isPillDay(today, pack)) payload = { title, body, tag: `ciclita-${msg.kind}`, url: '/#/home' }
   } else if (msg.kind === 'events' && r.events && msg.at !== undefined) {
     // Todos los recordatorios con fecha que caen en este mismo instante.
     const due = r.events.filter((e) => Math.abs(eventInstant(e, record.timezone).getTime() - msg.at!) < 60_000)

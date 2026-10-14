@@ -29,9 +29,14 @@ export interface EventReminder {
   body: string
 }
 
+export interface PillReminder extends TimedReminder {
+  /** Envase con días de descanso: el servidor no avisa en ellos. */
+  pack?: { active: number; start: ISODate }
+}
+
 export interface RemindersPayload {
   daily?: TimedReminder
-  pill?: TimedReminder
+  pill?: PillReminder
   period?: PeriodReminder
   events?: EventReminder[]
 }
@@ -41,6 +46,7 @@ export function buildReminders(
   prediction: Prediction | null,
   today: ISODate = todayISO(),
   mode: AppMode = 'cycle',
+  pillPack?: PillReminder['pack'],
 ): RemindersPayload {
   // En embarazo y perimenopausia no hay previsiones fiables de periodo ni de fertilidad.
   if (mode !== 'cycle') r = { ...r, periodEnabled: false, fertileEnabled: false }
@@ -53,6 +59,7 @@ export function buildReminders(
   }
   if (r.pillEnabled) {
     out.pill = { time: r.pillTime, title: title('pill'), body: r.discreet ? n.discreet.pill : n.pill }
+    if (pillPack) out.pill.pack = pillPack
   }
 
   // Solo se programa si hay un próximo periodo previsto en el futuro (no con retraso).

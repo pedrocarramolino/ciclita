@@ -3,6 +3,7 @@ import { Button } from '../../components/Button'
 import { NumberStepper } from '../../components/NumberStepper'
 import { Switch } from '../../components/Switch'
 import { setSettings, type Settings, type ReminderSettings } from '../../db/settings'
+import { reminderPillPack } from '../../domain/pill'
 import { permission, requestPermission, showTestNotification, syncPush } from '../../push/pushClient'
 import { formatLong, today } from '../../domain/dates'
 import { buildEventReminders, type ContraceptionMethod } from '../../domain/reminderEvents'
@@ -117,7 +118,14 @@ export function RemindersSection({ settings }: { settings: Settings }) {
         />
       </Row>
       {reminders.pillEnabled && (
-        <TimeField id="pill-time" value={reminders.pillTime} onChange={(v) => void update({ pillTime: v })} />
+        <>
+          <TimeField id="pill-time" value={reminders.pillTime} onChange={(v) => void update({ pillTime: v })} />
+          {!(settings.tracking.pill && settings.pill.pack === 28) && (
+            <p className="text-sm text-muted">
+              {reminderPillPack(settings.tracking.pill, settings.pill) ? s.pillSkipsBreak : s.pillBreakHint}
+            </p>
+          )}
+        </>
       )}
 
       <Row id={ids.fertile} label={s.fertileReminder} hint={s.fertileReminderHint}>

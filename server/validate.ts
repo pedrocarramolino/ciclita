@@ -1,5 +1,5 @@
 import { ECDH } from 'node:crypto'
-import type { EventReminder, Message, PeriodReminder, RegisterInput, Reminders, TimedReminder } from './types.js'
+import type { EventReminder, Message, PeriodReminder, PillReminder, RegisterInput, Reminders, TimedReminder } from './types.js'
 
 export class ValidationError extends Error {}
 
@@ -72,6 +72,19 @@ function timed(v: unknown, field: string): TimedReminder | undefined {
   return { time: v.time, ...message(v, field) }
 }
 
+function pillReminder(v: unknown): PillReminder | undefined {
+  const base = timed(v, 'pill')
+  if (!base) return undefined
+  const pack = (v as Record<string, unknown>).pack
+  if (pack === undefined || pack === null) return base
+  if (!isObj(pack)) fail('pill.pack no válido')
+  if (typeof pack.active !== 'number' || !Number.isInteger(pack.active) || pack.active < 1 || pack.active > 28) {
+    fail('pill.pack.active no válido')
+  }
+  if (typeof pack.start !== 'string' || !DATE_RE.test(pack.start)) fail('pill.pack.start no válido')
+  return { ...base, pack: { active: pack.active, start: pack.start } }
+}
+
 function period(v: unknown): PeriodReminder | undefined {
   if (v === undefined || v === null) return undefined
   if (!isObj(v)) fail('period no válido')
@@ -132,7 +145,7 @@ export function validateRegister(raw: unknown): RegisterInput {
 
   const r: Reminders = {}
   const daily = timed(reminders.daily, 'daily')
-  const pill = timed(reminders.pill, 'pill')
+  const pill = pillReminder(reminders.pill)
   const per = period(reminders.period)
   if (daily) r.daily = daily
   if (pill) r.pill = pill

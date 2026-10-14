@@ -70,3 +70,16 @@ describe('buildReminders · modos', () => {
     expect(buildReminders(r, upcoming, '2026-10-20', 'cycle').period).toBeDefined()
   })
 })
+
+describe('píldora con envase', () => {
+  it('envía el envase solo si tiene días de descanso y se registra la píldora', async () => {
+    const { reminderPillPack } = await import('../domain/pill')
+    expect(reminderPillPack(true, { pack: 21, start: '2026-10-01' })).toEqual({ active: 21, start: '2026-10-01' })
+    expect(reminderPillPack(true, { pack: 28, start: '2026-10-01' })).toBeUndefined()
+    expect(reminderPillPack(false, { pack: 21, start: '2026-10-01' })).toBeUndefined()
+    expect(reminderPillPack(true, { pack: 24, start: null })).toBeUndefined()
+
+    const r = buildReminders({ ...DEFAULT_REMINDERS, pillEnabled: true }, null, '2026-10-20', 'cycle', { active: 24, start: '2026-10-01' })
+    expect(r.pill?.pack).toEqual({ active: 24, start: '2026-10-01' })
+  })
+})

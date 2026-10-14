@@ -10,6 +10,7 @@ import { LockScreen } from './features/lock/LockScreen'
 import type { PinCheck } from './features/lock/pinCheck'
 import { flushVault, getVaultRow, isVaultUnlocked, unlockVault, vaultLockStore } from './db/vault'
 import { requestPersistence } from './db/persist'
+import { reminderPillPack } from './domain/pill'
 import { usePushSync } from './push/usePushSync'
 import { preloadable } from './preloadable'
 import { useHashRoute } from './useHashRoute'
@@ -128,7 +129,12 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
   const [locked, unlock] = useAppLock(settings?.pinHash, startUnlocked)
   useTheme(settings?.theme)
   const prediction = usePrediction()
-  usePushSync(settings?.onboardingDone ? settings.reminders : undefined, prediction, settings?.mode)
+  usePushSync(
+    settings?.onboardingDone ? settings.reminders : undefined,
+    prediction,
+    settings?.mode,
+    settings && reminderPillPack(settings.tracking.pill, settings.pill),
+  )
   usePreloadScreens(!!settings?.onboardingDone)
   // Una vez que hay datos, se pide al navegador que no los borre para liberar espacio.
   const onboardingDone = !!settings?.onboardingDone
