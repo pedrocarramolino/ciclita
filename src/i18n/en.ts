@@ -26,6 +26,12 @@ export const en: Messages = {
     ],
     start: 'Get started',
     importBackup: 'Already used Ciclita? Import a backup',
+    modeTitle: 'What will you use Ciclita for?',
+    modeHint: 'You can change it any time in Settings.',
+    pregnancyLastTitle: 'When did your last period start?',
+    pregnancyLastHint:
+      "It is used to calculate weeks of pregnancy and your due date. If you have been given a due date, you can enter it in Settings.",
+    perimenopauseLastHint: 'It is used to count the days since your last period. You can change it later.',
     lastPeriodTitle: 'When did your last period start?',
     lastPeriodHint: 'This helps us estimate your next period. You can change it later.',
     lastPeriodLabel: 'Start date',

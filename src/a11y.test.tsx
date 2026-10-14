@@ -56,12 +56,15 @@ describe('accesibilidad (axe)', () => {
     expect(v.some((x) => x.startsWith('label'))).toBe(true)
   })
 
-  it('bienvenida: los tres pasos', async () => {
+  it('bienvenida: todos los pasos', async () => {
     const user = userEvent.setup()
     render(<App encrypted={false} />)
     await screen.findByRole('button', { name: 'Empezar' })
     await expectNoViolations()
     await user.click(screen.getByRole('button', { name: 'Empezar' }))
+    await screen.findByRole('radio', { name: /Embarazo/ })
+    await expectNoViolations()
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
     await screen.findByLabelText('Fecha de inicio')
     await expectNoViolations()
     await user.click(screen.getByRole('button', { name: 'Continuar' }))

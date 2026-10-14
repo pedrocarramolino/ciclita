@@ -28,6 +28,12 @@ export const es = {
     ],
     start: 'Empezar',
     importBackup: '¿Ya usabas Ciclita? Importar una copia',
+    modeTitle: '¿Para qué vas a usar Ciclita?',
+    modeHint: 'Podrás cambiarlo cuando quieras en Ajustes.',
+    pregnancyLastTitle: '¿Cuándo empezó tu última regla?',
+    pregnancyLastHint:
+      'Con ella se calculan las semanas de embarazo y la fecha probable de parto. Si te han dado la fecha de parto, podrás indicarla en Ajustes.',
+    perimenopauseLastHint: 'Nos sirve para contar los días desde tu último periodo. Podrás cambiarlo después.',
     lastPeriodTitle: '¿Cuándo empezó tu último periodo?',
     lastPeriodHint: 'Nos sirve para estimar tu próximo periodo. Podrás cambiarlo después.',
     lastPeriodLabel: 'Fecha de inicio',

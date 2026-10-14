@@ -18,10 +18,13 @@ describe('App', () => {
 
     // Paso 1: bienvenida.
     await user.click(await screen.findByRole('button', { name: 'Empezar' }))
-    // Paso 2: último periodo, hace 10 días.
+    // Paso 2: modo (ciclo menstrual, el marcado por defecto).
+    expect(await screen.findByRole('radio', { name: /Ciclo menstrual/ })).toBeChecked()
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    // Paso 3: último periodo, hace 10 días.
     fireEvent.change(await screen.findByLabelText('Fecha de inicio'), { target: { value: addDays(today(), -10) } })
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
-    // Paso 3: duraciones por defecto.
+    // Paso 4: duraciones por defecto.
     await user.click(await screen.findByRole('button', { name: 'Listo' }))
 
     expect(await screen.findByText('Día 11 de tu ciclo')).toBeInTheDocument()
@@ -90,5 +93,34 @@ describe('App', () => {
 
     expect(await screen.findByText('Día 11 de tu ciclo', {}, { timeout: 3000 })).toBeInTheDocument()
     expect((await getSettings()).onboardingDone).toBe(true)
+  })
+
+  it('bienvenida en modo embarazo: sin duraciones, con las semanas desde la última regla', async () => {
+    const user = userEvent.setup()
+    render(<App encrypted={false} />)
+    await user.click(await screen.findByRole('button', { name: 'Empezar' }))
+    await user.click(await screen.findByRole('radio', { name: /Embarazo/ }))
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+
+    expect(await screen.findByRole('heading', { name: '¿Cuándo empezó tu última regla?' })).toBeInTheDocument()
+    expect(screen.getByText('Paso 3 de 3')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Fecha de inicio'), { target: { value: addDays(today(), -70) } })
+    await user.click(screen.getByRole('button', { name: 'Listo' }))
+
+    expect(await screen.findByText(/10 semanas de embarazo/)).toBeInTheDocument()
+    expect(await getSettings()).toMatchObject({ mode: 'pregnancy', pregnancyStart: addDays(today(), -70), cycleLength: null })
+  })
+
+  it('bienvenida en modo perimenopausia: sin duraciones', async () => {
+    const user = userEvent.setup()
+    render(<App encrypted={false} />)
+    await user.click(await screen.findByRole('button', { name: 'Empezar' }))
+    await user.click(await screen.findByRole('radio', { name: /Perimenopausia/ }))
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    fireEvent.change(await screen.findByLabelText('Fecha de inicio'), { target: { value: addDays(today(), -50) } })
+    await user.click(screen.getByRole('button', { name: 'Listo' }))
+
+    expect(await screen.findByText(/50 días desde tu último periodo/)).toBeInTheDocument()
+    expect((await getSettings()).mode).toBe('perimenopause')
   })
 })

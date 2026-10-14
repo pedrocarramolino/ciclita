@@ -153,6 +153,8 @@ export interface OnboardingResult {
   lastPeriodStart: ISODate | null
   cycleLength: number | null
   periodLength: number | null
+  /** Modo elegido (por defecto, ciclo). En embarazo, el último periodo es el inicio. */
+  mode?: AppMode
 }
 
 /** Guarda lo indicado en el onboarding y lo marca como completado. */
@@ -171,8 +173,15 @@ export async function completeOnboarding(
         await database.periods.add({ startDate: r.lastPeriodStart, endDate: end < today ? end : null })
       }
     }
+    const mode = r.mode ?? 'cycle'
     await setSettings(
-      { cycleLength: r.cycleLength, periodLength: r.periodLength, onboardingDone: true },
+      {
+        cycleLength: r.cycleLength,
+        periodLength: r.periodLength,
+        mode,
+        ...(mode === 'pregnancy' ? { pregnancyStart: r.lastPeriodStart } : {}),
+        onboardingDone: true,
+      },
       database,
     )
   })
