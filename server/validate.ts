@@ -85,6 +85,9 @@ function pillReminder(v: unknown): PillReminder | undefined {
   return { ...base, pack: { active: pack.active, start: pack.start } }
 }
 
+/** Periodos previstos adicionales que se pueden enviar. */
+export const MAX_NEXT_PERIODS = 5
+
 function period(v: unknown): PeriodReminder | undefined {
   if (v === undefined || v === null) return undefined
   if (!isObj(v)) fail('period no válido')
@@ -92,12 +95,28 @@ function period(v: unknown): PeriodReminder | undefined {
   if (typeof from !== 'string' || !DATE_RE.test(from)) fail('period.from no válido')
   if (typeof until !== 'string' || !DATE_RE.test(until) || until < from) fail('period.until no válido')
   if (!Array.isArray(bodies) || bodies.length < 1 || bodies.length > 8) fail('period.bodies no válido')
-  return {
+  const out: PeriodReminder = {
     title: text(v.title, 'period.title'),
     from,
     until,
     bodies: bodies.map((b, i) => text(b, `period.bodies[${i}]`)),
   }
+  if (v.next !== undefined && v.next !== null) {
+    if (!Array.isArray(v.next) || v.next.length > MAX_NEXT_PERIODS) fail('period.next no válido')
+    let prev = until
+    out.next = v.next.map((w, i) => {
+      if (!isObj(w)) fail(`period.next[${i}] no válido`)
+      const { from: wf, until: wu } = w
+      // Cada intervalo, correcto y posterior al anterior (sin solaparse).
+      if (typeof wf !== 'string' || !DATE_RE.test(wf) || typeof wu !== 'string' || !DATE_RE.test(wu)) {
+        fail(`period.next[${i}] no válido`)
+      }
+      if (wu < wf || wf <= prev) fail(`period.next[${i}] no válido`)
+      prev = wu
+      return { from: wf, until: wu }
+    })
+  }
+  return out
 }
 
 /** Máximo de recordatorios con fecha por dispositivo. */

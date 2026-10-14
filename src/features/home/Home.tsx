@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
-import { endPeriod, startPeriod } from '../../db/repo'
+import { endPeriod, restorePeriods, startPeriod } from '../../db/repo'
 import { diffDays, formatDayMonth, formatLong, formatRange, today as todayISO } from '../../domain/dates'
 import type { Prediction, Source } from '../../domain/prediction'
 import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
-import { db } from '../../db/db'
+import { db, type Period } from '../../db/db'
+import { UndoToast } from '../../components/UndoToast'
 import { getSettings } from '../../db/settings'
 import { perimenopauseInfo, pregnancyInfo } from '../../domain/modes'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -25,6 +26,8 @@ export function Home() {
     return { mode: settings.mode, pregnancyStart: settings.pregnancyStart, periods }
   })
   // El atajo "Registrar hoy" del icono de la app abre #/log: se abre el registro de hoy.
+  // Última acción de periodo, para poder deshacerla.
+  const [undo, setUndo] = useState<{ message: string; prev: Period[] } | null>(null)
   const [logOpen, setLogOpen] = useState(() => window.location.hash === LOG_TODAY_HASH)
   useEffect(() => {
     if (window.location.hash === LOG_TODAY_HASH) history.replaceState(null, '', '#/home')
@@ -71,12 +74,15 @@ export function Home() {
 
       <div className="grid gap-3">
         {mode === 'pregnancy' ? null : ongoing ? (
-          <Button className="min-h-16 w-full text-lg" onClick={() => void endPeriod()}>
+          <Button className="min-h-16 w-full text-lg" onClick={() => void endPeriod().then((prev) => setUndo({ message: h.endedToast, prev }))}>
             {h.ended}
           </Button>
         ) : (
           !inPeriod && (
-            <Button className="min-h-16 w-full text-lg" onClick={() => void startPeriod()}>
+            <Button
+              className="min-h-16 w-full text-lg"
+              onClick={() => void startPeriod().then((prev) => setUndo({ message: h.startedToast, prev }))}
+            >
               <Icon name="drop" />
               {h.started}
             </Button>
@@ -101,6 +107,16 @@ export function Home() {
       </p>
 
       {logOpen && <DaySheet date={today} onClose={() => setLogOpen(false)} />}
+      {undo && (
+        <UndoToast
+          message={undo.message}
+          onClose={() => setUndo(null)}
+          onUndo={() => {
+            setUndo(null)
+            void restorePeriods(undo.prev)
+          }}
+        />
+      )}
     </main>
   )
 }

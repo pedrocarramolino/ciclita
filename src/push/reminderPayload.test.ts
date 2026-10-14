@@ -37,6 +37,15 @@ describe('buildReminders', () => {
     ])
   })
 
+  it('aviso de periodo: incluye los periodos previstos siguientes', () => {
+    const r = buildReminders(s({ periodEnabled: true, periodDaysBefore: 2 }), upcoming)
+    expect(r.period?.next).toHaveLength(upcoming!.nextPeriods.length - 1)
+    r.period!.next!.forEach((w, i) => {
+      expect(w.until).toBe(upcoming!.nextPeriods[i + 1].start)
+      expect(w.from < w.until).toBe(true)
+    })
+  })
+
   it('no programa el aviso de periodo si hay retraso o no hay datos', () => {
     expect(buildReminders(s({ periodEnabled: true }), late).period).toBeUndefined()
     expect(buildReminders(s({ periodEnabled: true }), null).period).toBeUndefined()

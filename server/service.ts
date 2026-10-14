@@ -14,6 +14,7 @@
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
 import { localDate, nextOccurrence, zonedToUtc } from './time.js'
 import {
+  periodWindows,
   REMINDER_KINDS,
   type DeliverMessage,
   type PillPack,
@@ -166,7 +167,8 @@ export async function register(deps: Deps, input: RegisterInput): Promise<void> 
       reminders: input.reminders,
       jobs,
       // Si cambia el periodo previsto, se podrá volver a avisar.
-      periodSentFor: period && existing?.periodSentFor === period.until ? period.until : undefined,
+      periodSentFor:
+        period && periodWindows(period).some((w) => w.until === existing?.periodSentFor) ? existing?.periodSentFor : undefined,
       updatedAt: deps.now().getTime(),
     },
     DEVICE_TTL_SECONDS,
@@ -201,16 +203,21 @@ export async function deliver(deps: Deps, msg: DeliverMessage): Promise<DeliverR
   let ttl = 4 * 3600
   let continueChain = true
 
+  let sentFor: string | undefined
   if (msg.kind === 'period' && r.period) {
-    const left = daysBetween(today, r.period.until)
-    if (today >= r.period.from && left >= 0 && record.periodSentFor !== r.period.until) {
+    const windows = periodWindows(r.period)
+    // El intervalo en curso o el siguiente.
+    const w = windows.find((x) => today <= x.until)
+    const left = w ? daysBetween(today, w.until) : -1
+    if (w && today >= w.from && record.periodSentFor !== w.until) {
       const body = r.period.bodies[Math.min(left, r.period.bodies.length - 1)]
       payload = { title: r.period.title, body, tag: 'ciclita-period', url: '/#/home' }
+      sentFor = w.until
       ttl = 12 * 3600
     }
-    // Pasada la fecha prevista no hay nada más que comprobar hasta que la app
-    // vuelva a sincronizar con el siguiente periodo.
-    if (today >= r.period.until) continueChain = false
+    // Pasado el último periodo previsto no hay nada más que comprobar hasta que la
+    // app vuelva a sincronizar.
+    if (today >= windows.at(-1)!.until) continueChain = false
   } else if ((msg.kind === 'daily' || msg.kind === 'pill') && r[msg.kind]) {
     const { title, body } = r[msg.kind]!
     // Por si llega un mensaje programado antes de cambiar el envase: en descanso no se avisa.
@@ -242,7 +249,7 @@ export async function deliver(deps: Deps, msg: DeliverMessage): Promise<DeliverR
         return 'removed'
       }
     }
-    if (msg.kind === 'period') updated.periodSentFor = r.period!.until
+    if (sentFor) updated.periodSentFor = sentFor
   }
 
   await deps.store.set(msg.deviceId, updated, DEVICE_TTL_SECONDS)

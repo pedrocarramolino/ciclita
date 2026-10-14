@@ -26,15 +26,26 @@ export interface TimedReminder extends Message {
   time: string
 }
 
-export interface PeriodReminder {
-  title: string
+export interface PeriodWindow {
   /** Primer día (YYYY-MM-DD) en que se avisa. */
   from: string
   /** Inicio previsto del periodo: último día en que se avisa. */
   until: string
+}
+
+export interface PeriodReminder extends PeriodWindow {
+  title: string
   /** Texto según los días que falten: bodies[n] = faltan n días. */
   bodies: string[]
+  /**
+   * Periodos previstos siguientes, para seguir avisando aunque la app no se abra en
+   * meses. (`from`/`until` son el primero; las versiones antiguas solo envían ese.)
+   */
+  next?: PeriodWindow[]
 }
+
+/** Todos los intervalos de aviso de periodo, en orden. */
+export const periodWindows = (p: PeriodReminder): PeriodWindow[] => [{ from: p.from, until: p.until }, ...(p.next ?? [])]
 
 /**
  * Recordatorio en una fecha concreta (anticonceptivos con pauta, ventana fértil,

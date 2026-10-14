@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { AppDB } from './db'
-import { addCustomSymptom, endPeriod, saveDay, setPillTaken, startPeriod } from './repo'
+import { addCustomSymptom, endPeriod, restorePeriods, saveDay, setPillTaken, startPeriod } from './repo'
 
 const TODAY = '2026-10-13'
 let database: AppDB
@@ -93,5 +93,22 @@ describe('setPillTaken', () => {
     const day = await d.days.get('2026-10-11')
     expect(day).toMatchObject({ mood: 'calm' })
     expect(day?.pillTaken).toBeUndefined()
+  })
+})
+
+describe('deshacer inicio / fin de periodo', () => {
+  it('startPeriod y endPeriod devuelven el estado anterior y restorePeriods lo recupera', async () => {
+    const d = await freshDB()
+    await d.periods.add({ startDate: '2026-09-15', endDate: '2026-09-19' })
+    const before = await startPeriod(TODAY, d)
+    expect(await d.periods.count()).toBe(2)
+    await restorePeriods(before, d)
+    expect(await d.periods.toArray()).toMatchObject([{ startDate: '2026-09-15', endDate: '2026-09-19' }])
+
+    await startPeriod('2026-10-10', d)
+    const beforeEnd = await endPeriod('2026-10-12', d)
+    expect((await d.periods.toArray()).at(-1)).toMatchObject({ endDate: '2026-10-12' })
+    await restorePeriods(beforeEnd, d)
+    expect((await d.periods.toArray()).at(-1)).toMatchObject({ startDate: '2026-10-10', endDate: null })
   })
 })

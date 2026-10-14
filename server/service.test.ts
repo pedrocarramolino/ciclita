@@ -166,6 +166,50 @@ describe('deliver', () => {
     expect(f.published.length).toBe(before)
   })
 
+  it('aviso de periodo: sigue con los periodos previstos siguientes sin volver a sincronizar', async () => {
+    const period = {
+      title: 'Periodo',
+      from: '2026-10-27',
+      until: '2026-10-28',
+      bodies: ['hoy', 'mañana'],
+      next: [
+        { from: '2026-11-24', until: '2026-11-25' },
+        { from: '2026-12-22', until: '2026-12-23' },
+      ],
+    }
+    const f = fakeDeps('2026-10-25T20:00:00Z')
+    await register(f.deps, input({ period }))
+    const deliverAt = async (iso: string) => {
+      f.setNow(iso)
+      return deliver(f.deps, { deviceId: ID, kind: 'period', version: 'v1' })
+    }
+
+    expect(await deliverAt('2026-10-27T08:00:00Z')).toBe('sent') // primer periodo, faltan 1 día
+    expect(await deliverAt('2026-10-28T08:00:00Z')).toBe('skipped') // ya avisado
+    expect(await deliverAt('2026-11-10T08:00:00Z')).toBe('skipped') // entre periodos
+    expect(await deliverAt('2026-11-25T08:00:00Z')).toBe('sent') // segundo periodo, hoy
+    expect(f.sent.map((p) => p.body)).toEqual(['mañana', 'hoy'])
+    expect(f.records.get(ID)?.periodSentFor).toBe('2026-11-25')
+
+    // Tras el último previsto, la cadena se detiene.
+    expect(await deliverAt('2026-12-23T08:00:00Z')).toBe('sent')
+    const before = f.published.length
+    expect(await deliverAt('2026-12-24T08:00:00Z')).toBe('skipped')
+    expect(f.published.length).toBe(before)
+  })
+
+  it('valida los periodos siguientes', () => {
+    const base = input({})
+    const p = { title: 'T', from: '2026-10-27', until: '2026-10-28', bodies: ['a'] }
+    const bad = (next: unknown) => () => validateRegister({ ...base, reminders: { period: { ...p, next } } })
+    expect(bad([{ from: '2026-10-28', until: '2026-10-29' }])).toThrow(ValidationError) // se solapa
+    expect(bad([{ from: '2026-11-25', until: '2026-11-24' }])).toThrow(ValidationError) // invertido
+    expect(bad(Array.from({ length: 6 }, (_, i) => ({ from: `2027-0${i + 1}-01`, until: `2027-0${i + 1}-02` })))).toThrow(
+      ValidationError,
+    )
+    expect(validateRegister({ ...base, reminders: { period: { ...p, next: [{ from: '2026-11-24', until: '2026-11-25' }] } } }).reminders.period?.next).toHaveLength(1)
+  })
+
   it('si la suscripción ya no existe, borra el dispositivo y cancela lo programado', async () => {
     const f = fakeDeps()
     await register(f.deps, input({ pill: { time: '08:00', title: 'P', body: 'B' } }))

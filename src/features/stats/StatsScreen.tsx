@@ -13,6 +13,8 @@ import {
 import { symptomLabel, t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { CycleChart } from './CycleChart'
+import { TemperatureCard } from './TemperatureCard'
+import { temperatureCycles } from '../../domain/temperature'
 
 const TOP_SYMPTOMS = 8
 
@@ -30,6 +32,7 @@ export function StatsScreen() {
   const cycles = completedCycles(data.periods).slice(-CHART_CYCLES)
   const extremes = cycleExtremes(cycles)
   const symptoms = symptomStats(data.days, data.periods, p.cycleLength, p.periodLength, today())
+  const tempCycles = temperatureCycles(data.periods, data.days, today())
 
   return (
     <main className="mx-auto w-full max-w-md space-y-4 px-4 pt-6 pb-4">
@@ -85,6 +88,8 @@ export function StatsScreen() {
           <p className="mt-1 text-sm text-muted">{s.emptyHint}</p>
         </section>
       )}
+
+      {tempCycles.length > 0 && <TemperatureCard cycles={tempCycles} />}
 
       <Symptoms symptoms={symptoms.slice(0, TOP_SYMPTOMS)} />
     </main>

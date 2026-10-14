@@ -20,6 +20,8 @@ export interface PeriodReminder {
   from: ISODate
   until: ISODate
   bodies: string[]
+  /** Periodos previstos siguientes: el servidor sigue avisando aunque no se abra la app. */
+  next?: { from: ISODate; until: ISODate }[]
 }
 
 export interface EventReminder {
@@ -66,10 +68,12 @@ export function buildReminders(
   const kind = prediction?.status.kind
   const next = prediction?.nextPeriods[0]
   if (r.periodEnabled && next && (kind === 'upcoming' || kind === 'period')) {
+    const window = (start: ISODate) => ({ from: addDays(start, -r.periodDaysBefore), until: start })
+    const following = prediction!.nextPeriods.slice(1).map((p) => window(p.start))
     out.period = {
       title: title('period'),
-      from: addDays(next.start, -r.periodDaysBefore),
-      until: next.start,
+      ...window(next.start),
+      ...(following.length ? { next: following } : {}),
       bodies: Array.from({ length: r.periodDaysBefore + 1 }, (_, i) =>
         r.discreet ? n.discreet.period : n.period(i),
       ),

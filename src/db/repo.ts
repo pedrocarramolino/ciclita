@@ -1,4 +1,4 @@
-import { db, type AppDB, type DayLog } from './db'
+import { db, type AppDB, type DayLog, type Period } from './db'
 import { periodDateSet, togglePeriodDay } from '../domain/periods'
 import { findCatalogSymptom, normalize } from '../domain/symptoms'
 import { today as todayISO, type ISODate } from '../domain/dates'
@@ -59,29 +59,45 @@ export async function setPillTaken(date: ISODate, taken: boolean, database: AppD
   })
 }
 
-/** "Ha empezado mi periodo": abre un periodo en curso desde `date`. */
+/**
+ * "Ha empezado mi periodo": abre un periodo en curso desde `date`. Devuelve los
+ * periodos de antes, para poder deshacerlo con restorePeriods.
+ */
 export async function startPeriod(
   date: ISODate = todayISO(),
   database: AppDB = db,
-): Promise<void> {
-  await database.transaction('rw', database.periods, async () => {
+): Promise<Period[]> {
+  return database.transaction('rw', database.periods, async () => {
     const periods = await database.periods.toArray()
-    if (periodDateSet(periods, date).has(date)) return
+    if (periodDateSet(periods, date).has(date)) return periods
     // Si el periodo anterior terminó ayer, se une a él.
     const next = togglePeriodDay(periods, date, true, date).map((p) =>
       p.endDate === date ? { ...p, endDate: null } : p,
     )
     await database.periods.clear()
     await database.periods.bulkAdd(next)
+    return periods
   })
 }
 
-/** "Ha terminado mi periodo": cierra el periodo en curso en `date`. */
-export async function endPeriod(date: ISODate = todayISO(), database: AppDB = db): Promise<void> {
-  const ongoing = await database.periods.filter((p) => p.endDate === null).first()
-  if (!ongoing?.id) return
-  const end = date < ongoing.startDate ? ongoing.startDate : date
-  await database.periods.update(ongoing.id, { endDate: end })
+/** "Ha terminado mi periodo": cierra el periodo en curso en `date`. Devuelve los de antes. */
+export async function endPeriod(date: ISODate = todayISO(), database: AppDB = db): Promise<Period[]> {
+  return database.transaction('rw', database.periods, async () => {
+    const periods = await database.periods.toArray()
+    const ongoing = periods.find((p) => p.endDate === null)
+    if (!ongoing?.id) return periods
+    const end = date < ongoing.startDate ? ongoing.startDate : date
+    await database.periods.update(ongoing.id, { endDate: end })
+    return periods
+  })
+}
+
+/** Vuelve a dejar los periodos como estaban (deshacer "Ha empezado / terminado"). */
+export async function restorePeriods(periods: Period[], database: AppDB = db): Promise<void> {
+  await database.transaction('rw', database.periods, async () => {
+    await database.periods.clear()
+    await database.periods.bulkAdd(periods.map(({ startDate, endDate }) => ({ startDate, endDate })))
+  })
 }
 
 /** Añade un síntoma personalizado (si no existe ya) y devuelve su nombre normalizado. */

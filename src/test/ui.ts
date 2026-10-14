@@ -29,6 +29,15 @@ if (!window.matchMedia) {
 
 window.scrollTo = () => {}
 
+// Las gráficas miden su contenedor con ResizeObserver (en jsdom el ancho es 0).
+if (!('ResizeObserver' in window)) {
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver
+}
+
 // jsdom tampoco tiene Blob.text() (lo usa la importación de copias).
 if (!Blob.prototype.text) {
   Blob.prototype.text = function (this: Blob) {

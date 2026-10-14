@@ -32,6 +32,12 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Día 1 de tu periodo' })).toBeInTheDocument()
     expect(await db.periods.where('startDate').equals(today()).count()).toBe(1)
 
+    // Deshacer devuelve los periodos a como estaban.
+    expect(screen.getByRole('status')).toHaveTextContent('Has marcado el inicio de tu periodo.')
+    await user.click(screen.getByRole('button', { name: 'Deshacer' }))
+    expect(await screen.findByRole('heading', { name: 'Tu periodo empieza en 18 días' })).toBeInTheDocument()
+    expect(await db.periods.where('startDate').equals(today()).count()).toBe(0)
+
     const nav = within(screen.getByRole('navigation', { name: 'Navegación principal' }))
     await user.click(nav.getByRole('link', { name: 'Calendario' }))
     expect(await screen.findByRole('button', { name: 'Mes anterior' })).toBeInTheDocument()

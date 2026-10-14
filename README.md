@@ -6,7 +6,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 
 ## Funcionalidades
 
-- **Inicio**: "Tu periodo empieza en X días" / "Día X de tu periodo" y botones grandes de *Ha empezado* / *Ha terminado mi periodo*.
+- **Inicio**: "Tu periodo empieza en X días" / "Día X de tu periodo" y botones grandes de *Ha empezado* / *Ha terminado mi periodo*, que se pueden deshacer durante unos segundos.
 - **Calendario** mensual con días de periodo, periodos previstos, ventana fértil y ovulación estimadas, con leyenda. Si los ciclos varían, también se marcan los días en que el periodo o la ventana fértil podrían adelantarse o retrasarse.
 - **Registro diario** (todo opcional): flujo, síntomas, estado de ánimo, dolor 0–10, medicación y notas.
   - **Síntomas por categorías**: catálogo de unos 30 síntomas (dolor, digestión, piel y pelo, energía y sueño, apetito, otros), con los más usados arriba y los personalizados aparte.
@@ -14,7 +14,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - **Píldora anticonceptiva** (también en *Qué registras*): según el envase (21 + 7, 24 + 4 o 28 seguidas), el inicio muestra "Píldora de hoy" para marcarla con un toque; los días sin marcar aparecen en el calendario y en el informe.
 - **Predicciones**: medias de los últimos 6 ciclos (28/5 días por defecto), próximos 3 periodos y ventana fértil, con un **margen** (±días) calculado a partir de lo que varían tus ciclos.
 - **Buscar** (lupa del calendario): en notas, síntomas y medicación, sin distinguir tildes ni mayúsculas. Al buscar un síntoma muestra en cuántos días se registró y cuándo fue el último; cada resultado abre ese día.
-- **Estadísticas**: gráfica de los últimos ciclos, medias, ciclo más corto y más largo, síntomas frecuentes por fase y aviso suave si los ciclos varían más de 7 días.
+- **Estadísticas**: gráfica de temperatura basal por ciclo (con detección de la subida por la regla "3 sobre 6": línea de base y ovulación probable), gráfica de los últimos ciclos, medias, ciclo más corto y más largo, síntomas frecuentes por fase y aviso suave si los ciclos varían más de 7 días.
 - **Informe para el médico**: resumen de 3, 6 o 12 meses (o todo) con ciclos, flujo, dolor, píldora, síntomas, medicación, fertilidad y, si quieres, notas. Se genera en el dispositivo como **PDF** (con pdf-lib), que se puede compartir (WhatsApp, correo, Archivos…), descargar o imprimir.
 - **Modos de la app** (*Ajustes → Modo de la app*):
   - **Ciclo menstrual** (por defecto).
@@ -122,7 +122,7 @@ Otros comandos:
 5. **Despliega** (o vuelve a desplegar tras añadir las variables).
 6. Comprueba: `https://tu-app.vercel.app/api/vapid` debe devolver `{"key": "..."}`. Después activa un recordatorio en *Ajustes* y pulsa *Probar notificación*; en la consola de QStash (*Messages*) verás el mensaje pendiente para la hora del recordatorio.
 
-**Cómo funcionan los avisos:** al activar un recordatorio, la app registra el dispositivo en `PUT /api/subscription`. El servidor guarda los datos en Redis y publica en QStash **un mensaje diferido** para la próxima hora de cada tipo de recordatorio, en la zona horaria del dispositivo. Hay cuatro tipos: diario, píldora, periodo (se comprueba a las 9:00 y se envía una sola vez) y avisos con fecha (ventana fértil, autoexploración y anticonceptivos, hasta 30 fechas, a las 9:00 o a la hora elegida). Los textos se generan en la app, en su idioma. A esa hora, QStash llama a `/api/deliver` (que solo acepta peticiones firmadas por QStash), que envía el Web Push y publica el mensaje del día siguiente. Cada programación lleva una versión: al cambiar o desactivar un recordatorio, los mensajes antiguos se cancelan o se ignoran.
+**Cómo funcionan los avisos:** al activar un recordatorio, la app registra el dispositivo en `PUT /api/subscription`. El servidor guarda los datos en Redis y publica en QStash **un mensaje diferido** para la próxima hora de cada tipo de recordatorio, en la zona horaria del dispositivo. Hay cuatro tipos: diario, píldora, periodo (se comprueba a las 9:00 y se envía una sola vez por periodo; se envían los 3 próximos periodos previstos, así sigue avisando aunque la app no se abra en meses) y avisos con fecha (ventana fértil, autoexploración y anticonceptivos, hasta 30 fechas, a las 9:00 o a la hora elegida). Los textos se generan en la app, en su idioma. A esa hora, QStash llama a `/api/deliver` (que solo acepta peticiones firmadas por QStash), que envía el Web Push y publica el mensaje del día siguiente. Cada programación lleva una versión: al cambiar o desactivar un recordatorio, los mensajes antiguos se cancelan o se ignoran.
 
 No se usan *schedules* de QStash (el plan gratuito solo permite 10 por cuenta), así que el número de dispositivos no está limitado por ellos. Cada tipo de recordatorio activo consume como mucho 1 mensaje al día por dispositivo (4 en total como máximo), dentro del cupo diario de QStash.
 
