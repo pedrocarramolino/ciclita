@@ -180,8 +180,9 @@ function Symptoms({ symptoms }: { symptoms: SymptomStat[] }) {
                   style={{ width: `${(sym.count / max) * 100}%` }}
                 />
               </div>
+              {sym.timing && <p className="mt-1 text-xs font-bold">{s.timing(sym.timing.from, sym.timing.to)}</p>}
               {sym.topPhase && (
-                <p className="mt-1 text-xs text-muted">{s.mostlyIn(s.phases[sym.topPhase])}</p>
+                <p className={`${sym.timing ? '' : 'mt-1 '}text-xs text-muted`}>{s.mostlyIn(s.phases[sym.topPhase])}</p>
               )}
             </li>
           ))}

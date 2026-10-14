@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { DayLog, Period } from '../db/db'
-import { completedCycles, cycleExtremes, phaseOf, symptomStats } from './stats'
+import { completedCycles, cycleExtremes, phaseOf, symptomStats, symptomTiming } from './stats'
 
 const TODAY = '2026-10-20'
 const periods: Period[] = [
@@ -77,5 +77,44 @@ describe('symptomStats', () => {
       ['Dolor abdominal', 2, 'menstrual'],
       ['Acné', 1, null],
     ])
+  })
+})
+
+describe('cuándo suele aparecer cada síntoma', () => {
+  it('symptomTiming: tramo central si es estrecho; null con pocos datos o sin patrón', () => {
+    expect(symptomTiming([1, 2, 2, 3, 1])).toEqual({ from: 1, to: 3 })
+    expect(symptomTiming([1, 2])).toBeNull()
+    expect(symptomTiming([1, 8, 15, 22, 27])).toBeNull()
+  })
+
+  it('symptomTiming: junta los días de antes del periodo con los primeros del ciclo', () => {
+    // Del día antes del periodo al día 1 (el 60 % central).
+    expect(symptomTiming([-2, -1, 1, 2, -1, 1])).toEqual({ from: -1, to: 1 })
+    // Solo antes del periodo.
+    expect(symptomTiming([-3, -2, -2, -1])).toEqual({ from: -3, to: -1 })
+  })
+
+  it('symptomStats sitúa cada aparición en su ciclo', () => {
+    const periods: Period[] = [
+      { startDate: '2026-07-01', endDate: '2026-07-05' },
+      { startDate: '2026-07-29', endDate: '2026-08-02' },
+      { startDate: '2026-08-26', endDate: '2026-08-30' },
+    ]
+    const log = (date: string, symptoms: string[]): DayLog => ({ date, symptoms, updatedAt: 0 })
+    const days = [
+      // Hinchazón 2 y 1 días antes de cada periodo.
+      log('2026-07-27', ['Hinchazón']),
+      log('2026-07-28', ['Hinchazón']),
+      log('2026-08-24', ['Hinchazón']),
+      log('2026-08-25', ['Hinchazón']),
+      // Dolor los días 1 y 2.
+      log('2026-07-01', ['Dolor abdominal']),
+      log('2026-07-02', ['Dolor abdominal']),
+      log('2026-07-29', ['Dolor abdominal']),
+      log('2026-08-26', ['Dolor abdominal']),
+    ]
+    const stats = symptomStats(days, periods, 28, 5, '2026-09-10')
+    expect(stats.find((s) => s.name === 'Hinchazón')?.timing).toEqual({ from: -2, to: -1 })
+    expect(stats.find((s) => s.name === 'Dolor abdominal')?.timing).toEqual({ from: 1, to: 2 })
   })
 })

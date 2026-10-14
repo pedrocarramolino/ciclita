@@ -413,6 +413,7 @@ export const es = {
     colSymptom: 'Síntoma',
     colDays: 'Días',
     colPhase: 'Fase más habitual',
+    colTiming: 'Cuándo suele aparecer',
     noSymptoms: 'No hay síntomas registrados en este periodo.',
     medicationTitle: 'Medicación registrada',
     colMedication: 'Medicación',
@@ -516,6 +517,21 @@ export const es = {
     symptomsEmpty: 'Todavía no has registrado síntomas.',
     times: (n: number) => `${n} ${n === 1 ? 'vez' : 'veces'}`,
     mostlyIn: (phase: string) => `Sobre todo en la fase ${phase}`,
+    /** Momento habitual (ver SymptomTiming: negativos = días antes del periodo). */
+    timing: (from: number, to: number) => {
+      const before = (n: number) => (n === 1 ? 'el día antes del periodo' : `${n} días antes del periodo`)
+      if (from > 0) return from === to ? `Suele aparecer el día ${from} del ciclo` : `Suele aparecer entre los días ${from} y ${to} del ciclo`
+      if (to < 0) {
+        return from === to ? `Suele aparecer ${before(-from)}` : `Suele aparecer entre ${-to} y ${-from} días antes del periodo`
+      }
+      return `Suele aparecer desde ${before(-from)} hasta el día ${to}`
+    },
+    timingShort: (from: number, to: number) => {
+      const days = (n: number) => `${n} ${n === 1 ? 'día' : 'días'}`
+      if (from > 0) return from === to ? `día ${from} del ciclo` : `días ${from}–${to} del ciclo`
+      if (to < 0) return from === to ? `${days(-from)} antes del periodo` : `${-to}–${days(-from)} antes del periodo`
+      return `de ${days(-from)} antes del periodo al día ${to}`
+    },
     phasesTitle: '¿Qué son las fases?',
     phases: {
       menstrual: 'menstrual',

@@ -44,3 +44,15 @@ describe('idiomas', () => {
     })
   })
 })
+
+describe('momento habitual de un síntoma', () => {
+  it('frases en español', () => {
+    expect(es.stats.timing(1, 3)).toBe('Suele aparecer entre los días 1 y 3 del ciclo')
+    expect(es.stats.timing(14, 14)).toBe('Suele aparecer el día 14 del ciclo')
+    expect(es.stats.timing(-1, -1)).toBe('Suele aparecer el día antes del periodo')
+    expect(es.stats.timing(-3, -1)).toBe('Suele aparecer entre 1 y 3 días antes del periodo')
+    expect(es.stats.timing(-2, 2)).toBe('Suele aparecer desde 2 días antes del periodo hasta el día 2')
+    expect(es.stats.timingShort(-2, -1)).toBe('1–2 días antes del periodo')
+    expect(es.stats.timingShort(-1, 2)).toBe('de 1 día antes del periodo al día 2')
+  })
+})

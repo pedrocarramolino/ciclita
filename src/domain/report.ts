@@ -7,7 +7,7 @@ import type { DayLog, Flow, Period } from '../db/db'
 import { parseISODate, toISODate, type ISODate } from './dates'
 import type { PredictedPeriod, Prediction } from './prediction'
 import { pillAdherence, type PillAdherence, type PillConfig } from './pill'
-import { completedCycles, symptomStats, type CycleRecord, type Phase } from './stats'
+import { completedCycles, symptomStats, type CycleRecord, type Phase, type SymptomTiming } from './stats'
 
 export type ReportMonths = 3 | 6 | 12 | 'all'
 
@@ -41,7 +41,7 @@ export interface Report {
   /** Días registrados con cada intensidad de flujo. */
   flowDays: Record<Flow, number>
   pain: { daysWithPain: number; average: number; max: number; severeDays: number } | null
-  symptoms: { name: string; count: number; topPhase: Phase | null }[]
+  symptoms: { name: string; count: number; topPhase: Phase | null; timing: SymptomTiming | null }[]
   medication: { name: string; count: number; last: ISODate }[]
   /** Datos opcionales de fertilidad y peso; null si no hay ninguno en el intervalo. */
   fertility: {
@@ -100,7 +100,7 @@ export function buildReport(
     : null
 
   const symptoms = symptomStats(rangeDays, periods, prediction.cycleLength, prediction.periodLength, today).map(
-    ({ name, count, topPhase }) => ({ name, count, topPhase }),
+    ({ name, count, topPhase, timing }) => ({ name, count, topPhase, timing }),
   )
 
   // Medicación agrupada sin distinguir mayúsculas; se muestra el texto más reciente.

@@ -433,6 +433,7 @@ export const en: Messages = {
     colSymptom: 'Symptom',
     colDays: 'Days',
     colPhase: 'Most common phase',
+    colTiming: 'When it usually appears',
     noSymptoms: 'No symptoms logged in this period.',
     medicationTitle: 'Medication logged',
     colMedication: 'Medication',
@@ -532,6 +533,18 @@ export const en: Messages = {
     symptomsEmpty: "You haven't logged any symptoms yet.",
     times: (n) => `${n} ${n === 1 ? 'time' : 'times'}`,
     mostlyIn: (phase) => `Mostly in the ${phase} phase`,
+    timing: (from, to) => {
+      const before = (n: number) => (n === 1 ? 'the day before your period' : `${n} days before your period`)
+      if (from > 0) return from === to ? `Usually on cycle day ${from}` : `Usually between cycle days ${from} and ${to}`
+      if (to < 0) return from === to ? `Usually ${before(-from)}` : `Usually between ${-to} and ${-from} days before your period`
+      return `Usually from ${before(-from)} to day ${to}`
+    },
+    timingShort: (from, to) => {
+      const days = (n: number) => `${n} ${n === 1 ? 'day' : 'days'}`
+      if (from > 0) return from === to ? `cycle day ${from}` : `cycle days ${from}–${to}`
+      if (to < 0) return from === to ? `${days(-from)} before period` : `${-to}–${days(-from)} before period`
+      return `from ${days(-from)} before period to day ${to}`
+    },
     phasesTitle: 'What are the phases?',
     phases: {
       menstrual: 'menstrual',

@@ -50,8 +50,8 @@ describe('buildReport', () => {
     ])
   })
 
-  it('incluye síntomas con su fase más habitual', () => {
-    expect(r.symptoms[0]).toEqual({ name: 'Dolor abdominal', count: 3, topPhase: 'menstrual' })
+  it('incluye síntomas con su fase y su momento más habituales', () => {
+    expect(r.symptoms[0]).toEqual({ name: 'Dolor abdominal', count: 3, topPhase: 'menstrual', timing: { from: 1, to: 2 } })
   })
 
   it('no incluye notas salvo que se pida', () => {

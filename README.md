@@ -16,7 +16,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - Si un ciclo dura 1,7 veces lo habitual o más, se aparta del cálculo y el inicio pregunta si se olvidó registrar un periodo (con acceso al calendario en ese mes, o "No, fue un ciclo largo").
   - Si un periodo sigue "en curso" 2 días más de lo habitual, el inicio pregunta si ya terminó.
 - **Buscar** (lupa del calendario): en notas, síntomas y medicación, sin distinguir tildes ni mayúsculas. Al buscar un síntoma muestra en cuántos días se registró y cuándo fue el último; cada resultado abre ese día.
-- **Estadísticas**: gráfica de temperatura basal por ciclo (con detección de la subida por la regla "3 sobre 6": línea de base y ovulación probable), gráfica de los últimos ciclos, medias, ciclo más corto y más largo, síntomas frecuentes por fase y aviso suave si los ciclos varían más de 7 días.
+- **Estadísticas**: gráfica de temperatura basal por ciclo (con detección de la subida por la regla "3 sobre 6": línea de base y ovulación probable), gráfica de los últimos ciclos, medias, ciclo más corto y más largo, síntomas frecuentes por fase y en qué días del ciclo suelen aparecer (p. ej. "entre 1 y 2 días antes del periodo"; también en el informe) y aviso suave si los ciclos varían más de 7 días.
 - **Informe para el médico**: resumen de 3, 6 o 12 meses (o todo) con ciclos, flujo, dolor, píldora, síntomas, medicación, fertilidad y, si quieres, notas. Se genera en el dispositivo como **PDF** (con pdf-lib), que se puede compartir (WhatsApp, correo, Archivos…), descargar o imprimir.
 - **Modos de la app** (*Ajustes → Modo de la app*):
   - **Ciclo menstrual** (por defecto).

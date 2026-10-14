@@ -112,12 +112,13 @@ export function reportBlocks(r: Report, name?: string): ReportBlock[] {
     r.symptoms.length
       ? {
           kind: 'table',
-          head: [R.colSymptom, R.colDays, R.colPhase],
-          numeric: [false, true, false],
+          head: [R.colSymptom, R.colDays, R.colPhase, R.colTiming],
+          numeric: [false, true, false, false],
           rows: r.symptoms.map((sym) => [
             symptomLabel(sym.name),
             String(sym.count),
             sym.topPhase ? t.stats.phases[sym.topPhase] : '—',
+            sym.timing ? t.stats.timingShort(sym.timing.from, sym.timing.to) : '—',
           ]),
         }
       : { kind: 'empty', text: R.noSymptoms },
