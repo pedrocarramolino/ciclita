@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppDB } from './db'
-import { exportCSV, exportJSON, importFile } from './data'
+import { exportCSV, exportJSON, importFile, wipeAll } from './data'
 import { getSettings, setSettings } from './settings'
 
 const dbs: AppDB[] = []
@@ -31,6 +31,8 @@ async function seed(d: AppDB) {
       pinHash: 'hash-secreto',
       onboardingDone: true,
       pushDevice: { id: 'id-dispositivo', secret: 'secreto-push' },
+      lastBackup: '2026-01-02',
+      backupSnoozedOn: '2026-03-04',
     },
     d,
   )
@@ -43,6 +45,8 @@ describe('exportar / importar', () => {
     const json = await exportJSON(a)
     expect(json).not.toContain('hash-secreto')
     expect(json).not.toContain('secreto-push')
+    expect(json).not.toContain('2026-01-02')
+    expect(json).not.toContain('2026-03-04')
 
     const b = await freshDB()
     await setSettings({ pinHash: 'pin-de-b' }, b)
@@ -76,5 +80,22 @@ describe('exportar / importar', () => {
     await seed(d)
     await expect(importFile('x.json', '{"nada": true}', d)).rejects.toThrow()
     expect(await d.periods.count()).toBe(2)
+  })
+})
+
+describe('wipeAll', () => {
+  it('borra la base de datos y el idioma elegido', async () => {
+    const store = new Map([['ciclita-lang', 'en']])
+    const fake = { getItem: (k: string) => store.get(k) ?? null, removeItem: (k: string) => void store.delete(k) }
+    vi.stubGlobal('localStorage', fake)
+    try {
+      const d = await freshDB()
+      await seed(d)
+      await wipeAll(d)
+      expect(store.has('ciclita-lang')).toBe(false)
+      expect(await AppDB.exists(d.name)).toBe(false)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

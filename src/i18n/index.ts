@@ -33,6 +33,15 @@ export function setLanguage(l: Lang) {
   location.reload()
 }
 
+/** Olvida el idioma elegido (al borrar todos los datos). No recarga. */
+export function clearLanguage() {
+  try {
+    localStorage.removeItem(KEY)
+  } catch {
+    // Nada que borrar.
+  }
+}
+
 /** Nombre a mostrar de un síntoma (los del catálogo se guardan en español). */
 export function symptomLabel(name: string): string {
   return t.symptomNames[name] ?? name

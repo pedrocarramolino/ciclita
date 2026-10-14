@@ -1,53 +1,50 @@
-import { useRef, useState } from 'react'
-import { Button } from '../../components/Button'
-import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { downloadText, exportCSV, exportJSON, importFile } from '../../db/data'
-import { BackupError } from '../../domain/backup'
-import { today } from '../../domain/dates'
-import { t } from '../../i18n'
-import { isVaultUnlocked } from '../../db/vault'
-import { DeleteAllFlow } from './DeleteAllFlow'
-import { Section } from './Section'
+import { useRef, useState } from "react";
+import { Button } from "../../components/Button";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import {
+  downloadBackupCSV,
+  downloadBackupJSON,
+  importFile,
+} from "../../db/data";
+import { BackupError } from "../../domain/backup";
+import { formatFullDate } from "../../domain/dates";
+import { t } from "../../i18n";
+import { isVaultUnlocked } from "../../db/vault";
+import { DeleteAllFlow } from "./DeleteAllFlow";
+import { Section } from "./Section";
+import { StorageProtection } from "./StorageProtection";
 
 /** Una copia de años de registros ocupa unos cientos de KB: 10 MB es un margen amplio. */
-const MAX_IMPORT_BYTES = 10 * 1024 * 1024
+const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
 
-export function DataSection() {
-  const fileRef = useRef<HTMLInputElement>(null)
-  const [pending, setPending] = useState<File | null>(null)
-  const [status, setStatus] = useState('')
-  const [deleting, setDeleting] = useState(false)
-  const s = t.settings
+export function DataSection({ lastBackup }: { lastBackup: string | null }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [pending, setPending] = useState<File | null>(null);
+  const [status, setStatus] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const s = t.settings;
 
   const doImport = async (file: File) => {
-    setPending(null)
+    setPending(null);
     if (file.size > MAX_IMPORT_BYTES) {
-      setStatus(s.importError(s.importTooBig))
-      return
+      setStatus(s.importError(s.importTooBig));
+      return;
     }
     try {
-      const r = await importFile(file.name, await file.text())
-      setStatus(s.importDone(r.periods, r.days))
+      const r = await importFile(file.name, await file.text());
+      setStatus(s.importDone(r.periods, r.days));
     } catch (e) {
-      setStatus(s.importError(e instanceof BackupError ? e.message : ''))
+      setStatus(s.importError(e instanceof BackupError ? e.message : ""));
     }
-  }
+  };
 
   return (
     <Section title={s.data} hint={s.dataHint}>
       <div className="grid gap-2">
-        <Button
-          variant="secondary"
-          onClick={async () =>
-            downloadText(`ciclita-${today()}.json`, await exportJSON(), 'application/json')
-          }
-        >
+        <Button variant="secondary" onClick={() => void downloadBackupJSON()}>
           {s.exportJSON}
         </Button>
-        <Button
-          variant="secondary"
-          onClick={async () => downloadText(`ciclita-${today()}.csv`, await exportCSV(), 'text/csv;charset=utf-8')}
-        >
+        <Button variant="secondary" onClick={() => void downloadBackupCSV()}>
           {s.exportCSV}
         </Button>
         <a
@@ -67,18 +64,28 @@ export function DataSection() {
           tabIndex={-1}
           aria-hidden="true"
           onChange={(e) => {
-            const f = e.target.files?.[0]
-            e.target.value = ''
-            if (f) setPending(f)
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (f) setPending(f);
           }}
         />
       </div>
+      <p className="text-sm text-muted">
+        {lastBackup ? s.lastBackup(formatFullDate(lastBackup)) : s.noBackup}
+      </p>
       <p role="status" className="text-sm font-bold">
         {status}
       </p>
-      {isVaultUnlocked() && <p className="text-xs text-muted">{t.encryption.exportsNotEncrypted}</p>}
+      <StorageProtection />
+      {isVaultUnlocked() && (
+        <p className="text-xs text-muted">{t.encryption.exportsNotEncrypted}</p>
+      )}
 
-      <Button variant="danger" className="w-full" onClick={() => setDeleting(true)}>
+      <Button
+        variant="danger"
+        className="w-full"
+        onClick={() => setDeleting(true)}
+      >
         {s.deleteAll}
       </Button>
 
@@ -94,5 +101,5 @@ export function DataSection() {
       )}
       {deleting && <DeleteAllFlow onCancel={() => setDeleting(false)} />}
     </Section>
-  )
+  );
 }

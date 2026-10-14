@@ -118,7 +118,7 @@ export function SettingsScreen() {
 
       <RemindersSection settings={settings} />
       <PinSection pinHash={settings.pinHash} />
-      <DataSection />
+      <DataSection lastBackup={settings.lastBackup} />
 
       <Section title={s.about}>
         <p className="text-sm">{s.aboutBody}</p>

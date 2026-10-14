@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { endPeriod, startPeriod } from '../../db/repo'
@@ -11,7 +11,11 @@ import { db } from '../../db/db'
 import { getSettings } from '../../db/settings'
 import { perimenopauseInfo, pregnancyInfo } from '../../domain/modes'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { BackupNudgeCard } from './BackupNudgeCard'
 import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
+
+/** Dirección del atajo "Registrar hoy" (manifest). */
+export const LOG_TODAY_HASH = '#/log'
 
 export function Home() {
   const p = usePrediction()
@@ -19,7 +23,11 @@ export function Home() {
     const [settings, periods] = await Promise.all([getSettings(), db.periods.toArray()])
     return { mode: settings.mode, pregnancyStart: settings.pregnancyStart, periods }
   })
-  const [logOpen, setLogOpen] = useState(false)
+  // El atajo "Registrar hoy" del icono de la app abre #/log: se abre el registro de hoy.
+  const [logOpen, setLogOpen] = useState(() => window.location.hash === LOG_TODAY_HASH)
+  useEffect(() => {
+    if (window.location.hash === LOG_TODAY_HASH) history.replaceState(null, '', '#/home')
+  }, [])
   const today = todayISO()
   const h = t.home
 
@@ -78,6 +86,8 @@ export function Home() {
           {h.logToday}
         </Button>
       </div>
+
+      <BackupNudgeCard />
 
       {mode === 'cycle' && p.nextPeriods.length > 0 && <Upcoming p={p} />}
       {mode !== 'pregnancy' && <CycleSummary p={p} />}

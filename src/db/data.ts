@@ -1,4 +1,5 @@
 import { db, diskDb, type AppDB } from './db'
+import { clearLanguage } from '../i18n'
 import { closeVaultSession } from './vault'
 import { getSettings, setSettings, type Settings } from './settings'
 import { buildBackup, parseBackup, parseCSV, toCSV } from '../domain/backup'
@@ -13,7 +14,16 @@ export async function exportJSON(database: AppDB = db): Promise<string> {
     getSettings(database),
   ])
   // Datos internos y credenciales del servidor de avisos no se exportan.
-  const { pushDevice: _d, pushSync: _s, pushError: _e, pinFailures: _f, pinLockedUntil: _u, ...rest } = settings
+  const {
+    pushDevice: _d,
+    pushSync: _s,
+    pushError: _e,
+    pinFailures: _f,
+    pinLockedUntil: _u,
+    lastBackup: _b,
+    backupSnoozedOn: _n,
+    ...rest
+  } = settings
   const backup = buildBackup({
     periods,
     days,
@@ -26,6 +36,18 @@ export async function exportJSON(database: AppDB = db): Promise<string> {
 export async function exportCSV(database: AppDB = db): Promise<string> {
   const [periods, days] = await Promise.all([database.periods.toArray(), database.days.toArray()])
   return toCSV(periodDateSet(periods, today()), days)
+}
+
+/** Descarga la copia completa (JSON) y apunta la fecha para el aviso de copias. */
+export async function downloadBackupJSON(): Promise<void> {
+  downloadText(`ciclita-${today()}.json`, await exportJSON(), 'application/json')
+  await setSettings({ lastBackup: today(), backupSnoozedOn: null })
+}
+
+/** Descarga los registros en CSV (también cuenta como copia: se puede importar). */
+export async function downloadBackupCSV(): Promise<void> {
+  downloadText(`ciclita-${today()}.csv`, await exportCSV(), 'text/csv;charset=utf-8')
+  await setSettings({ lastBackup: today(), backupSnoozedOn: null })
 }
 
 export interface ImportSummary {
@@ -94,6 +116,7 @@ export async function importFile(
 export async function wipeAll(disk: AppDB = diskDb): Promise<void> {
   await closeVaultSession().catch(() => {})
   await disk.delete()
+  clearLanguage()
 }
 
 /** Descarga un texto como archivo, sin pasar por ningún servidor. */

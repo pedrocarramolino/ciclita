@@ -134,7 +134,7 @@ export const es = {
       'Para que los avisos lleguen aunque la app esté cerrada, se programan en un servidor (Upstash). En iPhone, instala la app en la pantalla de inicio (iOS 16.4 o posterior) para recibirlos.',
     remindersDataTitle: '¿Qué datos se envían?',
     remindersData:
-      'Qué se envía al servidor al activar un recordatorio: la suscripción de notificaciones de este navegador, tu zona horaria y, por cada aviso, su hora y su texto (con "Notificaciones discretas", textos neutros). Con el aviso de periodo se envían también las fechas en que debe sonar. Tus registros, síntomas y notas nunca salen del dispositivo. Al desactivar todos los recordatorios o borrar tus datos, se elimina lo enviado.',
+      'Qué se envía al servidor al activar un recordatorio: la suscripción de notificaciones de este navegador, tu zona horaria y, por cada aviso, su hora y su texto (con "Notificaciones discretas", textos neutros). Con los avisos de periodo, ventana fértil, autoexploración y anticonceptivos se envían también las fechas en que deben sonar. Tus registros, síntomas y notas nunca salen del dispositivo. Al desactivar todos los recordatorios o borrar tus datos, se elimina lo enviado.',
     pushSynced: 'Recordatorios activos en el servidor.',
     pushSyncing: 'Sincronizando…',
     pushErrorTitle: 'No se pudieron programar los recordatorios',
@@ -202,6 +202,14 @@ export const es = {
       `Importado: ${p} ${p === 1 ? 'periodo' : 'periodos'} y ${d} ${d === 1 ? 'día' : 'días'} con registro.`,
     importError: (msg: string) => `No se pudo importar. ${msg}`,
     importTooBig: 'El archivo es demasiado grande (máximo 10 MB).',
+    lastBackup: (d: string) => `Última copia: ${d}.`,
+    noBackup: 'Aún no has hecho ninguna copia.',
+    storageTitle: 'Protección frente al borrado',
+    storagePersisted: 'Activada: el navegador no borrará tus datos para liberar espacio.',
+    storageNotPersisted:
+      'Sin activar: el navegador podría borrar tus datos si se queda sin espacio o si pasas mucho tiempo sin abrir la app. Instalar la app y hacer copias ayuda.',
+    storageProtect: 'Proteger mis datos',
+    storageDenied: 'El navegador no ha concedido la protección. Instala la app y haz copias de seguridad.',
     deleteAll: 'Borrar todos mis datos',
     deleteTitle: '¿Borrar todos tus datos?',
     deleteBody:
@@ -215,6 +223,21 @@ export const es = {
     aboutBody:
       'Sin cuentas, sin analítica ni rastreadores. Tus registros nunca salen de tu dispositivo salvo que tú los exportes. Los recordatorios, si los activas, se programan en un servidor (Upstash) con su hora y su texto.',
     saved: 'Guardado',
+  },
+  backupNudge: {
+    title: 'Haz una copia de seguridad',
+    never: 'Tus datos solo están en este dispositivo. Guarda una copia por si cambias de móvil o se borran.',
+    old: (n: number) => `Tu última copia es de hace ${n} días. Guarda una nueva por si cambias de móvil o se borran.`,
+    now: 'Exportar copia ahora',
+    later: 'Más tarde',
+    done: 'Copia guardada. Guárdala en un lugar seguro.',
+  },
+  crash: {
+    title: 'Algo ha fallado',
+    body: 'La app ha tenido un error inesperado. Tus datos siguen guardados en este dispositivo.',
+    reload: 'Recargar la app',
+    export: 'Exportar mis datos',
+    exportFailed: 'No se pudieron exportar los datos. Prueba a recargar la app.',
   },
   update: {
     available: 'Hay una versión nueva de la app.',

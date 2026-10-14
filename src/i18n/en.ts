@@ -161,7 +161,7 @@ export const en: Messages = {
       'So reminders arrive even when the app is closed, they are scheduled on a server (Upstash). On iPhone, install the app on your home screen (iOS 16.4 or later) to receive them.',
     remindersDataTitle: 'What data is sent?',
     remindersData:
-      'What is sent to the server when you turn on a reminder: this browser\'s notification subscription, your time zone and, for each reminder, its time and text (neutral texts with "Discreet notifications"). The period reminder also sends the dates it should go off. Your logs, symptoms and notes never leave the device. When you turn off all reminders or delete your data, what was sent is deleted.',
+      'What is sent to the server when you turn on a reminder: this browser\'s notification subscription, your time zone and, for each reminder, its time and text (neutral texts with "Discreet notifications"). The period, fertile window, self-exam and contraceptive reminders also send the dates they should go off. Your logs, symptoms and notes never leave the device. When you turn off all reminders or delete your data, what was sent is deleted.',
     pushSynced: 'Reminders active on the server.',
     pushSyncing: 'Syncing…',
     pushErrorTitle: "Reminders couldn't be scheduled",
@@ -226,6 +226,14 @@ export const en: Messages = {
       `Imported: ${p} ${p === 1 ? 'period' : 'periods'} and ${d} ${d === 1 ? 'day' : 'days'} with logs.`,
     importError: (msg) => `Couldn't import. ${msg}`,
     importTooBig: 'The file is too large (10 MB maximum).',
+    lastBackup: (d) => `Last backup: ${d}.`,
+    noBackup: "You haven't made a backup yet.",
+    storageTitle: 'Protection against deletion',
+    storagePersisted: "On: the browser won't delete your data to free up space.",
+    storageNotPersisted:
+      "Off: the browser could delete your data if it runs out of space or if you don't open the app for a long time. Installing the app and making backups helps.",
+    storageProtect: 'Protect my data',
+    storageDenied: "The browser didn't grant protection. Install the app and make backups.",
     deleteAll: 'Delete all my data',
     deleteTitle: 'Delete all your data?',
     deleteBody: 'Your periods, logs, settings and PIN will be removed from this device. This cannot be undone.',
@@ -238,6 +246,21 @@ export const en: Messages = {
     aboutBody:
       'No accounts, no analytics, no trackers. Your logs never leave your device unless you export them. Reminders, if you turn them on, are scheduled on a server (Upstash) with their time and text.',
     saved: 'Saved',
+  },
+  backupNudge: {
+    title: 'Make a backup',
+    never: 'Your data is only on this device. Save a backup in case you change phones or it gets deleted.',
+    old: (n) => `Your last backup was ${n} days ago. Save a new one in case you change phones or it gets deleted.`,
+    now: 'Export backup now',
+    later: 'Later',
+    done: 'Backup saved. Keep it somewhere safe.',
+  },
+  crash: {
+    title: 'Something went wrong',
+    body: 'The app hit an unexpected error. Your data is still stored on this device.',
+    reload: 'Reload the app',
+    export: 'Export my data',
+    exportFailed: "Your data couldn't be exported. Try reloading the app.",
   },
   update: {
     available: 'A new version of the app is available.',

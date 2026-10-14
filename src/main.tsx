@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/index.css'
 import App from './App.tsx'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { migrateLegacyDb } from './db/migrate'
 import { isEncrypted } from './db/vault'
 import { lang } from './i18n'
@@ -15,7 +16,9 @@ async function boot() {
   const encrypted = await isEncrypted().catch(() => false)
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <App encrypted={encrypted} />
+      <ErrorBoundary>
+        <App encrypted={encrypted} />
+      </ErrorBoundary>
     </StrictMode>,
   )
 }

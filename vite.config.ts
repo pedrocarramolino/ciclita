@@ -43,7 +43,7 @@ export default defineConfig({
           { src: 'icons/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         ],
         shortcuts: [
-          { name: 'Registrar hoy', short_name: 'Registrar', url: '/#/home', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
+          { name: 'Registrar hoy', short_name: 'Registrar', url: '/#/log', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
           { name: 'Calendario', url: '/#/calendar', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
         ],
       },

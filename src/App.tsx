@@ -9,6 +9,7 @@ import { Home } from './features/home/Home'
 import { LockScreen } from './features/lock/LockScreen'
 import type { PinCheck } from './features/lock/pinCheck'
 import { flushVault, getVaultRow, isVaultUnlocked, unlockVault, vaultLockStore } from './db/vault'
+import { requestPersistence } from './db/persist'
 import { usePushSync } from './push/usePushSync'
 import { preloadable } from './preloadable'
 import { useHashRoute } from './useHashRoute'
@@ -129,6 +130,11 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
   const prediction = usePrediction()
   usePushSync(settings?.onboardingDone ? settings.reminders : undefined, prediction, settings?.mode)
   usePreloadScreens(!!settings?.onboardingDone)
+  // Una vez que hay datos, se pide al navegador que no los borre para liberar espacio.
+  const onboardingDone = !!settings?.onboardingDone
+  useEffect(() => {
+    if (onboardingDone) void requestPersistence()
+  }, [onboardingDone])
 
   let screen: ReactNode
   if (!settings) screen = null // cargando IndexedDB

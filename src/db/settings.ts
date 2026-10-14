@@ -35,6 +35,10 @@ export interface Settings {
   pushSync: { payload: string; at: number } | null
   /** Último error al sincronizar los recordatorios (null = todo bien). */
   pushError: string | null
+  /** Día de la última copia de seguridad exportada. */
+  lastBackup: ISODate | null
+  /** Día en que se pospuso el aviso de copia de seguridad del inicio. */
+  backupSnoozedOn: ISODate | null
 }
 
 export interface PushDevice {
@@ -103,6 +107,8 @@ export const DEFAULT_SETTINGS: Settings = {
   pushDevice: null,
   pushSync: null,
   pushError: null,
+  lastBackup: null,
+  backupSnoozedOn: null,
 }
 
 export async function getSettings(database: AppDB = db): Promise<Settings> {
