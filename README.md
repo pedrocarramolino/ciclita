@@ -8,6 +8,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 
 - **Inicio**: "Tu periodo empieza en X días" / "Día X de tu periodo" y botones grandes de *Ha empezado* / *Ha terminado mi periodo*, que se pueden deshacer durante unos segundos.
 - **Calendario** mensual con días de periodo, periodos previstos, ventana fértil y ovulación estimadas, con leyenda. Si los ciclos varían, también se marcan los días en que el periodo o la ventana fértil podrían adelantarse o retrasarse.
+  - **Editar periodos**: tocando el primer y el último día se marca un periodo pasado entero (hasta 14 días); tocar un día marcado lo quita. Se puede deshacer. El aviso "¿Se te olvidó registrar un periodo?" abre el calendario directamente en este modo.
 - **Registro diario** (todo opcional): flujo, síntomas, estado de ánimo, dolor 0–10, medicación y notas.
   - **Síntomas por categorías**: catálogo de unos 30 síntomas (dolor, digestión, piel y pelo, energía y sueño, apetito, otros), con los más usados arriba y los personalizados aparte.
   - **Fertilidad y peso** (se activan en *Ajustes → Qué registras*): temperatura basal, moco cervical, relaciones sexuales con o sin protección y peso.

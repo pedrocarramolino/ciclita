@@ -641,6 +641,22 @@ export const es = {
     marginNote:
       'Como tus ciclos varían, también se marcan los días en los que el periodo o la ventana fértil podrían adelantarse o retrasarse.',
     hint: 'Toca un día para registrar cómo te sientes.',
+    edit: {
+      open: 'Editar periodos',
+      title: 'Editar periodos',
+      pickStart:
+        'Toca el primer día de un periodo y luego el último: se marcan todos los días entre medias. Para quitar un día marcado, tócalo.',
+      pickEnd: (d: string) => `Primer día: ${d}. Ahora toca el último (o el mismo, si duró un día).`,
+      anchor: 'primer día elegido',
+      marked: (a: string, b: string, n: number) => `Marcado del ${a} al ${b} (${n} días).`,
+      markedOne: (d: string) => `Marcado el ${d}.`,
+      removed: (d: string) => `Quitado el ${d}.`,
+      tooLong: (n: number, max: number) =>
+        `Serían ${n} días, y un periodo no suele durar más de ${max}. Toca un último día más cercano.`,
+      undo: 'Deshacer',
+      undone: 'Deshecho.',
+      done: 'Listo',
+    },
   },
   log: {
     close: 'Cerrar',

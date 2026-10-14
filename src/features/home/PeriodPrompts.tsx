@@ -96,7 +96,7 @@ export function MissedPeriodPrompt({ prediction }: { prediction: Prediction }) {
       <p className="mt-1 text-sm">{m.body(formatDayMonth(missed.start), formatDayMonth(missed.end), missed.length)}</p>
       <div className="mt-3 grid gap-2">
         {/* Se abre el calendario en el mes en medio del ciclo, donde estaría el periodo. */}
-        <Button variant="secondary" onClick={() => openCalendarAt(addDays(missed.start, Math.round(missed.length / 2)))}>
+        <Button variant="secondary" onClick={() => openCalendarAt(addDays(missed.start, Math.round(missed.length / 2)), { edit: true })}>
           {m.calendar}
         </Button>
         <Button

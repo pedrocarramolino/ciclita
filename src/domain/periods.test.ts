@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Period } from '../db/db'
 import { addDays } from './dates'
-import { expandPeriod, MAX_ONGOING_DAYS, periodEndQuestion, togglePeriodDay } from './periods'
+import { dateRange, expandPeriod, MAX_ONGOING_DAYS, periodEndQuestion, togglePeriodDay } from './periods'
 
 const TODAY = '2026-10-13'
 const closed = (startDate: string, endDate: string): Period => ({ startDate, endDate })
@@ -87,3 +87,12 @@ describe('periodEndQuestion', () => {
     expect(periodEndQuestion(ongoing, 5, '2026-10-30')?.lastPossible).toBe(addDays('2026-10-01', MAX_ONGOING_DAYS - 1))
   })
 })
+
+describe('dateRange', () => {
+  it('da los días entre dos fechas en cualquier orden', () => {
+    expect(dateRange('2026-09-30', '2026-10-02')).toEqual(['2026-09-30', '2026-10-01', '2026-10-02'])
+    expect(dateRange('2026-10-02', '2026-09-30')).toEqual(['2026-09-30', '2026-10-01', '2026-10-02'])
+    expect(dateRange('2026-10-02', '2026-10-02')).toEqual(['2026-10-02'])
+  })
+})
+

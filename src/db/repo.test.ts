@@ -1,6 +1,16 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { AppDB } from './db'
-import { addCustomSymptom, endPeriod, restorePeriods, saveDay, setPillTaken, startPeriod } from './repo'
+import {
+  addCustomSymptom,
+  endPeriod,
+  markPeriodRange,
+  restorePeriods,
+  saveDay,
+  setPillTaken,
+  startPeriod,
+  undoPeriodEdit,
+  unmarkPeriodDay,
+} from './repo'
 
 const TODAY = '2026-10-13'
 let database: AppDB
@@ -112,3 +122,53 @@ describe('deshacer inicio / fin de periodo', () => {
     expect((await d.periods.toArray()).at(-1)).toMatchObject({ startDate: '2026-10-10', endDate: null })
   })
 })
+
+describe('editar periodos en el calendario', () => {
+  const periodsOf = async (d: AppDB) =>
+    (await d.periods.orderBy('startDate').toArray()).map(({ startDate, endDate }) => ({ startDate, endDate }))
+
+  it('marca un tramo entero de una vez, en cualquier orden, y se une a los periodos vecinos', async () => {
+    const d = await freshDB()
+    await d.periods.add({ startDate: '2026-09-01', endDate: '2026-09-03' })
+    await markPeriodRange('2026-09-08', '2026-09-04', d, TODAY)
+    expect(await periodsOf(d)).toEqual([{ startDate: '2026-09-01', endDate: '2026-09-08' }])
+
+    await markPeriodRange('2026-08-05', '2026-08-09', d, TODAY)
+    expect(await periodsOf(d)).toEqual([
+      { startDate: '2026-08-05', endDate: '2026-08-09' },
+      { startDate: '2026-09-01', endDate: '2026-09-08' },
+    ])
+  })
+
+  it('un periodo en curso sigue en curso si el tramo no cambia su final', async () => {
+    const d = await freshDB()
+    await d.periods.add({ startDate: '2026-10-11', endDate: null })
+    await markPeriodRange('2026-10-08', '2026-10-10', d, TODAY)
+    expect(await periodsOf(d)).toEqual([{ startDate: '2026-10-08', endDate: null }])
+  })
+
+  it('quitar un día parte el periodo, borra su flujo y se puede deshacer', async () => {
+    const d = await freshDB()
+    await d.periods.add({ startDate: '2026-09-01', endDate: '2026-09-05' })
+    await d.days.put({ date: '2026-09-03', flow: 'heavy', updatedAt: 1 })
+    await d.days.put({ date: '2026-09-04', flow: 'light', notes: 'nota', updatedAt: 1 })
+
+    const undo = await unmarkPeriodDay('2026-09-03', d, TODAY)
+    expect(await periodsOf(d)).toEqual([
+      { startDate: '2026-09-01', endDate: '2026-09-02' },
+      { startDate: '2026-09-04', endDate: '2026-09-05' },
+    ])
+    expect(await d.days.get('2026-09-03')).toBeUndefined()
+
+    const undo2 = await unmarkPeriodDay('2026-09-04', d, TODAY)
+    expect(await d.days.get('2026-09-04')).toMatchObject({ notes: 'nota' })
+    expect((await d.days.get('2026-09-04'))?.flow).toBeUndefined()
+
+    await undoPeriodEdit(undo2, d)
+    await undoPeriodEdit(undo, d)
+    expect(await periodsOf(d)).toEqual([{ startDate: '2026-09-01', endDate: '2026-09-05' }])
+    expect(await d.days.get('2026-09-03')).toMatchObject({ flow: 'heavy' })
+    expect(await d.days.get('2026-09-04')).toMatchObject({ flow: 'light', notes: 'nota' })
+  })
+})
+

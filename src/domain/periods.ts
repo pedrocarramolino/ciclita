@@ -42,12 +42,25 @@ export function togglePeriodDay(
   on: boolean,
   today: ISODate,
 ): Period[] {
+  return setPeriodDays(periods, [date], on, today)
+}
+
+/** Todas las fechas entre `a` y `b` (en cualquier orden), ambas incluidas. */
+export function dateRange(a: ISODate, b: ISODate): ISODate[] {
+  const [from, to] = a <= b ? [a, b] : [b, a]
+  return Array.from({ length: diffDays(from, to) + 1 }, (_, i) => addDays(from, i))
+}
+
+/** Como `togglePeriodDay`, pero con varios días a la vez (p. ej. un tramo entero). */
+export function setPeriodDays(periods: Period[], dates: ISODate[], on: boolean, today: ISODate): Period[] {
   const ongoing = periods.find((p) => p.endDate === null)
   const ongoingEnd = ongoing ? periodEnd(ongoing, today) : null
 
   const days = periodDateSet(periods, today)
-  if (on) days.add(date)
-  else days.delete(date)
+  for (const date of dates) {
+    if (on) days.add(date)
+    else days.delete(date)
+  }
 
   const sorted = [...days].sort()
   const runs: ISODate[][] = []

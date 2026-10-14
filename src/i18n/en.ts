@@ -651,6 +651,22 @@ export const en: Messages = {
     marginNote:
       'Because your cycles vary, the days when your period or fertile window could come earlier or later are also marked.',
     hint: 'Tap a day to log how you feel.',
+    edit: {
+      open: 'Edit periods',
+      title: 'Edit periods',
+      pickStart:
+        'Tap the first day of a period and then the last: every day in between is marked. To remove a marked day, tap it.',
+      pickEnd: (d: string) => `First day: ${d}. Now tap the last one (or the same one, if it lasted one day).`,
+      anchor: 'first day selected',
+      marked: (a: string, b: string, n: number) => `Marked from ${a} to ${b} (${n} days).`,
+      markedOne: (d: string) => `Marked ${d}.`,
+      removed: (d: string) => `Removed ${d}.`,
+      tooLong: (n: number, max: number) =>
+        `That would be ${n} days, and a period rarely lasts more than ${max}. Tap a closer last day.`,
+      undo: 'Undo',
+      undone: 'Undone.',
+      done: 'Done',
+    },
   },
   log: {
     close: 'Close',

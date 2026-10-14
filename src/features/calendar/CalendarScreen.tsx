@@ -1,11 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
+import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { db } from '../../db/db'
+import { markPeriodRange, undoPeriodEdit, unmarkPeriodDay, type PeriodEditUndo } from '../../db/repo'
 import { getSettings } from '../../db/settings'
 import { monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
-import { formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
-import { periodDateSet } from '../../domain/periods'
+import { diffDays, formatDayMonth, formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
+import { MAX_ONGOING_DAYS, periodDateSet } from '../../domain/periods'
 import { missedPillDates } from '../../domain/pill'
 import { clearCalendarFocus, peekCalendarFocus } from './calendarFocus'
 import { t } from '../../i18n'
@@ -23,13 +25,26 @@ interface DayState {
   isPossibleFertile: boolean
   isLogged: boolean
   pillMissed: boolean
+  /** Primer día elegido al marcar un tramo en "Editar periodos". */
+  isAnchor: boolean
 }
+
+/** Tramo más largo que se puede marcar de una vez (evita marcar meses por un toque equivocado). */
+const MAX_RANGE_DAYS = MAX_ONGOING_DAYS
 
 export function CalendarScreen() {
   const [now] = useState(() => new Date())
-  const [ym, setYm] = useState(() => peekCalendarFocus() ?? { y: now.getFullYear(), m: now.getMonth() })
+  const [ym, setYm] = useState(() => {
+    const f = peekCalendarFocus()
+    return f ? { y: f.y, m: f.m } : { y: now.getFullYear(), m: now.getMonth() }
+  })
+  const [editing, setEditing] = useState(() => !!peekCalendarFocus()?.edit)
   useEffect(clearCalendarFocus, [])
   const [selected, setSelected] = useState<ISODate | null>(null)
+  // "Editar periodos": primer día elegido, resultado del último cambio y cómo deshacerlo.
+  const [anchor, setAnchor] = useState<ISODate | null>(null)
+  const [editMsg, setEditMsg] = useState('')
+  const [undo, setUndo] = useState<PeriodEditUndo | null>(null)
   const today = todayISO()
   const c = t.calendar
 
@@ -73,7 +88,37 @@ export function CalendarScreen() {
       isPossibleFertile: !isPeriod && !!predicted?.possibleFertile.has(date),
       isLogged: !!data?.logged.has(date),
       pillMissed: !!data?.pillMissed?.has(date),
+      isAnchor: editing && date === anchor,
     }
+  }
+
+  const e = c.edit
+  /**
+   * En "Editar periodos": el primer toque elige el inicio y el segundo marca todo el
+   * tramo; tocar un día ya marcado (sin inicio elegido) lo quita.
+   */
+  const editTap = async (date: ISODate) => {
+    if (anchor) {
+      const n = Math.abs(diffDays(anchor, date)) + 1
+      if (n > MAX_RANGE_DAYS) return setEditMsg(e.tooLong(n, MAX_RANGE_DAYS))
+      const [from, to] = anchor <= date ? [anchor, date] : [date, anchor]
+      setUndo(await markPeriodRange(from, to))
+      setAnchor(null)
+      setEditMsg(from === to ? e.markedOne(formatDayMonth(from)) : e.marked(formatDayMonth(from), formatDayMonth(to), n))
+    } else if (data?.periodDays.has(date)) {
+      setUndo(await unmarkPeriodDay(date))
+      setEditMsg(e.removed(formatDayMonth(date)))
+    } else {
+      setAnchor(date)
+      setEditMsg('')
+    }
+  }
+
+  const stopEditing = () => {
+    setEditing(false)
+    setAnchor(null)
+    setUndo(null)
+    setEditMsg('')
   }
 
   const shift = (delta: number) =>
@@ -127,6 +172,43 @@ export function CalendarScreen() {
         </div>
       </header>
 
+      {editing && (
+        <section aria-labelledby="edit-periods" className="mt-4 rounded-3xl border-2 border-primary/40 bg-surface p-4 shadow-sm">
+          <h2 id="edit-periods" className="font-extrabold">
+            {e.title}
+          </h2>
+          <p className="mt-1 text-sm" aria-live="polite">
+            {anchor ? e.pickEnd(formatDayMonth(anchor)) : e.pickStart}
+          </p>
+          <p role="status" className="mt-1 text-sm font-bold empty:hidden">
+            {editMsg}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button className="flex-1" onClick={stopEditing}>
+              <Icon name="check" />
+              {e.done}
+            </Button>
+            {anchor && (
+              <Button variant="secondary" onClick={() => setAnchor(null)}>
+                {t.confirm.cancel}
+              </Button>
+            )}
+            {undo && !anchor && (
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  await undoPeriodEdit(undo)
+                  setUndo(null)
+                  setEditMsg(e.undone)
+                }}
+              >
+                {e.undo}
+              </Button>
+            )}
+          </div>
+        </section>
+      )}
+
       <div className="mt-4 rounded-3xl bg-surface p-3 shadow-sm">
         <table className="w-full table-fixed border-separate border-spacing-y-1">
           <thead>
@@ -145,7 +227,7 @@ export function CalendarScreen() {
               <tr key={week[0].date}>
                 {week.map((gd) => (
                   <td key={gd.date} className="p-0.5">
-                    <DayCell gd={gd} s={stateOf(gd.date)} onSelect={setSelected} />
+                    <DayCell gd={gd} s={stateOf(gd.date)} onSelect={editing ? (d) => void editTap(d) : setSelected} />
                   </td>
                 ))}
               </tr>
@@ -154,7 +236,15 @@ export function CalendarScreen() {
         </table>
       </div>
 
-      <p className="mt-3 text-center text-sm text-muted">{c.hint}</p>
+      {!editing && (
+        <>
+          <p className="mt-3 text-center text-sm text-muted">{c.hint}</p>
+          <Button variant="secondary" className="mt-3 w-full" onClick={() => setEditing(true)}>
+            <Icon name="drop" />
+            {e.open}
+          </Button>
+        </>
+      )}
       <Legend withMargin={!!predicted?.hasMargin} withPredictions={mode === 'cycle'} withPill={!!data?.pillMissed} />
 
       {selected && <DaySheet date={selected} onClose={() => setSelected(null)} />}
@@ -174,6 +264,7 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
   else if (s.isPossibleFertile) parts.push(c.possibleFertile)
   if (s.isLogged) parts.push(c.logged)
   if (s.pillMissed) parts.push(t.pill.calendarMissed)
+  if (s.isAnchor) parts.push(c.edit.anchor)
 
   const look = s.isPeriod
     ? 'bg-primary text-on-primary'
@@ -202,6 +293,7 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
         ${look}
         
         ${s.isToday ? 'outline-2 outline-offset-2 outline-ink' : ''}
+        ${s.isAnchor ? 'bg-primary-soft text-ink ring-3 ring-primary' : ''}
         disabled:cursor-default`}
     >
       {gd.day}

@@ -1,5 +1,5 @@
 import { db, type AppDB, type DayLog, type Period } from './db'
-import { periodDateSet, togglePeriodDay } from '../domain/periods'
+import { dateRange, periodDateSet, setPeriodDays, togglePeriodDay } from '../domain/periods'
 import { findCatalogSymptom, normalize } from '../domain/symptoms'
 import { today as todayISO, type ISODate } from '../domain/dates'
 
@@ -89,6 +89,56 @@ export async function endPeriod(date: ISODate = todayISO(), database: AppDB = db
     const end = date < ongoing.startDate ? ongoing.startDate : date
     await database.periods.update(ongoing.id, { endDate: end })
     return periods
+  })
+}
+
+/** Estado de antes de editar periodos en el calendario, para deshacer. */
+export interface PeriodEditUndo {
+  periods: Period[]
+  /** Registros de días a los que se quitó el flujo al dejar de ser de periodo. */
+  days: DayLog[]
+}
+
+/** Marca como periodo todos los días entre `a` y `b` (ambos incluidos). */
+export async function markPeriodRange(
+  a: ISODate,
+  b: ISODate,
+  database: AppDB = db,
+  today: ISODate = todayISO(),
+): Promise<PeriodEditUndo> {
+  return database.transaction('rw', database.periods, async () => {
+    const periods = await database.periods.toArray()
+    const next = setPeriodDays(periods, dateRange(a, b), true, today)
+    await database.periods.clear()
+    await database.periods.bulkAdd(next)
+    return { periods, days: [] }
+  })
+}
+
+/** Quita un día de su periodo (y el flujo de ese día, que ya no tiene sentido). */
+export async function unmarkPeriodDay(
+  date: ISODate,
+  database: AppDB = db,
+  today: ISODate = todayISO(),
+): Promise<PeriodEditUndo> {
+  return database.transaction('rw', database.periods, database.days, async () => {
+    const periods = await database.periods.toArray()
+    await database.periods.clear()
+    await database.periods.bulkAdd(togglePeriodDay(periods, date, false, today))
+    const day = await database.days.get(date)
+    if (day?.flow) {
+      const { date: _d, updatedAt: _u, flow: _f, ...rest } = day
+      if (isEmpty(rest)) await database.days.delete(date)
+      else await database.days.put({ ...rest, date, updatedAt: Date.now() })
+    }
+    return { periods, days: day?.flow ? [day] : [] }
+  })
+}
+
+export async function undoPeriodEdit(u: PeriodEditUndo, database: AppDB = db): Promise<void> {
+  await database.transaction('rw', database.periods, database.days, async () => {
+    await restorePeriods(u.periods, database)
+    if (u.days.length) await database.days.bulkPut(u.days)
   })
 }
 
