@@ -7,20 +7,32 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 ## Funcionalidades
 
 - **Inicio**: "Tu periodo empieza en X días" / "Día X de tu periodo" y botones grandes de *Ha empezado* / *Ha terminado mi periodo*.
-- **Calendario** mensual con días de periodo, periodos previstos, ventana fértil y ovulación estimadas, con leyenda.
-- **Registro diario** (todo opcional): flujo, síntomas (también personalizados), estado de ánimo, dolor 0–10, medicación y notas.
-- **Predicciones**: medias de los últimos 6 ciclos (28/5 días por defecto), próximos 3 periodos y ventana fértil.
+- **Calendario** mensual con días de periodo, periodos previstos, ventana fértil y ovulación estimadas, con leyenda. Si los ciclos varían, también se marcan los días en que el periodo o la ventana fértil podrían adelantarse o retrasarse.
+- **Registro diario** (todo opcional): flujo, síntomas, estado de ánimo, dolor 0–10, medicación y notas.
+  - **Síntomas por categorías**: catálogo de unos 30 síntomas (dolor, digestión, piel y pelo, energía y sueño, apetito, otros), con los más usados arriba y los personalizados aparte.
+  - **Fertilidad y peso** (se activan en *Ajustes → Qué registras*): temperatura basal, moco cervical, relaciones sexuales con o sin protección y peso.
+- **Predicciones**: medias de los últimos 6 ciclos (28/5 días por defecto), próximos 3 periodos y ventana fértil, con un **margen** (±días) calculado a partir de lo que varían tus ciclos.
 - **Estadísticas**: gráfica de los últimos ciclos, medias, ciclo más corto y más largo, síntomas frecuentes por fase y aviso suave si los ciclos varían más de 7 días.
-- **Recordatorios** por notificación push: antes del próximo periodo, registro diario y píldora anticonceptiva.
-- **Privacidad**: PIN de 4 dígitos, exportar/importar (JSON y CSV) y borrado total con doble confirmación.
-- Tema claro / oscuro / automático, diseño pensado para móvil y accesible (WCAG AA).
+- **Informe para el médico**: resumen de 3, 6 o 12 meses (o todo) con ciclos, flujo, dolor, síntomas, medicación, fertilidad y, si quieres, notas. Se genera en el dispositivo y se puede imprimir, guardar en PDF o descargar como HTML.
+- **Modos de la app** (*Ajustes → Modo de la app*):
+  - **Ciclo menstrual** (por defecto).
+  - **Embarazo**: semanas y días, trimestre y fecha probable de parto (a partir de la última regla o de la fecha de parto). Se pausan las previsiones y los avisos del ciclo.
+  - **Perimenopausia**: días desde el último periodo, periodos en los últimos 12 meses, aviso al llegar a 12 meses sin periodo y síntomas propios de esta etapa. Sin previsiones.
+- **Recordatorios** por notificación push, aunque la app esté cerrada:
+  - antes del próximo periodo, registro diario y píldora anticonceptiva;
+  - ventana fértil (el día antes) y autoexploración de mama (una vez al mes);
+  - anticonceptivos con pauta: anillo vaginal, parche o inyección trimestral.
+- **Privacidad**: PIN de 4 dígitos, cifrado opcional de los datos con el PIN, exportar/importar (JSON y CSV) y borrado total con doble confirmación.
+- **Idiomas**: español (por defecto) e inglés. Se elige en la bienvenida o en *Ajustes → Idioma*.
+- Tema claro / oscuro / automático, animación de apertura, diseño pensado para móvil y accesible (WCAG AA).
 
 ## Privacidad: qué se guarda y dónde
 
 | Dato | Dónde |
 | --- | --- |
 | Periodos, registros diarios, síntomas, notas, ajustes, PIN (hash PBKDF2) | **Solo en el dispositivo** (IndexedDB) |
-| Suscripción push del navegador, zona horaria, hora y texto de cada recordatorio activo y, para el aviso de periodo, las fechas en que debe sonar | Servidor (Upstash Redis + QStash), **solo si se activa algún recordatorio** |
+| Idioma elegido | En el dispositivo (localStorage), sin cifrar, para mostrar la pantalla del PIN en ese idioma |
+| Suscripción push del navegador, zona horaria, hora y texto de cada recordatorio activo y, para los avisos de periodo, ventana fértil, autoexploración y anticonceptivos, las fechas en que deben sonar | Servidor (Upstash Redis + QStash), **solo si se activa algún recordatorio** |
 
 - Sin cuentas, sin analítica ni rastreadores. La fuente tipográfica está incluida en la app (no se carga de Google Fonts).
 - Cada dispositivo se identifica en el servidor con un id aleatorio y un secreto (en Redis solo se guarda su hash). Los registros caducan a los 90 días sin actividad.
@@ -48,13 +60,15 @@ server/              Lógica del servidor de avisos (testeable, sin dependencias
 public/icons/        Iconos de Ciclita (PWA, maskable, iPhone, favicon) e icono de notificaciones
 scripts/             Generación del icono monocromo de notificaciones
 src/
-  domain/            Lógica pura: predicciones, periodos, estadísticas, copias de seguridad, fechas
+  domain/            Lógica pura: predicciones, periodos, estadísticas, informe, modos, síntomas,
+                     avisos con fecha, copias de seguridad, fechas
   db/                Esquema Dexie, ajustes, repositorios, exportar/importar
-  features/          Pantallas: onboarding, inicio, calendario, registro, estadísticas, ajustes, bloqueo
+  features/          Pantallas: onboarding, inicio, calendario, registro, estadísticas, informe, ajustes, bloqueo
   components/        Componentes reutilizables (botones, chips, PIN, diálogos…)
   push/              Suscripción push y sincronización de recordatorios con el servidor
   security/          Hash y verificación del PIN
-  i18n/              Textos: es.ts (español, por defecto) y en.ts (inglés). El idioma se elige en Ajustes
+  i18n/              Textos: es.ts (español, por defecto) y en.ts (inglés, misma estructura comprobada por TypeScript)
+  db/vault.ts        Cifrado de los datos con el PIN
   sw.ts              Service worker: modo offline y notificaciones
 ```
 
@@ -105,9 +119,9 @@ Otros comandos:
 5. **Despliega** (o vuelve a desplegar tras añadir las variables).
 6. Comprueba: `https://tu-app.vercel.app/api/vapid` debe devolver `{"key": "..."}`. Después activa un recordatorio en *Ajustes* y pulsa *Probar notificación*; en la consola de QStash (*Messages*) verás el mensaje pendiente para la hora del recordatorio.
 
-**Cómo funcionan los avisos:** al activar un recordatorio, la app registra el dispositivo en `PUT /api/subscription`. El servidor guarda los datos en Redis y publica en QStash **un mensaje diferido** para la próxima hora de cada recordatorio, en la zona horaria del dispositivo (el aviso de periodo se comprueba a las 9:00 y se envía una sola vez). A esa hora, QStash llama a `/api/deliver` (que solo acepta peticiones firmadas por QStash), que envía el Web Push y publica el mensaje del día siguiente. Cada programación lleva una versión: al cambiar o desactivar un recordatorio, los mensajes antiguos se cancelan o se ignoran.
+**Cómo funcionan los avisos:** al activar un recordatorio, la app registra el dispositivo en `PUT /api/subscription`. El servidor guarda los datos en Redis y publica en QStash **un mensaje diferido** para la próxima hora de cada tipo de recordatorio, en la zona horaria del dispositivo. Hay cuatro tipos: diario, píldora, periodo (se comprueba a las 9:00 y se envía una sola vez) y avisos con fecha (ventana fértil, autoexploración y anticonceptivos, hasta 30 fechas, a las 9:00 o a la hora elegida). Los textos se generan en la app, en su idioma. A esa hora, QStash llama a `/api/deliver` (que solo acepta peticiones firmadas por QStash), que envía el Web Push y publica el mensaje del día siguiente. Cada programación lleva una versión: al cambiar o desactivar un recordatorio, los mensajes antiguos se cancelan o se ignoran.
 
-No se usan *schedules* de QStash (el plan gratuito solo permite 10 por cuenta), así que el número de dispositivos no está limitado por ellos. Cada recordatorio activo consume 1 mensaje al día por dispositivo (como mucho 3), dentro del cupo diario de QStash.
+No se usan *schedules* de QStash (el plan gratuito solo permite 10 por cuenta), así que el número de dispositivos no está limitado por ellos. Cada tipo de recordatorio activo consume como mucho 1 mensaje al día por dispositivo (4 en total como máximo), dentro del cupo diario de QStash.
 
 La app también puede desplegarse en cualquier hosting estático (`dist/`), pero entonces los recordatorios no funcionarán.
 
@@ -130,7 +144,7 @@ Una vez instalada, la app funciona sin conexión. Cuando haya una versión nueva
 
 En *Ajustes → Tus datos*:
 - **JSON**: copia completa (periodos, registros, síntomas personalizados y ajustes; nunca el PIN ni las credenciales del servidor de avisos).
-- **CSV**: un día por fila, separado por `;` (se abre directamente en Excel en español).
-- **Importar** acepta ambos formatos y **reemplaza** los datos actuales.
+- **CSV**: un día por fila, separado por `;` (se abre directamente en Excel en español), con la temperatura, el moco, las relaciones y el peso. La cabecera y los textos van en el idioma de la app.
+- **Importar** acepta ambos formatos (y CSV en español o en inglés) y **reemplaza** los datos actuales.
 
 Como los datos solo viven en el dispositivo, si se borran los datos del navegador o se desinstala la app se pierden: haz copias de vez en cuando.
