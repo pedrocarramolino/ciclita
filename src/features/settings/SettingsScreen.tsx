@@ -27,7 +27,38 @@ export function SettingsScreen() {
 
       <InstallSection />
 
-      <Section title={s.cycleSection} hint={s.cycleHint}>
+      <Section title={s.cycleSection} hint={settings.manualPrediction ? s.cycleHintManual : s.cycleHint}>
+        <fieldset>
+          <legend className="mb-2 font-bold">{s.predictionMode}</legend>
+          <div className="space-y-2">
+            {([false, true] as const).map((manual) => (
+              <label
+                key={String(manual)}
+                className="flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-surface p-3 has-checked:border-primary has-checked:bg-primary-soft has-focus-visible:outline-3 has-focus-visible:outline-[var(--focus)]"
+              >
+                <input
+                  type="radio"
+                  name="prediction-mode"
+                  checked={settings.manualPrediction === manual}
+                  onChange={() =>
+                    void setSettings({
+                      manualPrediction: manual,
+                      // La previsión manual necesita unas duraciones: las habituales si no había.
+                      ...(manual && unknown
+                        ? { cycleLength: DEFAULT_CYCLE_LENGTH, periodLength: DEFAULT_PERIOD_LENGTH }
+                        : {}),
+                    })
+                  }
+                  className="mt-1 size-5 accent-[var(--primary)]"
+                />
+                <span>
+                  <span className="block font-bold">{manual ? s.predictionManual : s.predictionAuto}</span>
+                  <span className="block text-sm text-muted">{manual ? s.predictionManualHint : s.predictionAutoHint}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <NumberStepper
           id="set-cycle"
           label={t.onboarding.cycleLabel}
@@ -47,21 +78,23 @@ export function SettingsScreen() {
           unit={t.common.days}
           onChange={(n) => void setSettings({ periodLength: n })}
         />
-        <button
-          type="button"
-          aria-pressed={unknown}
-          onClick={() =>
-            void setSettings(
-              unknown
-                ? { cycleLength: DEFAULT_CYCLE_LENGTH, periodLength: DEFAULT_PERIOD_LENGTH }
-                : { cycleLength: null, periodLength: null },
-            )
-          }
-          className={`min-h-11 rounded-full border px-5 font-bold ${unknown ? 'border-primary bg-primary-soft' : 'border-line bg-surface'}`}
-        >
-          {unknown && <span aria-hidden="true">✓ </span>}
-          {t.common.dontKnow}
-        </button>
+        {!settings.manualPrediction && (
+          <button
+            type="button"
+            aria-pressed={unknown}
+            onClick={() =>
+              void setSettings(
+                unknown
+                  ? { cycleLength: DEFAULT_CYCLE_LENGTH, periodLength: DEFAULT_PERIOD_LENGTH }
+                  : { cycleLength: null, periodLength: null },
+              )
+            }
+            className={`min-h-11 rounded-full border px-5 font-bold ${unknown ? 'border-primary bg-primary-soft' : 'border-line bg-surface'}`}
+          >
+            {unknown && <span aria-hidden="true">✓ </span>}
+            {t.common.dontKnow}
+          </button>
+        )}
       </Section>
 
       <ModeSection settings={settings} />

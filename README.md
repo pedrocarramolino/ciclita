@@ -13,6 +13,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - **Fertilidad y peso** (se activan en *Ajustes → Qué registras*): temperatura basal, moco cervical, relaciones sexuales con o sin protección y peso.
   - **Píldora anticonceptiva** (también en *Qué registras*): según el envase (21 + 7, 24 + 4 o 28 seguidas), el inicio muestra "Píldora de hoy" para marcarla con un toque, y la notificación lleva un botón "Ya la he tomado" (Android y ordenador); el aviso de periodo lleva "Ha empezado" para marcar el inicio sin abrir la app; los días sin marcar aparecen en el calendario y en el informe. El recordatorio no suena en los días de descanso, y el último día de descanso avisa de que al día siguiente empieza un envase nuevo.
 - **Predicciones**: mediana de los últimos 6 ciclos (28/5 días por defecto; un ciclo aislado raro no la desplaza), próximos 3 periodos y ventana fértil, con un **margen** (±días) calculado a partir de lo que varían tus ciclos.
+  - Previsión automática (por defecto) o manual: en *Ajustes → Tu ciclo* se puede fijar la duración del ciclo y del periodo para que las fechas se calculen siempre con ella, sin margen.
   - Si un ciclo dura 1,7 veces lo habitual o más, se aparta del cálculo y el inicio pregunta si se olvidó registrar un periodo (con acceso al calendario en ese mes, o "No, fue un ciclo largo").
   - Si un periodo sigue "en curso" 2 días más de lo habitual, el inicio pregunta si ya terminó.
   - El inicio muestra una sola de estas preguntas a la vez (fin de periodo → periodo olvidado → copia de seguridad).

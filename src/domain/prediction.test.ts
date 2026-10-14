@@ -274,3 +274,19 @@ describe('mediana y periodos olvidados', () => {
     expect(predict({ periods, today: '2026-03-30', userCycleLength: 28 }).suspectedMissed).toHaveLength(1)
   })
 })
+
+describe('previsión manual', () => {
+  const periods = periodsFrom(['2026-07-01', '2026-07-31', '2026-08-31', '2026-09-30'])
+
+  it('usa las duraciones indicadas aunque haya historial, sin margen', () => {
+    const auto = predict({ periods, today: '2026-10-05', userCycleLength: 26, userPeriodLength: 4 })
+    expect(auto.cycleLength).toBe(30)
+    const manual = predict({ periods, today: '2026-10-05', userCycleLength: 26, userPeriodLength: 4, manual: true })
+    expect(manual).toMatchObject({ cycleLength: 26, cycleSource: 'user', periodLength: 4, periodSource: 'user' })
+    expect(manual.nextPeriods[0]).toMatchObject({ start: '2026-10-26', margin: 0 })
+  })
+
+  it('sin duraciones indicadas sigue siendo automática', () => {
+    expect(predict({ periods, today: '2026-10-05', manual: true }).cycleSource).toBe('history')
+  })
+})

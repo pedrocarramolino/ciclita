@@ -14,6 +14,8 @@ export interface Settings {
   /** Duración habitual indicada por la usuaria; null = "No lo sé". */
   cycleLength: number | null
   periodLength: number | null
+  /** Previsión con las duraciones indicadas en lugar de las del historial. */
+  manualPrediction: boolean
   theme: Theme
   language: Lang
   /** Hash PBKDF2 del PIN; null = sin PIN. */
@@ -105,6 +107,7 @@ export const DEFAULT_SETTINGS: Settings = {
   onboardingDone: false,
   cycleLength: null,
   periodLength: null,
+  manualPrediction: false,
   theme: 'system',
   language: 'es',
   pinHash: null,

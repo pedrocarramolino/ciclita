@@ -84,6 +84,7 @@ export interface ImportSummary {
 const RESTORABLE: (keyof Settings)[] = [
   'cycleLength',
   'periodLength',
+  'manualPrediction',
   'theme',
   'reminders',
   'tracking',

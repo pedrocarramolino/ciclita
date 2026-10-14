@@ -10,6 +10,8 @@
  *    aislado muy largo o muy corto no la desplaza, como sí haría una media). Sin
  *    datos se usa lo que indicó la usuaria en el onboarding y, si eligió "No lo sé",
  *    28 y 5 días.
+ *  - Previsión manual: si la usuaria lo elige, se usan siempre las duraciones que indicó
+ *    (sin margen), aunque haya historial. Útil si los registros antiguos no son fiables.
  *  - Periodo olvidado: un ciclo que dura 1,7 veces lo habitual o más suele ser un
  *    periodo sin registrar. Se aparta de los cálculos y se pregunta (salvo que la
  *    usuaria haya confirmado que fue un ciclo largo de verdad).
@@ -106,6 +108,8 @@ export interface PredictionInput {
   userPeriodLength?: number | null
   /** Inicios de ciclos largos que la usuaria confirmó como reales (no se preguntan). */
   confirmedLongCycles?: ISODate[]
+  /** Previsión manual: se usan userCycleLength/userPeriodLength aunque haya historial. */
+  manual?: boolean
 }
 
 export interface SuspectedMissed {
@@ -215,13 +219,18 @@ export function predict(input: PredictionInput): Prediction {
   }))
   const recentPeriods = periodLengths(periods).slice(-HISTORY_SIZE)
 
-  const [cycleLength, cycleSource]: [number, Source] = recentCycles.length
+  const manual = !!input.manual && !!input.userCycleLength
+  const [cycleLength, cycleSource]: [number, Source] = manual
+    ? [input.userCycleLength!, 'user']
+    : recentCycles.length
     ? [median(recentCycles), 'history']
     : input.userCycleLength
       ? [input.userCycleLength, 'user']
       : [DEFAULT_CYCLE_LENGTH, 'default']
 
-  const [periodLength, periodSource]: [number, Source] = recentPeriods.length
+  const [periodLength, periodSource]: [number, Source] = manual && input.userPeriodLength
+    ? [input.userPeriodLength, 'user']
+    : recentPeriods.length
     ? [median(recentPeriods), 'history']
     : input.userPeriodLength
       ? [input.userPeriodLength, 'user']
@@ -285,7 +294,8 @@ export function predict(input: PredictionInput): Prediction {
   const nextPeriods: PredictedPeriod[] = []
   for (let i = 0; i < PREDICTED_PERIODS; i++) {
     const start = addDays(firstNext, i * cycleLength)
-    const margin = predictionMargin(recentCycles, i + 1)
+    // Con previsión manual las fechas son fijas: sin margen.
+    const margin = manual ? 0 : predictionMargin(recentCycles, i + 1)
     let earliestStart = addDays(start, -margin)
     // Si el periodo aún no ha llegado, no puede empezar antes de hoy.
     if (!inPeriodToday && earliestStart < today) earliestStart = today
