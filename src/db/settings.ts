@@ -74,6 +74,21 @@ export interface ReminderSettings {
   breastExamEnabled: boolean
   /** Anticonceptivo con pauta (anillo, parche, inyección) y su fecha de inicio. */
   contraception: { method: ContraceptionMethod; start: ISODate | null; time: string }
+  /** Tomar la temperatura basal cada mañana. */
+  temperatureEnabled: boolean
+  temperatureTime: string
+  /** Pesarse: todos los días (null) o un día de la semana (0 = domingo … 6 = sábado). */
+  weightEnabled: boolean
+  weightTime: string
+  weightDay: number | null
+  /** Vitaminas o una medicación diaria, con el nombre que se quiera. */
+  medicationEnabled: boolean
+  medicationName: string
+  medicationTime: string
+  /** Revisión médica (DIU, implante, citología…): una semana antes y el mismo día. */
+  checkupEnabled: boolean
+  checkupDate: ISODate | null
+  checkupYearly: boolean
 }
 
 export interface TrackingSettings {
@@ -103,6 +118,17 @@ export const DEFAULT_REMINDERS: ReminderSettings = {
   fertileEnabled: false,
   breastExamEnabled: false,
   contraception: { method: 'none', start: null, time: '09:00' },
+  temperatureEnabled: false,
+  temperatureTime: '07:00',
+  weightEnabled: false,
+  weightTime: '08:00',
+  weightDay: 1,
+  medicationEnabled: false,
+  medicationName: '',
+  medicationTime: '09:00',
+  checkupEnabled: false,
+  checkupDate: null,
+  checkupYearly: true,
 }
 
 export const DEFAULT_SETTINGS: Settings = {

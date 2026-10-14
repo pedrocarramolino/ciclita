@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { addDays } from './dates'
 import { predict } from './prediction'
-import { buildEventReminders, contraceptionEvents, MAX_EVENTS, type EventSettings } from './reminderEvents'
+import { addYears, buildEventReminders, checkupEvents, contraceptionEvents, MAX_EVENTS, type EventSettings } from './reminderEvents'
 
 const TODAY = '2026-10-13'
 const off: EventSettings = {
@@ -100,3 +100,25 @@ describe('aviso de envase nuevo de la píldora', () => {
     expect(buildEventReminders({ ...off, pillPack: null }, null, '2026-10-20')).toEqual([])
   })
 })
+
+describe('revisión médica', () => {
+  it('addYears respeta el 29 de febrero', () => {
+    expect(addYears('2028-02-29', 1)).toBe('2029-02-28')
+    expect(addYears('2026-10-14', 2)).toBe('2028-10-14')
+  })
+
+  it('cada año: sigue avisando en los años siguientes aunque la fecha ya pasara', () => {
+    expect(checkupEvents({ date: '2024-11-20', yearly: true }, '2026-10-20', '2027-02-17')).toEqual([
+      { date: '2026-11-13', type: 'checkup-soon' },
+      { date: '2026-11-20', type: 'checkup-due' },
+    ])
+  })
+
+  it('sin repetir: solo esa fecha', () => {
+    expect(checkupEvents({ date: '2024-11-20', yearly: false }, '2026-10-20', '2027-02-17')).toEqual([])
+    expect(checkupEvents({ date: '2026-10-24', yearly: false }, '2026-10-20', '2027-02-17')).toEqual([
+      { date: '2026-10-24', type: 'checkup-due' },
+    ])
+  })
+})
+

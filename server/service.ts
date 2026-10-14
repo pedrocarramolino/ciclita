@@ -12,7 +12,7 @@
  *     que aún lleguen se ignoran (y además se intentan cancelar).
  */
 import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
-import { localDate, nextOccurrence, zonedToUtc } from './time.js'
+import { addDaysISO, localDate, nextOccurrence, zonedToUtc } from './time.js'
 import {
   periodWindows,
   PERIOD_STARTED_ACTION,
@@ -27,6 +27,7 @@ import {
   type RegisterInput,
   type ReminderKind,
   type Reminders,
+  type RoutineReminder,
 } from './types.js'
 
 /** Hora local a la que se comprueba el aviso de periodo. */
@@ -80,6 +81,20 @@ function secretMatches(secret: string, hash: string): boolean {
 const daysBetween = (a: string, b: string) =>
   Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000)
 
+/** Día de la semana (0 = domingo) de una fecha YYYY-MM-DD. */
+const weekdayOf = (ymd: string) => new Date(`${ymd}T00:00:00Z`).getUTCDay()
+
+const routineOn = (r: RoutineReminder, ymd: string) => !r.weekdays || r.weekdays.includes(weekdayOf(ymd))
+
+/** Próxima vez que suena un hábito (a su hora, en uno de sus días de la semana). */
+function nextRoutineAt(r: RoutineReminder, timezone: string, now: Date): Date {
+  let at = nextOccurrence(r.time, timezone, now)
+  for (let i = 0; i < 7 && !routineOn(r, localDate(at, timezone)); i++) {
+    at = zonedToUtc(addDaysISO(localDate(at, timezone), 1), r.time, timezone)
+  }
+  return at
+}
+
 /** Instante de cada recordatorio con fecha, en UTC. */
 const eventInstant = (e: { date: string; time: string }, timezone: string) => zonedToUtc(e.date, e.time, timezone)
 
@@ -95,6 +110,10 @@ export function nextFireAt(kind: ReminderKind, reminders: Reminders, timezone: s
       .filter((d) => d > now)
       .sort((a, b) => a.getTime() - b.getTime())
     return upcoming[0] ?? null
+  }
+  if (kind === 'routines') {
+    const next = (reminders.routines ?? []).map((r) => nextRoutineAt(r, timezone, now))
+    return next.sort((a, b) => a.getTime() - b.getTime())[0] ?? null
   }
   const r = reminders[kind]
   if (!r) return null
@@ -239,6 +258,17 @@ export async function deliver(deps: Deps, msg: DeliverMessage): Promise<DeliverR
       else extra.push(p)
     })
     ttl = 12 * 3600
+  } else if (msg.kind === 'routines' && r.routines && msg.at !== undefined) {
+    // Todos los hábitos que suenan en este instante (p. ej. peso y vitaminas a la misma hora).
+    const day = localDate(new Date(msg.at), record.timezone)
+    const due = r.routines.filter(
+      (x) => routineOn(x, day) && Math.abs(zonedToUtc(day, x.time, record.timezone).getTime() - msg.at!) < 60_000,
+    )
+    due.forEach((x, i) => {
+      const p = { title: x.title, body: x.body, tag: `ciclita-routine-${x.id}`, url: '/#/home' }
+      if (i === 0) payload = p
+      else extra.push(p)
+    })
   }
 
   // 1) Programar el siguiente (idempotente gracias a dedupId si QStash reintenta).

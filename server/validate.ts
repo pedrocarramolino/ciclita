@@ -1,5 +1,14 @@
 import { ECDH } from 'node:crypto'
-import type { EventReminder, Message, PeriodReminder, PillReminder, RegisterInput, Reminders, TimedReminder } from './types.js'
+import type {
+  EventReminder,
+  Message,
+  PeriodReminder,
+  PillReminder,
+  RegisterInput,
+  Reminders,
+  RoutineReminder,
+  TimedReminder,
+} from './types.js'
 
 export class ValidationError extends Error {}
 
@@ -142,6 +151,36 @@ function events(v: unknown): EventReminder[] | undefined {
   })
 }
 
+/** Máximo de hábitos por dispositivo. */
+export const MAX_ROUTINES = 6
+const ROUTINE_ID_RE = /^[a-z0-9-]{1,24}$/
+
+function routines(v: unknown): RoutineReminder[] | undefined {
+  if (v === undefined || v === null) return undefined
+  if (!Array.isArray(v) || v.length > MAX_ROUTINES) fail('routines no válido')
+  const seen = new Set<string>()
+  return v.map((r, i) => {
+    const base = timed(r, `routines[${i}]`)!
+    const { id, weekdays } = r as Record<string, unknown>
+    if (typeof id !== 'string' || !ROUTINE_ID_RE.test(id) || seen.has(id)) fail(`routines[${i}].id no válido`)
+    seen.add(id)
+    const out: RoutineReminder = { id, ...base }
+    if (weekdays !== undefined && weekdays !== null) {
+      if (
+        !Array.isArray(weekdays) ||
+        weekdays.length < 1 ||
+        weekdays.length > 7 ||
+        weekdays.some((d) => !Number.isInteger(d) || d < 0 || d > 6) ||
+        new Set(weekdays).size !== weekdays.length
+      ) {
+        fail(`routines[${i}].weekdays no válido`)
+      }
+      out.weekdays = weekdays as number[]
+    }
+    return out
+  })
+}
+
 /** Valida el cuerpo de registro de un dispositivo. Lanza ValidationError. */
 export function validateRegister(raw: unknown): RegisterInput {
   if (!isObj(raw)) fail('Cuerpo no válido')
@@ -180,6 +219,8 @@ export function validateRegister(raw: unknown): RegisterInput {
   if (per) r.period = per
   const ev = events(reminders.events)
   if (ev?.length) r.events = ev
+  const ro = routines(reminders.routines)
+  if (ro?.length) r.routines = ro
 
   return {
     deviceId: deviceId.toLowerCase(),

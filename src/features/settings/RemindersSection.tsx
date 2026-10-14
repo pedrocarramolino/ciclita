@@ -5,8 +5,9 @@ import { Switch } from '../../components/Switch'
 import { setSettings, type Settings, type ReminderSettings } from '../../db/settings'
 import { reminderPillPack } from '../../domain/pill'
 import { permission, requestPermission, showTestNotification, syncPush } from '../../push/pushClient'
+import { MEDICATION_NAME_MAX } from '../../push/reminderPayload'
 import { formatLong, today } from '../../domain/dates'
-import { buildEventReminders, type ContraceptionMethod } from '../../domain/reminderEvents'
+import { addYears, buildEventReminders, checkupEvents, type ContraceptionMethod } from '../../domain/reminderEvents'
 import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { Row, Section } from './Section'
@@ -17,7 +18,18 @@ export function RemindersSection({ settings }: { settings: Settings }) {
   const [busy, setBusy] = useState(false)
   const prediction = usePrediction()
   const s = t.settings
-  const ids = { period: useId(), daily: useId(), pill: useId(), discreet: useId(), fertile: useId(), breast: useId() }
+  const ids = {
+    period: useId(),
+    daily: useId(),
+    pill: useId(),
+    discreet: useId(),
+    fertile: useId(),
+    breast: useId(),
+    temperature: useId(),
+    weight: useId(),
+    medication: useId(),
+    checkup: useId(),
+  }
 
   // La sincronización con el servidor la hace usePushSync (App) al cambiar los ajustes.
   const update = async (patch: Partial<ReminderSettings>) => {
@@ -49,11 +61,20 @@ export function RemindersSection({ settings }: { settings: Settings }) {
     reminders.pillEnabled ||
     reminders.fertileEnabled ||
     reminders.breastExamEnabled ||
+    reminders.temperatureEnabled ||
+    reminders.weightEnabled ||
+    reminders.medicationEnabled ||
+    (reminders.checkupEnabled && !!reminders.checkupDate) ||
     (c.method !== 'none' && !!c.start)
   // Próximo aviso del anticonceptivo, para que se vea que la pauta está bien.
   const nextContraception =
     c.method !== 'none' && c.start
       ? buildEventReminders({ fertileEnabled: false, breastExamEnabled: false, contraception: c }, null, today())[0]
+      : undefined
+  // Próximo aviso de la revisión (para comprobar la fecha y si se repite).
+  const nextCheckup =
+    reminders.checkupEnabled && reminders.checkupDate
+      ? checkupEvents({ date: reminders.checkupDate, yearly: reminders.checkupYearly }, today(), addYears(today(), 2))[0]
       : undefined
   const updateContraception = (patch: Partial<ReminderSettings['contraception']>) =>
     void update({ contraception: { ...c, ...patch } })
@@ -145,6 +166,126 @@ export function RemindersSection({ settings }: { settings: Settings }) {
           onChange={(v) => void update({ breastExamEnabled: v })}
         />
       </Row>
+
+      <Row id={ids.temperature} label={s.temperatureReminder} hint={s.temperatureReminderHint}>
+        <Switch
+          labelledBy={ids.temperature}
+          checked={reminders.temperatureEnabled}
+          disabled={blocked && !reminders.temperatureEnabled}
+          onChange={(v) => void update({ temperatureEnabled: v })}
+        />
+      </Row>
+      {reminders.temperatureEnabled && (
+        <TimeField
+          id="temperature-time"
+          value={reminders.temperatureTime}
+          onChange={(v) => void update({ temperatureTime: v })}
+        />
+      )}
+
+      <Row id={ids.weight} label={s.weightReminder}>
+        <Switch
+          labelledBy={ids.weight}
+          checked={reminders.weightEnabled}
+          disabled={blocked && !reminders.weightEnabled}
+          onChange={(v) => void update({ weightEnabled: v })}
+        />
+      </Row>
+      {reminders.weightEnabled && (
+        <>
+          <div className="flex items-center gap-3">
+            <label htmlFor="weight-day" className="font-bold text-muted">
+              {s.weightDay}
+            </label>
+            <select
+              id="weight-day"
+              value={reminders.weightDay ?? 'all'}
+              onChange={(e) => void update({ weightDay: e.target.value === 'all' ? null : Number(e.target.value) })}
+              className="min-h-12 flex-1 rounded-2xl border border-line bg-surface px-4"
+            >
+              <option value="all">{s.everyDay}</option>
+              {/* Lunes primero; el valor es el día de la semana con 0 = domingo. */}
+              {t.calendar.weekdaysLong.map((name, i) => (
+                <option key={name} value={(i + 1) % 7}>
+                  {s.everyWeekday(name)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <TimeField id="weight-time" value={reminders.weightTime} onChange={(v) => void update({ weightTime: v })} />
+        </>
+      )}
+
+      <Row id={ids.medication} label={s.medicationReminder} hint={s.medicationReminderHint}>
+        <Switch
+          labelledBy={ids.medication}
+          checked={reminders.medicationEnabled}
+          disabled={blocked && !reminders.medicationEnabled}
+          onChange={(v) => void update({ medicationEnabled: v })}
+        />
+      </Row>
+      {reminders.medicationEnabled && (
+        <>
+          <div>
+            <label htmlFor="medication-name" className="mb-1 block text-sm font-bold text-muted">
+              {s.medicationName}
+            </label>
+            <input
+              id="medication-name"
+              type="text"
+              value={reminders.medicationName}
+              maxLength={MEDICATION_NAME_MAX}
+              placeholder={s.medicationPlaceholder}
+              onChange={(e) => void update({ medicationName: e.target.value })}
+              className="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
+            />
+          </div>
+          <TimeField
+            id="medication-time"
+            value={reminders.medicationTime}
+            onChange={(v) => void update({ medicationTime: v })}
+          />
+        </>
+      )}
+
+      <Row id={ids.checkup} label={s.checkupReminder} hint={s.checkupReminderHint}>
+        <Switch
+          labelledBy={ids.checkup}
+          checked={reminders.checkupEnabled}
+          disabled={blocked && !reminders.checkupEnabled}
+          onChange={(v) => void update({ checkupEnabled: v })}
+        />
+      </Row>
+      {reminders.checkupEnabled && (
+        <>
+          <div>
+            <label htmlFor="checkup-date" className="mb-1 block text-sm font-bold text-muted">
+              {s.checkupDate}
+            </label>
+            <input
+              id="checkup-date"
+              type="date"
+              value={reminders.checkupDate ?? ''}
+              onChange={(e) => void update({ checkupDate: e.target.value || null })}
+              className="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
+            />
+          </div>
+          <label className="flex min-h-11 items-center gap-3">
+            <input
+              type="checkbox"
+              checked={reminders.checkupYearly}
+              onChange={(e) => void update({ checkupYearly: e.target.checked })}
+              className="size-5 accent-[var(--primary)]"
+            />
+            {s.checkupYearly}
+          </label>
+          {nextCheckup && (
+            <p className="text-sm font-bold">
+              {s.nextEvent(formatLong(nextCheckup.date))} · {t.notifications.events[nextCheckup.type].body}
+            </p>
+          )}
+        </>
+      )}
 
       <fieldset className="space-y-3 rounded-2xl bg-surface-soft p-4">
         <legend className="sr-only">{s.contraception}</legend>

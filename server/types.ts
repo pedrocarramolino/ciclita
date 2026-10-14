@@ -6,7 +6,8 @@
  *  - la zona horaria,
  *  - los recordatorios activos con su hora y su texto,
  *  - para el aviso de periodo, el intervalo de fechas en que debe sonar,
- *  - para la píldora, opcionalmente, el envase (para no avisar en los días de descanso).
+ *  - para la píldora, opcionalmente, el envase (para no avisar en los días de descanso),
+ *  - para los hábitos (temperatura, peso, medicación), los días de la semana en que suenan.
  * No hay cuentas: cada dispositivo se identifica con un id aleatorio y un secreto
  * que solo conoce ese dispositivo (en Redis se guarda su hash).
  */
@@ -80,15 +81,27 @@ export const PILL_TAKEN_ACTION = 'pill-taken'
 /** Acción del botón "Ha empezado" de la notificación del periodo. */
 export const PERIOD_STARTED_ACTION = 'period-started'
 
+/**
+ * Hábito que se repite a una hora (tomar la temperatura, pesarse, una medicación).
+ * Todos comparten una sola cadena de mensajes, como los recordatorios con fecha.
+ */
+export interface RoutineReminder extends TimedReminder {
+  /** Identificador corto (etiqueta de la notificación): 'temperature', 'weight'... */
+  id: string
+  /** Días de la semana en que suena (0 = domingo … 6 = sábado). Sin definir = todos. */
+  weekdays?: number[]
+}
+
 export interface Reminders {
   daily?: TimedReminder
   pill?: PillReminder
   period?: PeriodReminder
   events?: EventReminder[]
+  routines?: RoutineReminder[]
 }
 
 export type ReminderKind = keyof Reminders
-export const REMINDER_KINDS: ReminderKind[] = ['daily', 'pill', 'period', 'events']
+export const REMINDER_KINDS: ReminderKind[] = ['daily', 'pill', 'period', 'events', 'routines']
 
 export interface RegisterInput {
   deviceId: string

@@ -120,4 +120,45 @@ describe('botón "Ha empezado" del aviso de periodo', () => {
     expect(buildReminders({ ...on, discreet: false }, upcoming).period?.startedAction).toBe('Ha empezado')
     expect(buildReminders({ ...on, discreet: true }, upcoming).period?.startedAction).toBe('Marcar hoy')
   })
+
+  it('hábitos: temperatura, peso semanal y medicación con su nombre, en una sola lista', () => {
+    const r = buildReminders(
+      s({
+        discreet: false,
+        temperatureEnabled: true,
+        weightEnabled: true,
+        weightDay: 1,
+        weightTime: '07:30',
+        medicationEnabled: true,
+        medicationName: '  Ácido fólico ',
+        medicationTime: '22:00',
+      }),
+      upcoming,
+    )
+    expect(r.routines).toEqual([
+      { id: 'temperature', time: '07:00', title: 'Temperatura basal', body: 'Mide tu temperatura antes de levantarte.' },
+      { id: 'weight', time: '07:30', title: 'Peso', body: 'Es un buen momento para pesarte.', weekdays: [1] },
+      { id: 'medication', time: '22:00', title: 'Medicación', body: 'Es la hora de: Ácido fólico.' },
+    ])
+    expect(hasReminders(buildReminders(s({ weightEnabled: true, weightDay: null }), upcoming))).toBe(true)
+    expect(buildReminders(s({ weightEnabled: true, weightDay: null }), upcoming).routines?.[0].weekdays).toBeUndefined()
+  })
+
+  it('hábitos en modo discreto: sin nombres ni motivos', () => {
+    const r = buildReminders(s({ medicationEnabled: true, medicationName: 'Ácido fólico', temperatureEnabled: true }), upcoming)
+    expect(JSON.stringify(r)).not.toMatch(/fólico|temperatura|medicación/i)
+  })
+
+  it('revisión médica: una semana antes y el mismo día, como recordatorios con fecha', () => {
+    const r = buildReminders(
+      s({ discreet: false, checkupEnabled: true, checkupDate: '2026-11-20' }),
+      upcoming,
+      '2026-10-20',
+    )
+    expect(r.events).toEqual([
+      { date: '2026-11-13', time: '09:00', title: 'Revisión', body: 'Tu revisión médica es dentro de una semana.' },
+      { date: '2026-11-20', time: '09:00', title: 'Revisión', body: 'Hoy tienes tu revisión médica.' },
+    ])
+  })
 })
+

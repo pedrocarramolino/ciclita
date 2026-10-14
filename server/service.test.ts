@@ -276,6 +276,60 @@ describe('recordatorios con fecha', () => {
   })
 })
 
+describe('hábitos (temperatura, peso, medicación)', () => {
+  const TEMP = { id: 'temperature', time: '07:00', title: 'Temperatura', body: 'Mide tu temperatura' }
+  const WEIGHT = { id: 'weight', time: '07:00', title: 'Peso', body: 'Pésate', weekdays: [1] }
+  const MED = { id: 'medication', time: '21:00', title: 'Vitaminas', body: 'Toma las vitaminas' }
+
+  it('una sola cadena: programa el más próximo de todos', async () => {
+    const f = fakeDeps('2026-10-27T08:00:00Z') // martes, 09:00 en Madrid
+    await register(f.deps, input({ routines: [TEMP, WEIGHT, MED] }))
+    expect(f.published).toHaveLength(1)
+    expect(f.published[0]).toMatchObject({ message: { kind: 'routines' }, at: '2026-10-27T20:00:00.000Z' })
+  })
+
+  it('los semanales solo suenan su día de la semana', async () => {
+    const f = fakeDeps('2026-10-27T08:00:00Z')
+    await register(f.deps, input({ routines: [WEIGHT] }))
+    expect(f.published[0].at).toBe('2026-11-02T06:00:00.000Z') // lunes a las 07:00
+  })
+
+  it('envía los que coinciden en ese instante y encadena el siguiente', async () => {
+    const f = fakeDeps('2026-11-01T22:00:00Z') // domingo, 23:00 en Madrid
+    await register(f.deps, input({ routines: [TEMP, WEIGHT, MED] }))
+    expect(f.published[0].at).toBe('2026-11-02T06:00:00.000Z')
+
+    f.setNow('2026-11-02T06:00:01Z')
+    expect(await deliver(f.deps, f.published[0].message)).toBe('sent')
+    expect(f.sent.map((p) => [p.body, p.tag])).toEqual([
+      ['Mide tu temperatura', 'ciclita-routine-temperature'],
+      ['Pésate', 'ciclita-routine-weight'],
+    ])
+    expect(f.published.at(-1)?.at).toBe('2026-11-02T20:00:00.000Z')
+
+    f.setNow('2026-11-02T20:00:00Z')
+    await deliver(f.deps, f.published.at(-1)!.message)
+    expect(f.sent.at(-1)?.body).toBe('Toma las vitaminas')
+    // Martes: solo la temperatura (el peso es de los lunes).
+    expect(f.published.at(-1)?.at).toBe('2026-11-03T06:00:00.000Z')
+    f.setNow('2026-11-03T06:00:00Z')
+    await deliver(f.deps, f.published.at(-1)!.message)
+    expect(f.sent.at(-1)?.body).toBe('Mide tu temperatura')
+    expect(f.sent).toHaveLength(4)
+  })
+
+  it('valida identificadores, días de la semana y número máximo', () => {
+    const base = input({})
+    const bad = (routines: unknown) => () => validateRegister({ ...base, reminders: { routines } })
+    expect(bad([{ ...TEMP, id: 'Con espacios' }])).toThrow(ValidationError)
+    expect(bad([TEMP, TEMP])).toThrow(ValidationError)
+    expect(bad([{ ...WEIGHT, weekdays: [7] }])).toThrow(ValidationError)
+    expect(bad([{ ...WEIGHT, weekdays: [] }])).toThrow(ValidationError)
+    expect(bad(Array.from({ length: 7 }, (_, i) => ({ ...TEMP, id: `r${i}` })))).toThrow(ValidationError)
+    expect(validateRegister({ ...base, reminders: { routines: [TEMP, WEIGHT] } }).reminders.routines).toEqual([TEMP, WEIGHT])
+  })
+})
+
 describe('píldora con días de descanso', () => {
   // Envase 21 + 7 que empezó el 1 de octubre: descanso del 22 al 28 de octubre.
   const PILL = { pill: { time: '22:00', title: 'Píldora', body: 'Tómala', pack: { active: 21, start: '2026-10-01' } } }

@@ -10,6 +10,8 @@
  *  - Autoexploración de mama: una semana después del inicio de cada periodo.
  *  - Píldora con descanso (21 + 7, 24 + 4): el último día de descanso, a la hora de la
  *    píldora, "mañana empiezas un envase nuevo" (retrasarlo es el olvido más arriesgado).
+ *  - Revisión médica (DIU, implante, citología…): una semana antes y el mismo día; si se
+ *    repite cada año, también en los años siguientes.
  * Solo se generan las de los próximos meses (el servidor admite un máximo).
  */
 import { addDays, diffDays, type ISODate } from './dates'
@@ -28,6 +30,8 @@ export type EventType =
   | 'fertile'
   | 'breast'
   | 'pill-new-pack'
+  | 'checkup-soon'
+  | 'checkup-due'
 
 export interface ReminderEvent {
   date: ISODate
@@ -41,6 +45,8 @@ export interface EventSettings {
   contraception: { method: ContraceptionMethod; start: ISODate | null; time: string }
   /** Envase de la píldora con descanso, si hay recordatorio de píldora. */
   pillPack?: { active: number; start: ISODate; time: string } | null
+  /** Revisión médica, si está activada. */
+  checkup?: { date: ISODate; yearly: boolean } | null
 }
 
 /** Hora de los avisos que no son de anticonceptivos. */
@@ -51,6 +57,33 @@ export const MAX_EVENTS = 30
 
 const CYCLE = 28
 const INJECTION_EVERY = 84
+
+/** La misma fecha `n` años después (el 29 de febrero pasa al 28 si no es bisiesto). */
+export function addYears(date: ISODate, n: number): ISODate {
+  const [y, m, d] = date.split('-').map(Number)
+  const last = new Date(Date.UTC(y + n, m, 0)).getUTCDate()
+  return `${y + n}-${String(m).padStart(2, '0')}-${String(Math.min(d, last)).padStart(2, '0')}`
+}
+
+/** Avisos de la revisión entre `from` y `to`: una semana antes y el mismo día. */
+export function checkupEvents(
+  checkup: { date: ISODate; yearly: boolean },
+  from: ISODate,
+  to: ISODate,
+): { date: ISODate; type: EventType }[] {
+  const out: { date: ISODate; type: EventType }[] = []
+  const firstYear = checkup.yearly ? Math.max(0, Number(from.slice(0, 4)) - Number(checkup.date.slice(0, 4)) - 1) : 0
+  for (let n = firstYear; n <= firstYear + 2 && (checkup.yearly || n === 0); n++) {
+    const day = addYears(checkup.date, n)
+    for (const [date, type] of [
+      [addDays(day, -7), 'checkup-soon'],
+      [day, 'checkup-due'],
+    ] as const) {
+      if (date >= from && date <= to) out.push({ date, type })
+    }
+  }
+  return out
+}
 
 /** Fechas de la pauta del anticonceptivo entre `from` y `to` (ambas incluidas). */
 export function contraceptionEvents(
@@ -128,6 +161,10 @@ export function buildEventReminders(s: EventSettings, prediction: Prediction | n
       if (date > to) break
       if (date >= today) events.push({ date, time: pill.time, type: 'pill-new-pack' })
     }
+  }
+
+  if (s.checkup) {
+    for (const e of checkupEvents(s.checkup, today, to)) events.push({ ...e, time: EVENT_TIME })
   }
 
   return events

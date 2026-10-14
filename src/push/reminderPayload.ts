@@ -40,6 +40,13 @@ export interface PillReminder extends TimedReminder {
   takenAction?: string
 }
 
+/** Hábito que se repite a una hora (temperatura, peso, medicación). */
+export interface RoutineReminder extends TimedReminder {
+  id: 'temperature' | 'weight' | 'medication'
+  /** Días de la semana (0 = domingo); sin definir = todos. */
+  weekdays?: number[]
+}
+
 export interface PillOptions {
   pack?: PillReminder['pack']
   /** Se registran las tomas: la notificación lleva el botón "Ya la he tomado". */
@@ -51,6 +58,7 @@ export interface RemindersPayload {
   pill?: PillReminder
   period?: PeriodReminder
   events?: EventReminder[]
+  routines?: RoutineReminder[]
 }
 
 export function buildReminders(
@@ -94,14 +102,42 @@ export function buildReminders(
 
   // Recordatorios con fecha: anticonceptivo con pauta, ventana fértil, autoexploración.
   const pillPack = r.pillEnabled && pill.pack ? { ...pill.pack, time: r.pillTime } : null
-  const events = buildEventReminders({ ...r, pillPack }, prediction, today).map((e) => ({
+  const checkup = r.checkupEnabled && r.checkupDate ? { date: r.checkupDate, yearly: r.checkupYearly } : null
+  const events = buildEventReminders({ ...r, pillPack, checkup }, prediction, today).map((e) => ({
     date: e.date,
     time: e.time,
     title: r.discreet ? n.discreetTitle : n.events[e.type].title,
     body: r.discreet ? n.discreet.event : n.events[e.type].body,
   }))
   if (events.length) out.events = events
+
+  // Hábitos: comparten una sola cadena de avisos en el servidor.
+  const routines: RoutineReminder[] = []
+  const routine = (id: RoutineReminder['id'], time: string, msg: { title: string; body: string }) => {
+    const item: RoutineReminder = {
+      id,
+      time,
+      title: r.discreet ? n.discreetTitle : msg.title,
+      body: r.discreet ? n.discreet.routine : msg.body,
+    }
+    routines.push(item)
+    return item
+  }
+  if (r.temperatureEnabled) routine('temperature', r.temperatureTime, n.routines.temperature)
+  if (r.weightEnabled) {
+    const w = routine('weight', r.weightTime, n.routines.weight)
+    if (r.weightDay !== null) w.weekdays = [r.weightDay]
+  }
+  if (r.medicationEnabled) {
+    const name = r.medicationName.trim().slice(0, MEDICATION_NAME_MAX)
+    routine('medication', r.medicationTime, { title: n.routines.medicationTitle, body: n.routines.medicationBody(name) })
+  }
+  if (routines.length) out.routines = routines
   return out
 }
 
-export const hasReminders = (p: RemindersPayload) => !!(p.daily || p.pill || p.period || p.events?.length)
+/** Largo máximo del nombre de la medicación (cabe de sobra en el límite del servidor). */
+export const MEDICATION_NAME_MAX = 40
+
+export const hasReminders = (p: RemindersPayload) =>
+  !!(p.daily || p.pill || p.period || p.events?.length || p.routines?.length)
