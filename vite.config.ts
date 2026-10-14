@@ -3,8 +3,8 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
+import { MANIFEST_EN, MANIFEST_ES, MANIFEST_FILES } from './pwa-manifests.ts'
 
-const CREAM = '#fbf6f0'
 const vercelConfig = JSON.parse(readFileSync(new URL('./vercel.json', import.meta.url), 'utf-8'))
 
 // https://vite.dev/config/
@@ -22,31 +22,7 @@ export default defineConfig({
       registerType: 'prompt',
       // Los iconos ya entran por globPatterns; así no se duplican en la precarga.
       includeManifestIcons: false,
-      manifest: {
-        id: '/',
-        name: 'Ciclita · Registro menstrual',
-        short_name: 'Ciclita',
-        description: 'Registro menstrual privado: tus datos se quedan en tu dispositivo.',
-        lang: 'es',
-        dir: 'ltr',
-        start_url: '/',
-        scope: '/',
-        display: 'standalone',
-        background_color: CREAM,
-        theme_color: CREAM,
-        categories: ['health', 'lifestyle', 'medical'],
-        icons: [
-          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: 'icons/maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
-          { src: 'icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          { src: 'icons/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-        ],
-        shortcuts: [
-          { name: 'Registrar hoy', short_name: 'Registrar', url: '/#/log', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
-          { name: 'Calendario', url: '/#/calendar', icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
-        ],
-      },
+      manifest: MANIFEST_ES,
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // icon-1024 es para tiendas y redes: no hace falta en el dispositivo.
@@ -54,6 +30,14 @@ export default defineConfig({
       },
       devOptions: { enabled: true, type: 'module' },
     }),
+    // Manifiesto en inglés junto al español (la app enlaza el del idioma elegido).
+    {
+      name: 'ciclita-manifest-en',
+      apply: 'build',
+      generateBundle() {
+        this.emitFile({ type: 'asset', fileName: MANIFEST_FILES.en, source: JSON.stringify(MANIFEST_EN) })
+      },
+    },
   ],
   // `vite preview` usa las mismas cabeceras globales que Vercel (CSP incluida) para probarlas en local.
   preview: {

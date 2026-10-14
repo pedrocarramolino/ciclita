@@ -8,6 +8,8 @@ import { isEncrypted } from './db/vault'
 import { lang } from './i18n'
 
 document.documentElement.lang = lang
+// Nombre y atajos del icono en el idioma elegido (ver pwa-manifests.ts).
+if (lang === 'en') document.querySelector('link[rel="manifest"]')?.setAttribute('href', '/manifest-en.webmanifest')
 
 // Antes de pintar la app: se migra la base de datos del nombre antiguo si existe y se
 // mira si los datos están cifrados (entonces lo primero es pedir el PIN).

@@ -25,7 +25,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - ventana fértil (el día antes) y autoexploración de mama (una vez al mes);
   - anticonceptivos con pauta: anillo vaginal, parche o inyección trimestral.
 - **Privacidad**: PIN de 4 dígitos, cifrado opcional de los datos con el PIN, exportar/importar (JSON, JSON cifrado con contraseña y CSV) y borrado total con doble confirmación.
-- **Idiomas**: español (por defecto) e inglés. Se elige en la bienvenida o en *Ajustes → Idioma*.
+- **Idiomas**: español (por defecto) e inglés. Se elige en la bienvenida o en *Ajustes → Idioma*. El nombre de la app instalada y sus atajos también se traducen (`pwa-manifests.ts`: un manifiesto por idioma).
 - Tema claro / oscuro / automático, animación de apertura, diseño pensado para móvil y accesible (WCAG AA).
 
 ## Privacidad: qué se guarda y dónde
