@@ -108,7 +108,7 @@ export async function syncPush(prediction: Prediction | null, opts: { force?: bo
     prediction,
     undefined,
     settings.mode,
-    reminderPillPack(settings.tracking.pill, settings.pill),
+    { pack: reminderPillPack(settings.tracking.pill, settings.pill), trackTaken: settings.tracking.pill },
   )
 
   try {

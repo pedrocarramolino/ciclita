@@ -43,6 +43,10 @@ export interface Settings {
   lastBackup: ISODate | null
   /** Día en que se pospuso el aviso de copia de seguridad del inicio. */
   backupSnoozedOn: ISODate | null
+  /** Inicios de ciclos largos que la usuaria confirmó como reales (no fue un periodo olvidado). */
+  confirmedLongCycles: ISODate[]
+  /** "¿Ha terminado tu periodo?" pospuesto: periodo al que se refiere y día hasta el que no se pregunta. */
+  periodEndSnooze: { start: ISODate; until: ISODate } | null
 }
 
 export interface PushDevice {
@@ -116,6 +120,8 @@ export const DEFAULT_SETTINGS: Settings = {
   pushError: null,
   lastBackup: null,
   backupSnoozedOn: null,
+  confirmedLongCycles: [],
+  periodEndSnooze: null,
 }
 
 export async function getSettings(database: AppDB = db): Promise<Settings> {

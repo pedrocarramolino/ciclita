@@ -85,6 +85,12 @@ function pillReminder(v: unknown): PillReminder | undefined {
   return { ...base, pack: { active: pack.active, start: pack.start } }
 }
 
+function withTakenAction(pill: PillReminder | undefined, v: unknown): PillReminder | undefined {
+  const a = isObj(v) ? v.takenAction : undefined
+  if (!pill || a === undefined || a === null) return pill
+  return { ...pill, takenAction: text(a, 'pill.takenAction') }
+}
+
 /** Periodos previstos adicionales que se pueden enviar. */
 export const MAX_NEXT_PERIODS = 5
 
@@ -164,7 +170,7 @@ export function validateRegister(raw: unknown): RegisterInput {
 
   const r: Reminders = {}
   const daily = timed(reminders.daily, 'daily')
-  const pill = pillReminder(reminders.pill)
+  const pill = withTakenAction(pillReminder(reminders.pill), reminders.pill)
   const per = period(reminders.period)
   if (daily) r.daily = daily
   if (pill) r.pill = pill

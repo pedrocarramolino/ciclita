@@ -13,6 +13,7 @@ export function usePrediction(): Prediction | undefined {
       today: today(),
       userCycleLength: settings.cycleLength,
       userPeriodLength: settings.periodLength,
+      confirmedLongCycles: settings.confirmedLongCycles,
     })
   })
 }

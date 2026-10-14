@@ -15,6 +15,7 @@ import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
 import { localDate, nextOccurrence, zonedToUtc } from './time.js'
 import {
   periodWindows,
+  PILL_TAKEN_ACTION,
   REMINDER_KINDS,
   type DeliverMessage,
   type PillPack,
@@ -222,7 +223,11 @@ export async function deliver(deps: Deps, msg: DeliverMessage): Promise<DeliverR
     const { title, body } = r[msg.kind]!
     // Por si llega un mensaje programado antes de cambiar el envase: en descanso no se avisa.
     const pack = msg.kind === 'pill' ? r.pill?.pack : undefined
-    if (!pack || isPillDay(today, pack)) payload = { title, body, tag: `ciclita-${msg.kind}`, url: '/#/home' }
+    if (!pack || isPillDay(today, pack)) {
+      payload = { title, body, tag: `ciclita-${msg.kind}`, url: '/#/home' }
+      const action = msg.kind === 'pill' ? r.pill?.takenAction : undefined
+      if (action) payload.actions = [{ action: PILL_TAKEN_ACTION, title: action }]
+    }
   } else if (msg.kind === 'events' && r.events && msg.at !== undefined) {
     // Todos los recordatorios con fecha que caen en este mismo instante.
     const due = r.events.filter((e) => Math.abs(eventInstant(e, record.timezone).getTime() - msg.at!) < 60_000)

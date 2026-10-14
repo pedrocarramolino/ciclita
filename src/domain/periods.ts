@@ -62,3 +62,33 @@ export function togglePeriodDay(
     return { startDate: run[0], endDate: end === ongoingEnd ? null : end }
   })
 }
+
+/** Días por encima de la duración habitual tras los que se pregunta si el periodo terminó. */
+export const ASK_END_EXTRA_DAYS = 2
+
+export interface PeriodEndQuestion {
+  start: ISODate
+  /** Días que lleva en curso (hoy incluido). */
+  days: number
+  /** Último día que se puede elegir como final (hoy, o el tope de un periodo en curso). */
+  lastPossible: ISODate
+}
+
+/**
+ * Si hay un periodo en curso que ya dura más de lo habitual (+2 días), devuelve los
+ * datos para preguntar si ha terminado; null si no toca o se pospuso.
+ */
+export function periodEndQuestion(
+  periods: Period[],
+  periodLength: number,
+  today: ISODate,
+  snooze: { start: ISODate; until: ISODate } | null = null,
+): PeriodEndQuestion | null {
+  const ongoing = periods.find((p) => p.endDate === null)
+  if (!ongoing || ongoing.startDate > today) return null
+  const days = diffDays(ongoing.startDate, today) + 1
+  if (days <= periodLength + ASK_END_EXTRA_DAYS) return null
+  if (snooze && snooze.start === ongoing.startDate && today < snooze.until) return null
+  const cap = addDays(ongoing.startDate, MAX_ONGOING_DAYS - 1)
+  return { start: ongoing.startDate, days, lastPossible: today < cap ? today : cap }
+}

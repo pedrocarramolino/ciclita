@@ -6,6 +6,7 @@ import {
   DEFAULT_PERIOD_LENGTH,
   fertileWindowFor,
   MAX_MARGIN,
+  median,
   predict,
   predictionMargin,
 } from './prediction'
@@ -230,5 +231,46 @@ describe('predict · margen de la previsión', () => {
     const w = predict({ periods, today: TODAY }).fertileWindows[0]
     expect(w.possibleStart < w.start).toBe(true)
     expect(w.possibleEnd > w.end).toBe(true)
+  })
+})
+
+describe('mediana y periodos olvidados', () => {
+  const fromLengths = (start: string, lengths: number[]) => {
+    const starts = [start]
+    for (const l of lengths) starts.push(addDays(starts.at(-1)!, l))
+    return starts.map((s) => ({ startDate: s, endDate: addDays(s, 4) }))
+  }
+
+  it('median', () => {
+    expect(median([28, 30, 29])).toBe(29)
+    expect(median([28, 29, 30, 31])).toBe(30) // 29,5 redondeado
+  })
+
+  it('un ciclo aislado más largo no desplaza la duración habitual', () => {
+    const periods = fromLengths('2026-01-01', [28, 28, 29, 28, 45, 28])
+    const p = predict({ periods, today: '2026-07-08' })
+    expect(p.cycleLength).toBe(28)
+  })
+
+  it('un ciclo del doble de lo habitual se toma por periodo olvidado y no cuenta', () => {
+    const periods = fromLengths('2026-01-01', [28, 29, 56, 28])
+    const p = predict({ periods, today: '2026-05-20' })
+    expect(p.suspectedMissed).toEqual([{ start: '2026-02-27', end: '2026-04-23', length: 56 }])
+    expect(p.recentCycles).toEqual([28, 29, 28])
+    expect(p.isIrregular).toBe(false)
+    expect(p.cycleLength).toBe(28)
+  })
+
+  it('si la usuaria confirmó el ciclo largo, cuenta y no se pregunta', () => {
+    const periods = fromLengths('2026-01-01', [28, 29, 56, 28])
+    const p = predict({ periods, today: '2026-05-20', confirmedLongCycles: ['2026-02-27'] })
+    expect(p.suspectedMissed).toEqual([])
+    expect(p.recentCycles).toEqual([28, 29, 56, 28])
+  })
+
+  it('con pocos ciclos usa la duración indicada por la usuaria como referencia', () => {
+    const periods = fromLengths('2026-01-01', [28, 55])
+    expect(predict({ periods, today: '2026-03-30' }).suspectedMissed).toEqual([])
+    expect(predict({ periods, today: '2026-03-30', userCycleLength: 28 }).suspectedMissed).toHaveLength(1)
   })
 })

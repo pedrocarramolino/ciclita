@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
-import { endPeriod, restorePeriods, startPeriod } from '../../db/repo'
+import { endPeriod, restorePeriods, setPillTaken, startPeriod } from '../../db/repo'
+import { useHashAction } from '../../useHashAction'
 import { diffDays, formatDayMonth, formatLong, formatRange, today as todayISO } from '../../domain/dates'
 import type { Prediction, Source } from '../../domain/prediction'
 import { t } from '../../i18n'
@@ -14,10 +15,19 @@ import { perimenopauseInfo, pregnancyInfo } from '../../domain/modes'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { BackupNudgeCard } from './BackupNudgeCard'
 import { PillCard } from './PillCard'
+import { MissedPeriodPrompt, PeriodEndPrompt } from './PeriodPrompts'
 import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
 
 /** Dirección del atajo "Registrar hoy" (manifest). */
 export const LOG_TODAY_HASH = '#/log'
+/** Dirección del botón "Ya la he tomado" de la notificación de la píldora (sw.ts). */
+export const PILL_TAKEN_HASH = '#/pill-taken'
+
+/** Última acción que se puede deshacer desde el aviso flotante. */
+interface Undoable {
+  message: string
+  undo: () => Promise<void>
+}
 
 export function Home() {
   const p = usePrediction()
@@ -25,15 +35,21 @@ export function Home() {
     const [settings, periods] = await Promise.all([getSettings(), db.periods.toArray()])
     return { mode: settings.mode, pregnancyStart: settings.pregnancyStart, periods }
   })
-  // El atajo "Registrar hoy" del icono de la app abre #/log: se abre el registro de hoy.
-  // Última acción de periodo, para poder deshacerla.
-  const [undo, setUndo] = useState<{ message: string; prev: Period[] } | null>(null)
-  const [logOpen, setLogOpen] = useState(() => window.location.hash === LOG_TODAY_HASH)
-  useEffect(() => {
-    if (window.location.hash === LOG_TODAY_HASH) history.replaceState(null, '', '#/home')
-  }, [])
+  const [undo, setUndo] = useState<Undoable | null>(null)
+  const [logOpen, setLogOpen] = useState(false)
   const today = todayISO()
   const h = t.home
+  const undoPeriods = (message: string) => (prev: Period[]) => setUndo({ message, undo: () => restorePeriods(prev) })
+
+  // El atajo "Registrar hoy" del icono de la app abre el registro de hoy.
+  useHashAction(LOG_TODAY_HASH, () => setLogOpen(true))
+  // "Ya la he tomado" en la notificación: se marca la píldora de hoy.
+  useHashAction(PILL_TAKEN_HASH, () => {
+    const day = todayISO()
+    void setPillTaken(day, true).then(() =>
+      setUndo({ message: t.pill.takenFromNotification, undo: () => setPillTaken(day, false) }),
+    )
+  })
 
   if (!p || !modeData) return null
   const s = p.status
@@ -72,16 +88,25 @@ export function Home() {
       </section>
       )}
 
+      {mode !== 'pregnancy' && (
+        <PeriodEndPrompt
+          periodLength={p.periodLength}
+          today={today}
+          onEnded={undoPeriods(h.endedToast)}
+        />
+      )}
+      {mode === 'cycle' && <MissedPeriodPrompt prediction={p} />}
+
       <div className="grid gap-3">
         {mode === 'pregnancy' ? null : ongoing ? (
-          <Button className="min-h-16 w-full text-lg" onClick={() => void endPeriod().then((prev) => setUndo({ message: h.endedToast, prev }))}>
+          <Button className="min-h-16 w-full text-lg" onClick={() => void endPeriod().then(undoPeriods(h.endedToast))}>
             {h.ended}
           </Button>
         ) : (
           !inPeriod && (
             <Button
               className="min-h-16 w-full text-lg"
-              onClick={() => void startPeriod().then((prev) => setUndo({ message: h.startedToast, prev }))}
+              onClick={() => void startPeriod().then(undoPeriods(h.startedToast))}
             >
               <Icon name="drop" />
               {h.started}
@@ -113,7 +138,7 @@ export function Home() {
           onClose={() => setUndo(null)}
           onUndo={() => {
             setUndo(null)
-            void restorePeriods(undo.prev)
+            void undo.undo()
           }}
         />
       )}

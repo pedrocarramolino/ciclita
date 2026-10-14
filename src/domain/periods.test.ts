@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Period } from '../db/db'
-import { expandPeriod, MAX_ONGOING_DAYS, togglePeriodDay } from './periods'
+import { addDays } from './dates'
+import { expandPeriod, MAX_ONGOING_DAYS, periodEndQuestion, togglePeriodDay } from './periods'
 
 const TODAY = '2026-10-13'
 const closed = (startDate: string, endDate: string): Period => ({ startDate, endDate })
@@ -62,5 +63,27 @@ describe('togglePeriodDay', () => {
   it('da por terminado un periodo en curso si se quita hoy', () => {
     const r = togglePeriodDay([{ startDate: '2026-10-11', endDate: null }], TODAY, false, TODAY)
     expect(r).toEqual([closed('2026-10-11', '2026-10-12')])
+  })
+})
+
+describe('periodEndQuestion', () => {
+  const ongoing = [{ startDate: '2026-10-01', endDate: null }]
+
+  it('pregunta cuando el periodo dura 2 días más de lo habitual', () => {
+    expect(periodEndQuestion(ongoing, 5, '2026-10-07')).toBeNull() // día 7
+    expect(periodEndQuestion(ongoing, 5, '2026-10-08')).toEqual({ start: '2026-10-01', days: 8, lastPossible: '2026-10-08' })
+  })
+
+  it('no pregunta si el periodo está cerrado o se pospuso', () => {
+    expect(periodEndQuestion([{ startDate: '2026-10-01', endDate: '2026-10-05' }], 5, '2026-10-10')).toBeNull()
+    const snooze = { start: '2026-10-01', until: '2026-10-10' }
+    expect(periodEndQuestion(ongoing, 5, '2026-10-09', snooze)).toBeNull()
+    expect(periodEndQuestion(ongoing, 5, '2026-10-10', snooze)).not.toBeNull()
+    // Un aplazamiento de otro periodo no cuenta.
+    expect(periodEndQuestion(ongoing, 5, '2026-10-09', { start: '2026-09-01', until: '2026-10-20' })).not.toBeNull()
+  })
+
+  it('el último día elegible no pasa del tope de un periodo en curso', () => {
+    expect(periodEndQuestion(ongoing, 5, '2026-10-30')?.lastPossible).toBe(addDays('2026-10-01', MAX_ONGOING_DAYS - 1))
   })
 })

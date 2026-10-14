@@ -7,6 +7,7 @@ import { monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
 import { formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
 import { missedPillDates } from '../../domain/pill'
+import { takeCalendarFocus } from './calendarFocus'
 import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
@@ -26,7 +27,7 @@ interface DayState {
 
 export function CalendarScreen() {
   const [now] = useState(() => new Date())
-  const [ym, setYm] = useState({ y: now.getFullYear(), m: now.getMonth() })
+  const [ym, setYm] = useState(() => takeCalendarFocus() ?? { y: now.getFullYear(), m: now.getMonth() })
   const [selected, setSelected] = useState<ISODate | null>(null)
   const today = todayISO()
   const c = t.calendar

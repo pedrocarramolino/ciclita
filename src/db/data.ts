@@ -24,6 +24,7 @@ export async function exportJSON(database: AppDB = db): Promise<string> {
     pinLockedUntil: _u,
     lastBackup: _b,
     backupSnoozedOn: _n,
+    periodEndSnooze: _p,
     ...rest
   } = settings
   const backup = buildBackup({
@@ -89,6 +90,7 @@ const RESTORABLE: (keyof Settings)[] = [
   'mode',
   'pregnancyStart',
   'pill',
+  'confirmedLongCycles',
 ]
 
 async function replaceAll(

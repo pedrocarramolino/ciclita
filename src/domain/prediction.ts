@@ -6,9 +6,13 @@
  *
  * Definiciones:
  *  - Ciclo: días desde el inicio de un periodo hasta el inicio del siguiente.
- *  - Duración del ciclo/periodo: media redondeada de los últimos 6 registrados.
- *    Sin datos se usa lo que indicó la usuaria en el onboarding y, si eligió
- *    "No lo sé", 28 y 5 días.
+ *  - Duración del ciclo/periodo: mediana de los últimos 6 registrados (un ciclo
+ *    aislado muy largo o muy corto no la desplaza, como sí haría una media). Sin
+ *    datos se usa lo que indicó la usuaria en el onboarding y, si eligió "No lo sé",
+ *    28 y 5 días.
+ *  - Periodo olvidado: un ciclo que dura 1,7 veces lo habitual o más suele ser un
+ *    periodo sin registrar. Se aparta de los cálculos y se pregunta (salvo que la
+ *    usuaria haya confirmado que fue un ciclo largo de verdad).
  *  - Ovulación estimada: 14 días antes del inicio del siguiente periodo (la fase
  *    lútea es la más estable del ciclo).
  *  - Ventana fértil estimada: de 5 días antes de la ovulación al día siguiente.
@@ -31,6 +35,8 @@ export const LUTEAL_PHASE = 14
 /** Ciclos mínimos para estimar un margen, y margen máximo en días. */
 export const MIN_CYCLES_FOR_MARGIN = 3
 export const MAX_MARGIN = 6
+/** Un ciclo de esta proporción respecto al habitual o más se toma por periodo olvidado. */
+export const MISSED_PERIOD_RATIO = 1.7
 
 /**
  * Ciclos fuera de este rango se ignoran en las medias: casi siempre son
@@ -77,6 +83,8 @@ export interface Prediction {
   periodSource: Source
   /** Duraciones de los últimos ciclos completos (máx. 6), de más antiguo a más reciente. */
   recentCycles: number[]
+  /** Ciclos recientes tan largos que probablemente falta registrar un periodo. */
+  suspectedMissed: SuspectedMissed[]
   /** Más largo − más corto de `recentCycles`; null si hay menos de 2 ciclos. */
   variation: number | null
   isIrregular: boolean
@@ -96,19 +104,55 @@ export interface PredictionInput {
   /** Duraciones indicadas en el onboarding/ajustes (null = "No lo sé"). */
   userCycleLength?: number | null
   userPeriodLength?: number | null
+  /** Inicios de ciclos largos que la usuaria confirmó como reales (no se preguntan). */
+  confirmedLongCycles?: ISODate[]
 }
 
-const mean = (xs: number[]) => Math.round(xs.reduce((a, b) => a + b, 0) / xs.length)
+export interface SuspectedMissed {
+  /** Inicio del ciclo largo y último día antes del periodo siguiente. */
+  start: ISODate
+  end: ISODate
+  length: number
+}
+
+/** Mediana redondeada (con un número par de valores, la media de los dos centrales). */
+export function median(xs: number[]): number {
+  const s = [...xs].sort((a, b) => a - b)
+  const m = s.length >> 1
+  return Math.round(s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2)
+}
+
+/** Ciclos completos (inicio y duración), de más antiguo a más reciente. */
+export function cycleSpans(periods: Period[]): { start: ISODate; length: number }[] {
+  const starts = periods.map((p) => p.startDate).sort()
+  const out: { start: ISODate; length: number }[] = []
+  for (let i = 1; i < starts.length; i++) {
+    const length = diffDays(starts[i - 1], starts[i])
+    if (length >= MIN_CYCLE && length <= MAX_CYCLE) out.push({ start: starts[i - 1], length })
+  }
+  return out
+}
 
 /** Duraciones de los ciclos completos, de más antiguo a más reciente. */
 export function cycleLengths(periods: Period[]): number[] {
-  const starts = periods.map((p) => p.startDate).sort()
-  const out: number[] = []
-  for (let i = 1; i < starts.length; i++) {
-    const len = diffDays(starts[i - 1], starts[i])
-    if (len >= MIN_CYCLE && len <= MAX_CYCLE) out.push(len)
-  }
-  return out
+  return cycleSpans(periods).map((c) => c.length)
+}
+
+/**
+ * Separa de los últimos ciclos los que probablemente esconden un periodo sin
+ * registrar (1,7 veces lo habitual o más). Lo habitual es la mediana de los últimos
+ * ciclos si hay al menos 3, o la duración que indicó la usuaria.
+ */
+export function splitMissed(
+  spans: { start: ISODate; length: number }[],
+  userCycleLength: number | null | undefined,
+  confirmed: ISODate[] = [],
+): { used: { start: ISODate; length: number }[]; missed: { start: ISODate; length: number }[] } {
+  const ref = spans.length >= 3 ? median(spans.map((c) => c.length)) : (userCycleLength ?? null)
+  if (!ref) return { used: spans, missed: [] }
+  const limit = ref * MISSED_PERIOD_RATIO
+  const isMissed = (c: { start: ISODate; length: number }) => c.length >= limit && !confirmed.includes(c.start)
+  return { used: spans.filter((c) => !isMissed(c)), missed: spans.filter(isMissed) }
 }
 
 /** Duraciones de los periodos ya terminados, de más antiguo a más reciente. */
@@ -156,18 +200,29 @@ export function predictionMargin(recentCycles: number[], k: number): number {
 export function predict(input: PredictionInput): Prediction {
   const { periods, today } = input
 
-  // 1. Medias a partir de los últimos 6 ciclos (o valores de reserva).
-  const recentCycles = cycleLengths(periods).slice(-HISTORY_SIZE)
+  // 1. Duraciones típicas a partir de los últimos 6 ciclos (o valores de reserva),
+  //    sin los ciclos que parecen esconder un periodo olvidado.
+  const { used, missed } = splitMissed(
+    cycleSpans(periods).slice(-HISTORY_SIZE),
+    input.userCycleLength,
+    input.confirmedLongCycles,
+  )
+  const recentCycles = used.map((c) => c.length)
+  const suspectedMissed: SuspectedMissed[] = missed.map((c) => ({
+    start: c.start,
+    end: addDays(c.start, c.length - 1),
+    length: c.length,
+  }))
   const recentPeriods = periodLengths(periods).slice(-HISTORY_SIZE)
 
   const [cycleLength, cycleSource]: [number, Source] = recentCycles.length
-    ? [mean(recentCycles), 'history']
+    ? [median(recentCycles), 'history']
     : input.userCycleLength
       ? [input.userCycleLength, 'user']
       : [DEFAULT_CYCLE_LENGTH, 'default']
 
   const [periodLength, periodSource]: [number, Source] = recentPeriods.length
-    ? [mean(recentPeriods), 'history']
+    ? [median(recentPeriods), 'history']
     : input.userPeriodLength
       ? [input.userPeriodLength, 'user']
       : [DEFAULT_PERIOD_LENGTH, 'default']
@@ -183,6 +238,7 @@ export function predict(input: PredictionInput): Prediction {
     periodLength,
     periodSource,
     recentCycles,
+    suspectedMissed,
     variation,
     isIrregular,
   }

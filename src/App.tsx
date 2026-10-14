@@ -135,7 +135,7 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
     settings?.onboardingDone ? settings.reminders : undefined,
     prediction,
     settings?.mode,
-    settings && reminderPillPack(settings.tracking.pill, settings.pill),
+    settings && [settings.tracking.pill, reminderPillPack(settings.tracking.pill, settings.pill)],
   )
   usePreloadScreens(!!settings?.onboardingDone)
   // Una vez que hay datos, se pide al navegador que no los borre para liberar espacio.

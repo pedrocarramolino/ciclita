@@ -248,6 +248,22 @@ export const es = {
     wrong: 'Contraseña incorrecta.',
     bad: 'El archivo cifrado está dañado o no es compatible.',
   },
+  periodEnd: {
+    title: '¿Ha terminado tu periodo?',
+    body: (n: number) => `Lleva ${n} días marcado como en curso.`,
+    yesterday: 'Sí, terminó ayer',
+    pick: 'Elegir el último día',
+    pickLabel: 'Último día del periodo',
+    save: 'Guardar',
+    notYet: 'Todavía no',
+  },
+  missedPeriod: {
+    title: '¿Se te olvidó registrar un periodo?',
+    body: (a: string, b: string, n: number) =>
+      `Entre el ${a} y el ${b} pasaron ${n} días sin periodo, mucho más de lo habitual. Si tuviste uno, márcalo en el calendario: así las previsiones serán más precisas.`,
+    calendar: 'Ir al calendario',
+    confirm: 'No, fue un ciclo largo',
+  },
   backupNudge: {
     title: 'Haz una copia de seguridad',
     never: 'Tus datos solo están en este dispositivo. Guarda una copia por si cambias de móvil o se borran.',
@@ -344,6 +360,7 @@ export const es = {
     missedYesterday: 'La de ayer no está marcada. Si la tomaste, márcala desde el calendario.',
     logLabel: 'Píldora tomada',
     calendarMissed: 'Píldora sin marcar',
+    takenFromNotification: 'Píldora de hoy marcada como tomada.',
   },
   report: {
     title: 'Informe para tu médico',
@@ -450,7 +467,9 @@ export const es = {
       daily: 'Es un buen momento para tu registro de hoy.',
       pill: 'Recordatorio diario.',
       event: 'Tienes un recordatorio. Abre la app para verlo.',
+      done: 'Hecho',
     },
+    pillTaken: 'Ya la he tomado',
     events: {
       'ring-remove': { title: 'Anillo', body: 'Hoy toca retirar el anillo vaginal (semana de descanso).' },
       'ring-insert': { title: 'Anillo', body: 'Hoy toca colocar un anillo vaginal nuevo.' },
@@ -473,16 +492,16 @@ export const es = {
     empty: 'Aún no hay ciclos completos',
     emptyHint:
       'Cuando registres al menos dos periodos verás aquí la duración de tus ciclos y tus patrones.',
-    avgCycle: 'Ciclo medio',
-    avgPeriod: 'Periodo medio',
+    avgCycle: 'Ciclo habitual',
+    avgPeriod: 'Periodo habitual',
     shortest: 'Ciclo más corto',
     longest: 'Ciclo más largo',
     lastN: (n: number) => `Últimos ${n} ${n === 1 ? 'ciclo' : 'ciclos'}`,
     startedOn: (d: string) => `Empezó el ${d}`,
     chartTitle: 'Duración de tus últimos ciclos',
     chartSummary: (n: number, min: number, max: number, avg: number) =>
-      `Gráfica de barras con ${n} ciclos, de ${min} a ${max} días; media de ${avg} días.`,
-    average: (n: number) => `Media: ${n} días`,
+      `Gráfica de barras con ${n} ciclos, de ${min} a ${max} días; lo habitual, ${avg} días.`,
+    average: (n: number) => `Habitual: ${n} días`,
     tooltipCycle: (d: string) => `Ciclo del ${d}`,
     days: (n: number) => `${n} ${n === 1 ? 'día' : 'días'}`,
     periodDays: (n: number | null) => (n === null ? 'Periodo en curso' : `Periodo de ${n} ${n === 1 ? 'día' : 'días'}`),
@@ -630,8 +649,8 @@ export const es = {
     fertileWindowWide: (range: string) => `Contando el margen de tus ciclos: ${range}`,
     inDays: (n: number) => (n <= 0 ? 'hoy' : n === 1 ? 'mañana' : `en ${n} días`),
     yourCycle: 'Tu ciclo',
-    avgCycle: 'Ciclo medio',
-    avgPeriod: 'Periodo medio',
+    avgCycle: 'Ciclo habitual',
+    avgPeriod: 'Periodo habitual',
     source: {
       history: (n: number) => `Según tus últimos ${n} ${n === 1 ? 'ciclo' : 'ciclos'}`,
       historyPeriod: 'Según tus periodos registrados',

@@ -304,6 +304,20 @@ describe('píldora con días de descanso', () => {
     expect(f.sent).toEqual([])
   })
 
+  it('si se registran las tomas, el aviso lleva el botón "Ya la he tomado"', async () => {
+    const f = fakeDeps('2026-10-20T21:00:00Z')
+    await register(f.deps, input({ pill: { ...PILL.pill, takenAction: 'Ya la he tomado' } }))
+    f.setNow('2026-10-21T20:00:01Z')
+    expect(await deliver(f.deps, f.published[0].message)).toBe('sent')
+    expect(f.sent[0].actions).toEqual([{ action: 'pill-taken', title: 'Ya la he tomado' }])
+    // Sin texto de botón, sin botones.
+    const g = fakeDeps('2026-10-20T21:00:00Z')
+    await register(g.deps, input(PILL))
+    g.setNow('2026-10-21T20:00:01Z')
+    await deliver(g.deps, g.published[0].message)
+    expect(g.sent[0].actions).toBeUndefined()
+  })
+
   it('valida el envase', () => {
     const base = input({})
     const bad = (pack: unknown) => () => validateRegister({ ...base, reminders: { pill: { ...PILL.pill, pack } } })

@@ -69,7 +69,12 @@ export interface PillPack {
 
 export interface PillReminder extends TimedReminder {
   pack?: PillPack
+  /** Texto del botón "Ya la he tomado" de la notificación (si se registran las tomas). */
+  takenAction?: string
 }
+
+/** Acción del botón de la notificación de la píldora (la entiende el service worker). */
+export const PILL_TAKEN_ACTION = 'pill-taken'
 
 export interface Reminders {
   daily?: TimedReminder
@@ -120,4 +125,6 @@ export interface DeliverMessage {
 export interface PushPayload extends Message {
   tag: string
   url: string
+  /** Botones de la notificación (donde el sistema los admite). */
+  actions?: { action: string; title: string }[]
 }

@@ -88,7 +88,18 @@ describe('píldora con envase', () => {
     expect(reminderPillPack(false, { pack: 21, start: '2026-10-01' })).toBeUndefined()
     expect(reminderPillPack(true, { pack: 24, start: null })).toBeUndefined()
 
-    const r = buildReminders({ ...DEFAULT_REMINDERS, pillEnabled: true }, null, '2026-10-20', 'cycle', { active: 24, start: '2026-10-01' })
+    const r = buildReminders({ ...DEFAULT_REMINDERS, pillEnabled: true }, null, '2026-10-20', 'cycle', {
+      pack: { active: 24, start: '2026-10-01' },
+    })
     expect(r.pill?.pack).toEqual({ active: 24, start: '2026-10-01' })
+    expect(r.pill?.takenAction).toBeUndefined()
+  })
+
+  it('con las tomas registradas, la notificación lleva el botón (neutro en modo discreto)', () => {
+    const on = { ...DEFAULT_REMINDERS, pillEnabled: true }
+    expect(buildReminders({ ...on, discreet: false }, null, '2026-10-20', 'cycle', { trackTaken: true }).pill?.takenAction).toBe(
+      'Ya la he tomado',
+    )
+    expect(buildReminders({ ...on, discreet: true }, null, '2026-10-20', 'cycle', { trackTaken: true }).pill?.takenAction).toBe('Hecho')
   })
 })
