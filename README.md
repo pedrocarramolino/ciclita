@@ -148,3 +148,8 @@ En *Ajustes → Tus datos*:
 - **Importar** acepta ambos formatos (y CSV en español o en inglés) y **reemplaza** los datos actuales.
 
 Como los datos solo viven en el dispositivo, si se borran los datos del navegador o se desinstala la app se pierden: haz copias de vez en cuando.
+
+Para reducir ese riesgo:
+- La app pide al navegador **almacenamiento persistente**, para que no borre los datos al quedarse sin espacio. El estado se ve en *Ajustes → Tus datos → Protección frente al borrado*.
+- *Ajustes → Tus datos* muestra la fecha de la última copia, y el inicio sugiere hacer una si nunca se ha hecho tras un mes de uso o si la última tiene más de 60 días.
+- Si la app falla al abrirse, muestra una pantalla con **Exportar mis datos** en lugar de quedarse en blanco.
