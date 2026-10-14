@@ -186,7 +186,10 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
             ? 'border-2 border-dotted border-primary/60 text-ink'
             : s.isPossibleFertile
               ? 'border border-dotted border-accent/60 bg-lavender-soft/40 text-ink'
-              : 'text-ink hover:bg-surface-soft'
+              : // Días de otro mes: gris del tema (no transparencia, que no llega al contraste AA).
+                gd.inMonth
+                ? 'text-ink hover:bg-surface-soft'
+                : 'font-semibold text-muted hover:bg-surface-soft'
 
   return (
     <button
@@ -195,7 +198,7 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
       onClick={() => onSelect(gd.date)}
       aria-label={parts.join(', ')}
       className={`relative mx-auto grid aspect-square w-full max-w-12 place-items-center rounded-full text-base font-bold transition
-        ${gd.inMonth ? '' : 'opacity-40'} ${look}
+        ${look}
         
         ${s.isToday ? 'outline-2 outline-offset-2 outline-ink' : ''}
         disabled:cursor-default`}

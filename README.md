@@ -104,7 +104,7 @@ Otros comandos:
 
 | Comando | Qué hace |
 | --- | --- |
-| `npm test` | Tests (Vitest): lógica pura y pantallas (Testing Library sobre jsdom, con IndexedDB simulada) |
+| `npm test` | Tests (Vitest): lógica pura, pantallas (Testing Library sobre jsdom, con IndexedDB simulada) y revisión de accesibilidad de todas las pantallas con axe-core (`src/a11y.test.tsx`) |
 | `npm run build` | Comprobación de tipos y build de producción en `dist/` |
 | `npm run preview` | Sirve el build (con las mismas cabeceras de seguridad que Vercel) para probar la PWA y el modo offline |
 | `npm run lint` | Linter (oxlint) |
