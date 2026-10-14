@@ -491,6 +491,18 @@ export const es = {
     ],
     phasesNote: 'Las fases se estiman a partir de tus registros.',
   },
+  search: {
+    title: 'Buscar',
+    open: 'Buscar en tus registros',
+    label: 'Buscar en notas, síntomas y medicación',
+    placeholder: 'Por ejemplo, migraña o ibuprofeno',
+    hint: 'Busca en tus notas, síntomas y medicación. Toca un resultado para abrir ese día.',
+    count: (n: number) => (n === 1 ? '1 día' : `${n} días`),
+    none: 'No hay ningún día que coincida.',
+    fields: { notes: 'Notas', medication: 'Medicación', symptom: 'Síntoma' },
+    historyTitle: 'Historial del síntoma',
+    history: (n: number, last: string) => `${n} ${n === 1 ? 'día' : 'días'} · el último, el ${last}`,
+  },
   calendar: {
     prev: 'Mes anterior',
     next: 'Mes siguiente',

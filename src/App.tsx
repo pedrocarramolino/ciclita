@@ -24,6 +24,8 @@ const settingsScreen = preloadable(() =>
   import('./features/settings/SettingsScreen').then((m) => m.SettingsScreen),
 )
 const reportScreen = preloadable(() => import('./features/report/ReportScreen').then((m) => m.ReportScreen))
+const searchScreen = preloadable(() => import('./features/search/SearchScreen').then((m) => m.SearchScreen))
+const SearchScreen = searchScreen.Component
 const StatsScreen = stats.Component
 const ReportScreen = reportScreen.Component
 const SettingsScreen = settingsScreen.Component
@@ -33,7 +35,7 @@ function usePreloadScreens(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return
     const preload = () =>
-      void Promise.all([stats.preload(), settingsScreen.preload(), reportScreen.preload()]).catch(() => {})
+      void Promise.all([stats.preload(), settingsScreen.preload(), reportScreen.preload(), searchScreen.preload()]).catch(() => {})
     if ('requestIdleCallback' in window) {
       const id = requestIdleCallback(preload, { timeout: 3000 })
       return () => cancelIdleCallback(id)
@@ -159,6 +161,11 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
         {route === 'stats' && (
           <Suspense fallback={null}>
             <StatsScreen />
+          </Suspense>
+        )}
+        {route === 'search' && (
+          <Suspense fallback={null}>
+            <SearchScreen />
           </Suspense>
         )}
         {route === 'report' && (

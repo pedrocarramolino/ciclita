@@ -9,6 +9,8 @@ const ITEMS: { route: Route; icon: IconName; label: string }[] = [
   { route: 'settings', icon: 'settings', label: t.nav.settings },
 ]
 
+const PARENT: Partial<Record<Route, Route>> = { report: 'stats', search: 'calendar' }
+
 export function BottomNav({ route, onNavigate }: { route: Route; onNavigate: (r: Route) => void }) {
   return (
     <nav
@@ -17,12 +19,13 @@ export function BottomNav({ route, onNavigate }: { route: Route; onNavigate: (r:
     >
       <ul className="mx-auto flex max-w-md">
         {ITEMS.map((it) => {
-          const active = route === it.route
+          // Las pantallas secundarias marcan la sección de la que cuelgan.
+          const active = route === it.route || PARENT[route] === it.route
           return (
             <li key={it.route} className="flex-1">
               <a
                 href={`#/${it.route}`}
-                aria-current={active ? 'page' : undefined}
+                aria-current={route === it.route ? 'page' : active ? 'true' : undefined}
                 onClick={(e) => {
                   e.preventDefault()
                   onNavigate(it.route)

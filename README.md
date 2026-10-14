@@ -13,6 +13,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - **Fertilidad y peso** (se activan en *Ajustes → Qué registras*): temperatura basal, moco cervical, relaciones sexuales con o sin protección y peso.
   - **Píldora anticonceptiva** (también en *Qué registras*): según el envase (21 + 7, 24 + 4 o 28 seguidas), el inicio muestra "Píldora de hoy" para marcarla con un toque; los días sin marcar aparecen en el calendario y en el informe.
 - **Predicciones**: medias de los últimos 6 ciclos (28/5 días por defecto), próximos 3 periodos y ventana fértil, con un **margen** (±días) calculado a partir de lo que varían tus ciclos.
+- **Buscar** (lupa del calendario): en notas, síntomas y medicación, sin distinguir tildes ni mayúsculas. Al buscar un síntoma muestra en cuántos días se registró y cuándo fue el último; cada resultado abre ese día.
 - **Estadísticas**: gráfica de los últimos ciclos, medias, ciclo más corto y más largo, síntomas frecuentes por fase y aviso suave si los ciclos varían más de 7 días.
 - **Informe para el médico**: resumen de 3, 6 o 12 meses (o todo) con ciclos, flujo, dolor, píldora, síntomas, medicación, fertilidad y, si quieres, notas. Se genera en el dispositivo como **PDF** (con pdf-lib), que se puede compartir (WhatsApp, correo, Archivos…), descargar o imprimir.
 - **Modos de la app** (*Ajustes → Modo de la app*):
@@ -65,7 +66,7 @@ src/
   domain/            Lógica pura: predicciones, periodos, estadísticas, informe, modos, síntomas,
                      avisos con fecha, copias de seguridad, fechas
   db/                Esquema Dexie, ajustes, repositorios, exportar/importar
-  features/          Pantallas: onboarding, inicio, calendario, registro, estadísticas, informe, ajustes, bloqueo
+  features/          Pantallas: onboarding, inicio, calendario, registro, búsqueda, estadísticas, informe, ajustes, bloqueo
   components/        Componentes reutilizables (botones, chips, PIN, diálogos…)
   push/              Suscripción push y sincronización de recordatorios con el servidor
   security/          Hash y verificación del PIN

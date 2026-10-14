@@ -98,6 +98,14 @@ export function CalendarScreen() {
               {c.today}
             </button>
           )}
+          <a
+            href="#/search"
+            aria-label={t.search.open}
+            title={t.search.open}
+            className="grid size-11 place-items-center rounded-full hover:bg-surface-soft"
+          >
+            <Icon name="search" />
+          </a>
           <button
             type="button"
             onClick={() => shift(-1)}

@@ -507,6 +507,18 @@ export const en: Messages = {
     ],
     phasesNote: 'Phases are estimated from your logs.',
   },
+  search: {
+    title: 'Search',
+    open: 'Search your logs',
+    label: 'Search notes, symptoms and medication',
+    placeholder: 'For example, migraine or ibuprofen',
+    hint: 'Search your notes, symptoms and medication. Tap a result to open that day.',
+    count: (n) => (n === 1 ? '1 day' : `${n} days`),
+    none: 'No days match.',
+    fields: { notes: 'Notes', medication: 'Medication', symptom: 'Symptom' },
+    historyTitle: 'Symptom history',
+    history: (n, last) => `${n} ${n === 1 ? 'day' : 'days'} · last on ${last}`,
+  },
   calendar: {
     prev: 'Previous month',
     next: 'Next month',
