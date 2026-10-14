@@ -1,5 +1,6 @@
 import { db, diskDb, type AppDB } from './db'
 import { saveFile } from '../files'
+import { encryptBackup } from '../security/backupCrypto'
 import { clearLanguage } from '../i18n'
 import { closeVaultSession } from './vault'
 import { getSettings, setSettings, type Settings } from './settings'
@@ -45,6 +46,23 @@ export async function exportCSV(database: AppDB = db): Promise<string> {
  */
 export async function downloadBackupJSON(): Promise<boolean> {
   const saved = await downloadText(`ciclita-${today()}.json`, await exportJSON(), 'application/json')
+  if (saved) await setSettings({ lastBackup: today(), backupSnoozedOn: null })
+  return saved
+}
+
+/**
+ * Copia completa cifrada con contraseña (ver security/backupCrypto), lista para
+ * guardar. Se separa de guardarla porque cifrar tarda: en iOS el menú Compartir
+ * tiene que abrirse justo al tocar un botón.
+ */
+export async function encryptedBackupFile(password: string): Promise<File> {
+  const text = await encryptBackup(await exportJSON(), password)
+  return new File([text], `ciclita-${today()}-cifrada.json`, { type: 'application/json' })
+}
+
+/** Guarda un archivo de copia y, si se guarda, apunta la fecha para el aviso de copias. */
+export async function saveBackupFile(file: File): Promise<boolean> {
+  const saved = await saveFile(file)
   if (saved) await setSettings({ lastBackup: today(), backupSnoozedOn: null })
   return saved
 }

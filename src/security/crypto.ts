@@ -33,20 +33,21 @@ export interface Sealed {
   data: ArrayBuffer
 }
 
-export async function encryptJSON(key: CryptoKey, value: unknown): Promise<Sealed> {
+/** `aad` separa usos (bóveda, copias): un dato cifrado para uno no vale para otro. */
+export async function encryptJSON(key: CryptoKey, value: unknown, aad = AAD): Promise<Sealed> {
   const iv = randomBytes(12)
   const plain = new TextEncoder().encode(JSON.stringify(value))
-  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: AAD }, key, plain)
+  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: aad }, key, plain)
   return { iv, data }
 }
 
 export class WrongKeyError extends Error {}
 
 /** Descifra; lanza WrongKeyError si la clave (el PIN) no es la correcta. */
-export async function decryptJSON<T>(key: CryptoKey, sealed: Sealed): Promise<T> {
+export async function decryptJSON<T>(key: CryptoKey, sealed: Sealed, aad = AAD): Promise<T> {
   let plain: ArrayBuffer
   try {
-    plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: sealed.iv, additionalData: AAD }, key, sealed.data)
+    plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: sealed.iv, additionalData: aad }, key, sealed.data)
   } catch {
     throw new WrongKeyError('PIN incorrecto o datos dañados')
   }

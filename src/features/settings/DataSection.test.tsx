@@ -12,10 +12,15 @@ import { DataSection } from './DataSection'
 
 /** Lo que el navegador "descarga" (jsdom no descarga archivos). */
 let downloads: string[] = []
+let blobs: Blob[] = []
 
 beforeEach(() => {
   downloads = []
-  URL.createObjectURL = vi.fn(() => 'blob:prueba')
+  blobs = []
+  URL.createObjectURL = vi.fn((b: Blob) => {
+    blobs.push(b)
+    return 'blob:prueba'
+  })
   URL.revokeObjectURL = vi.fn()
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
     downloads.push(this.download)
@@ -94,4 +99,47 @@ describe('Tus datos', () => {
     // La base de datos se elimina entera (la app recarga después).
     await waitFor(async () => expect(await Dexie.exists(db.name)).toBe(false))
   })
+
+  it('exporta una copia cifrada con contraseña y la vuelve a importar', async () => {
+    await db.periods.add({ startDate: '2026-09-01', endDate: '2026-09-04' })
+    await db.days.put({ date: '2026-09-02', notes: 'Muy privado', updatedAt: 1 })
+    const user = userEvent.setup()
+    const { container } = render(<DataSection lastBackup={null} />)
+
+    await user.click(screen.getByRole('button', { name: 'Exportar copia cifrada con contraseña' }))
+    let dialog = within(await screen.findByRole('dialog', { name: 'Copia cifrada con contraseña' }))
+    await user.type(dialog.getByLabelText('Contraseña'), 'corta')
+    await user.click(dialog.getByRole('button', { name: 'Cifrar y exportar' }))
+    expect(dialog.getByRole('alert')).toHaveTextContent('Usa al menos 8 caracteres.')
+
+    await user.clear(dialog.getByLabelText('Contraseña'))
+    await user.type(dialog.getByLabelText('Contraseña'), 'luna llena 2026')
+    await user.type(dialog.getByLabelText('Repite la contraseña'), 'luna llena 2026')
+    await user.click(dialog.getByRole('button', { name: 'Cifrar y exportar' }))
+
+    dialog = within(await screen.findByRole('dialog', { name: 'Copia cifrada lista' }, { timeout: 5000 }))
+    await user.click(dialog.getByRole('button', { name: 'Guardar copia' }))
+    await waitFor(() => expect(downloads).toEqual([`ciclita-${today()}-cifrada.json`]))
+    const text = await blobs[0].text()
+    expect(text).toContain('ciclita-encrypted-backup')
+    expect(text).not.toContain('Muy privado')
+    await waitFor(async () => expect((await getSettings()).lastBackup).toBe(today()))
+
+    // Se borran los datos y se importa la copia cifrada.
+    await db.periods.clear()
+    await db.days.clear()
+    await user.upload(fileInput(container), new File([text], 'copia-cifrada.json', { type: 'application/json' }))
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Continuar' }))
+
+    dialog = within(await screen.findByRole('dialog', { name: 'Esta copia está cifrada' }))
+    await user.type(dialog.getByLabelText('Contraseña'), 'otra contraseña')
+    await user.click(dialog.getByRole('button', { name: 'Descifrar e importar' }))
+    await waitFor(() => expect(dialog.getByRole('alert')).toHaveTextContent('Contraseña incorrecta.'), { timeout: 5000 })
+
+    await user.clear(dialog.getByLabelText('Contraseña'))
+    await user.type(dialog.getByLabelText('Contraseña'), 'luna llena 2026')
+    await user.click(dialog.getByRole('button', { name: 'Descifrar e importar' }))
+    expect(await screen.findByText('Importado: 1 periodo y 1 día con registro.', {}, { timeout: 5000 })).toBeInTheDocument()
+    expect(await db.days.get('2026-09-02')).toMatchObject({ notes: 'Muy privado' })
+  }, 20_000)
 })

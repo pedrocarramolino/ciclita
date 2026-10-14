@@ -24,7 +24,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - antes del próximo periodo, registro diario y píldora anticonceptiva;
   - ventana fértil (el día antes) y autoexploración de mama (una vez al mes);
   - anticonceptivos con pauta: anillo vaginal, parche o inyección trimestral.
-- **Privacidad**: PIN de 4 dígitos, cifrado opcional de los datos con el PIN, exportar/importar (JSON y CSV) y borrado total con doble confirmación.
+- **Privacidad**: PIN de 4 dígitos, cifrado opcional de los datos con el PIN, exportar/importar (JSON, JSON cifrado con contraseña y CSV) y borrado total con doble confirmación.
 - **Idiomas**: español (por defecto) e inglés. Se elige en la bienvenida o en *Ajustes → Idioma*.
 - Tema claro / oscuro / automático, animación de apertura, diseño pensado para móvil y accesible (WCAG AA).
 
@@ -149,6 +149,7 @@ En iPhone/iPad con la app instalada, iOS no permite descargas ni imprimir desde 
 
 En *Ajustes → Tus datos*:
 - **JSON**: copia completa (periodos, registros, síntomas personalizados y ajustes; nunca el PIN ni las credenciales del servidor de avisos).
+- **JSON cifrado con contraseña**: la misma copia, cifrada con AES-256-GCM y una clave derivada de la contraseña (PBKDF2-SHA256, 600.000 iteraciones, mínimo 8 caracteres). Sin la contraseña no se puede leer, aunque el archivo acabe en la nube o en un correo; si se olvida, no se puede recuperar. Al importarla, la app la reconoce y pide la contraseña.
 - **CSV**: un día por fila, separado por `;` (se abre directamente en Excel en español), con la temperatura, el moco, las relaciones y el peso. La cabecera y los textos van en el idioma de la app.
 - **Importar** acepta ambos formatos (y CSV en español o en inglés) y **reemplaza** los datos actuales.
 
