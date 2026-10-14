@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { wipeAll } from '../../db/data'
 import { getSettings } from '../../db/settings'
+import { getVaultRow } from '../../db/vault'
+import { forgetCredential } from '../../security/biometric'
 import { unregisterPush, unsubscribeBrowserPush } from '../../push/pushClient'
 import { t } from '../../i18n'
 
@@ -14,7 +16,10 @@ export function DeleteAllFlow({ onCancel }: { onCancel: () => void }) {
     // Primero se borra lo que haya en el servidor de avisos (si falla, se borra igual en local).
     // Con los datos cifrados y bloqueados no hay credenciales: al menos se cancela la
     // suscripción del navegador para que dejen de llegar avisos.
-    const { pushDevice } = await getSettings().catch(() => ({ pushDevice: null }))
+    const { pushDevice, biometric } = await getSettings().catch(() => ({ pushDevice: null, biometric: null }))
+    // La llave de Face ID o huella ya no sirve: se pide al sistema que la olvide.
+    const bioId = biometric?.credentialId ?? (await getVaultRow().catch(() => undefined))?.bio?.credentialId
+    if (bioId) forgetCredential(bioId)
     await unregisterPush(pushDevice).catch(() => {})
     await unsubscribeBrowserPush().catch(() => {})
     await wipeAll()

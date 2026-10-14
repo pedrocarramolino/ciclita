@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { PinPad } from '../../components/PinPad'
+import { isCancel } from '../../security/biometric'
 import { lockoutMs, MAX_ATTEMPTS } from '../../security/pin'
 import { settingsPinCheck, type PinCheck } from './pinCheck'
 import { t } from '../../i18n'
@@ -12,11 +13,14 @@ export function LockScreen({
   onUnlock,
   check = settingsPinCheck,
   encrypted = false,
+  biometric,
 }: {
   onUnlock: () => void
   check?: PinCheck
   /** Con el cifrado activado se avisa de que olvidar el PIN hace perder los datos. */
   encrypted?: boolean
+  /** Desbloqueo con Face ID o huella; devuelve true si ha desbloqueado. */
+  biometric?: () => Promise<boolean>
 }) {
   const [attempt, setAttempt] = useState(0)
   const [message, setMessage] = useState('')
@@ -38,14 +42,38 @@ export function LockScreen({
     return () => clearInterval(id)
   }, [waiting])
 
+  const unlocked = async () => {
+    await check.setState({ failures: 0, lockedUntil: 0 })
+    onUnlock()
+  }
+
+  // Al abrir se pide la cara o la huella directamente; si el sistema no deja (iOS
+  // puede exigir un toque) o se cancela, queda el botón y el PIN.
+  const tryBiometric = async (auto: boolean) => {
+    if (!biometric) return
+    setChecking(true)
+    setMessage(encrypted ? l.unlocking : '')
+    try {
+      if (await biometric()) return void (await unlocked())
+      if (!auto) setMessage(l.bioFailed)
+    } catch (e) {
+      if (!auto && !isCancel(e)) setMessage(l.bioFailed)
+      else setMessage('')
+    }
+    setChecking(false)
+  }
+  const autoTried = useRef(false)
+  useEffect(() => {
+    if (!biometric || autoTried.current) return
+    autoTried.current = true
+    void tryBiometric(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [biometric])
+
   const submit = async (pin: string) => {
     setChecking(true)
     setMessage(encrypted ? l.unlocking : '')
-    if (await check.verify(pin)) {
-      await check.setState({ failures: 0, lockedUntil: 0 })
-      onUnlock()
-      return
-    }
+    if (await check.verify(pin)) return void (await unlocked())
     const { failures: prev } = await check.getState()
     const failures = prev + 1
     const until = Date.now() + lockoutMs(failures)
@@ -71,7 +99,13 @@ export function LockScreen({
       <div className="mt-2 w-full">
         <PinPad onComplete={(p) => void submit(p)} disabled={checking || waiting} resetKey={attempt} />
       </div>
-      <Button variant="ghost" className="mt-8 text-sm" onClick={() => setForgot(true)}>
+      {biometric && (
+        <Button variant="secondary" className="mt-6" disabled={checking} onClick={() => void tryBiometric(false)}>
+          <Icon name="faceId" />
+          {l.useBiometric}
+        </Button>
+      )}
+      <Button variant="ghost" className="mt-6 text-sm" onClick={() => setForgot(true)}>
         {l.forgot}
       </Button>
       {forgot && !wiping && (

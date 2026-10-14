@@ -60,6 +60,8 @@ export const en: Messages = {
       'Your data is encrypted with the PIN and nobody can decrypt it without it, not even us. The only option is to delete all data and start again (if you have a backup, you can import it afterwards).',
     encryptedHint: 'Your data is encrypted on this device.',
     unlocking: 'Decrypting your data…',
+    useBiometric: 'Use Face ID or fingerprint',
+    bioFailed: 'Could not verify. Use your PIN.',
     digit: (d) => `Digit ${d}`,
     deleteDigit: 'Delete last digit',
     entered: (n) => `${n} of 4 digits entered`,
@@ -469,6 +471,27 @@ export const en: Messages = {
       a === b && da === db ? `${num(a)} kg (${da})` : `${num(a)} kg (${da}) → ${num(b)} kg (${db})`,
     footer:
       "Report produced from the person's own logs in the Ciclita app. Predicted dates are estimates. It is not a diagnosis and does not replace a medical assessment.",
+  },
+  biometric: {
+    title: 'Face ID or fingerprint',
+    off: 'Unlock the app with your face or fingerprint instead of typing your PIN. Your PIN still works.',
+    offEncrypted:
+      'Unlock the app and decrypt your data with your face or fingerprint. Needs a recent device (on iPhone, iOS 18 or later). Your PIN still works.',
+    on: 'On: the app asks for your face or fingerprint when it opens. Your PIN still works.',
+    enable: 'Turn on Face ID or fingerprint',
+    disable: 'Turn off',
+    registerHint:
+      'Your device will create a passkey for Ciclita (it is kept in your passwords and never sent to any server).',
+    registerButton: 'Continue',
+    confirmHint: 'One last step: confirm again with your face or fingerprint.',
+    confirmButton: 'Confirm',
+    working: 'Saving…',
+    enabled: 'Face ID or fingerprint turned on.',
+    disabled: 'Face ID or fingerprint turned off.',
+    cancelled: 'Cancelled. You can try again.',
+    failed: 'Could not turn it on on this device.',
+    noPrf: 'This device cannot use your face or fingerprint with encrypted data. Keep using your PIN.',
+    redo: 'Turn Face ID or fingerprint on again.',
   },
   encryption: {
     title: 'Encrypt my data with the PIN',

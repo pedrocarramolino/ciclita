@@ -62,6 +62,8 @@ export const es = {
       'Tus datos están cifrados con el PIN y nadie puede descifrarlos sin él, tampoco nosotros. La única opción es borrar todos los datos y empezar de nuevo (si tienes una copia de seguridad, podrás importarla después).',
     encryptedHint: 'Tus datos están cifrados en este dispositivo.',
     unlocking: 'Descifrando tus datos…',
+    useBiometric: 'Usar Face ID o huella',
+    bioFailed: 'No se ha podido comprobar. Usa tu PIN.',
     digit: (d: string) => `Dígito ${d}`,
     deleteDigit: 'Borrar último dígito',
     entered: (n: number) => `${n} de 4 dígitos introducidos`,
@@ -452,6 +454,27 @@ export const es = {
         : `${num(a)} kg (${da}) → ${num(b)} kg (${db})`,
     footer:
       'Informe elaborado a partir de los registros de la propia persona en la app Ciclita. Las fechas previstas son estimaciones. No es un diagnóstico ni sustituye la valoración médica.',
+  },
+  biometric: {
+    title: 'Face ID o huella',
+    off: 'Desbloquea la app con la cara o la huella en lugar de escribir el PIN. El PIN sigue sirviendo.',
+    offEncrypted:
+      'Desbloquea la app y descifra tus datos con la cara o la huella. Necesita un dispositivo reciente (en iPhone, iOS 18 o posterior). El PIN sigue sirviendo.',
+    on: 'Activado: al abrir la app se pide la cara o la huella. El PIN sigue sirviendo.',
+    enable: 'Activar Face ID o huella',
+    disable: 'Desactivar',
+    registerHint:
+      'Tu dispositivo creará una llave de acceso para Ciclita (se guarda en tus contraseñas, no sale a ningún servidor).',
+    registerButton: 'Continuar',
+    confirmHint: 'Un último paso: confírmalo otra vez con la cara o la huella.',
+    confirmButton: 'Confirmar',
+    working: 'Guardando…',
+    enabled: 'Face ID o huella activado.',
+    disabled: 'Face ID o huella desactivado.',
+    cancelled: 'Se ha cancelado. Puedes intentarlo de nuevo.',
+    failed: 'No se ha podido activar en este dispositivo.',
+    noPrf: 'Este dispositivo no permite usar la cara o la huella con los datos cifrados. Sigue usando tu PIN.',
+    redo: 'Vuelve a activar Face ID o huella.',
   },
   encryption: {
     title: 'Cifrar mis datos con el PIN',

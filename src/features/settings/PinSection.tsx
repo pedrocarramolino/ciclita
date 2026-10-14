@@ -3,9 +3,11 @@ import { Button } from '../../components/Button'
 import { PinPad } from '../../components/PinPad'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { setSettings } from '../../db/settings'
-import { disableEncryption, enableEncryption, isVaultUnlocked, rekeyVault } from '../../db/vault'
+import { disableEncryption, enableEncryption, isVaultUnlocked, rekeyVault, setVaultBio } from '../../db/vault'
+import { forgetCredential } from '../../security/biometric'
 import { hashPin, verifyPin } from '../../security/pin'
 import { t } from '../../i18n'
+import { BiometricSetting } from './BiometricSetting'
 import { Section } from './Section'
 
 type Flow = 'set' | 'change' | 'remove' | 'encrypt' | 'decrypt'
@@ -14,7 +16,7 @@ type Step = 'current' | 'new' | 'repeat' | 'working'
 /** Recarga la app tras activar o desactivar el cifrado (cambia dónde viven los datos). */
 const reloadApp = () => setTimeout(() => location.reload(), 600)
 
-export function PinSection({ pinHash }: { pinHash: string | null }) {
+export function PinSection({ pinHash, biometricId }: { pinHash: string | null; biometricId: string | null }) {
   const [flow, setFlow] = useState<Flow | null>(null)
   const [confirmEncrypt, setConfirmEncrypt] = useState(false)
   const [status, setStatus] = useState('')
@@ -45,6 +47,7 @@ export function PinSection({ pinHash }: { pinHash: string | null }) {
         )}
       </div>
       {!encrypted && <p className="text-xs text-muted">{s.pinNote}</p>}
+      {pinHash && <BiometricSetting pinHash={pinHash} credentialId={biometricId} encrypted={encrypted} />}
 
       {/* Cifrado de los datos con el PIN */}
       <div className="rounded-2xl bg-surface-soft p-4">
@@ -90,6 +93,7 @@ export function PinSection({ pinHash }: { pinHash: string | null }) {
         <PinDialog
           flow={flow}
           pinHash={pinHash}
+          biometricId={biometricId}
           onDone={(msg) => {
             setFlow(null)
             setStatus(msg)
@@ -101,14 +105,24 @@ export function PinSection({ pinHash }: { pinHash: string | null }) {
   )
 }
 
+/** Quita el desbloqueo con Face ID o huella (la llave deja de servir). */
+async function dropBiometric(credentialId: string | null) {
+  if (!credentialId) return
+  forgetCredential(credentialId)
+  await setSettings({ biometric: null })
+  if (isVaultUnlocked()) await setVaultBio(null)
+}
+
 function PinDialog({
   flow,
   pinHash,
+  biometricId,
   onDone,
   onCancel,
 }: {
   flow: Flow
   pinHash: string | null
+  biometricId: string | null
   onDone: (msg: string) => void
   onCancel: () => void
 }) {
@@ -148,13 +162,18 @@ function PinDialog({
     if (step === 'current') {
       if (!pinHash || !(await verifyPin(pin, pinHash))) return next('current', t.lock.wrong)
       if (flow === 'remove') {
+        await dropBiometric(biometricId)
         await setSettings({ pinHash: null, pinFailures: 0, pinLockedUntil: 0 })
         return onDone(s.pinRemoved)
       }
       if (flow === 'encrypt' || flow === 'decrypt') {
         setStep('working')
         try {
-          if (flow === 'encrypt') await enableEncryption(pin)
+          // Al cifrar, Face ID necesita el PIN cifrado con su llave: hay que volver a activarlo.
+          if (flow === 'encrypt') {
+            await dropBiometric(biometricId)
+            await enableEncryption(pin)
+          }
           else await disableEncryption()
         } catch (err) {
           console.error(err)
@@ -171,8 +190,15 @@ function PinDialog({
     }
     if (pin !== first) return next('new', s.pinMismatch)
     await setSettings({ pinHash: await hashPin(pin), pinFailures: 0, pinLockedUntil: 0 })
-    // Con el cifrado activado, los datos se vuelven a cifrar con el PIN nuevo.
-    if (isVaultUnlocked()) await rekeyVault(pin)
+    // Con el cifrado activado, los datos se vuelven a cifrar con el PIN nuevo, y el PIN
+    // guardado para Face ID o huella ya no vale: hay que volver a activarlo.
+    if (isVaultUnlocked()) {
+      await rekeyVault(pin)
+      if (biometricId) {
+        await dropBiometric(biometricId)
+        return onDone(`${s.pinSaved} ${t.biometric.redo}`)
+      }
+    }
     onDone(s.pinSaved)
   }
 

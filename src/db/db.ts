@@ -1,5 +1,6 @@
 import Dexie, { type DexieOptions, type EntityTable } from 'dexie'
 import type { ISODate } from '../domain/dates'
+import type { WrappedPin } from '../security/biometric'
 
 /** Un periodo menstrual. Es la fuente de verdad de los inicios de ciclo. */
 export interface Period {
@@ -61,6 +62,8 @@ export interface VaultRow {
   lockedUntil: number
   /** Tema elegido, en claro, para que la pantalla de desbloqueo use los colores correctos. */
   theme?: string
+  /** Desbloqueo con Face ID o huella: el PIN cifrado con el secreto de la llave de acceso. */
+  bio?: WrappedPin
 }
 
 /** Nombre de la base de datos IndexedDB. */

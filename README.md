@@ -29,7 +29,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - antes del próximo periodo, registro diario y píldora anticonceptiva;
   - ventana fértil (el día antes) y autoexploración de mama (una vez al mes);
   - anticonceptivos con pauta: anillo vaginal, parche o inyección trimestral.
-- **Privacidad**: PIN de 4 dígitos, cifrado opcional de los datos con el PIN, exportar/importar (JSON, JSON cifrado con contraseña y CSV) y borrado total con doble confirmación.
+- **Privacidad**: PIN de 4 dígitos, desbloqueo con **Face ID, Touch ID o huella** (opcional), cifrado opcional de los datos con el PIN, exportar/importar (JSON, JSON cifrado con contraseña y CSV) y borrado total con doble confirmación.
 - **Móvil nuevo**: en la bienvenida, "¿Ya usabas Ciclita? Importar una copia" (también cifrada) lleva directo al inicio.
 - **Idiomas**: español (por defecto) e inglés. Se elige en la bienvenida o en *Ajustes → Idioma*. El nombre de la app instalada y sus atajos también se traducen (`pwa-manifests.ts`: un manifiesto por idioma).
 - Tema claro / oscuro / automático, animación de apertura, diseño pensado para móvil y accesible (WCAG AA).
@@ -50,6 +50,9 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - Si se olvida el PIN, los datos cifrados **no se pueden recuperar**: conviene exportar una copia de seguridad (las copias exportadas no van cifradas).
   - Un PIN de 4 dígitos protege frente a miradas y frente a quien copie los datos del navegador, pero con acceso técnico al dispositivo se podrían probar las 10.000 combinaciones. No sustituye el bloqueo del teléfono.
 - Sin cifrado, el PIN solo evita miradas indiscretas: los datos de IndexedDB quedan en claro.
+- **Face ID, Touch ID o huella** (*Ajustes → Privacidad y seguridad*, tras activar el PIN): crea una llave de acceso (passkey, WebAuthn) del dispositivo para el dominio de la app, sin servidor. Al abrir la app se pide la cara o la huella; el PIN sigue sirviendo.
+  - Con el cifrado activado usa la extensión PRF de WebAuthn (iPhone con iOS 18 o posterior, Android y navegadores recientes): la llave da un secreto con el que se guarda el PIN cifrado junto a la bóveda, y así la cara o la huella también descifran los datos. Si el dispositivo no tiene PRF, en ese modo no se puede activar.
+  - Al cambiar el PIN con el cifrado activado, al cifrar los datos o al quitar el PIN, hay que volver a activarlo. Al desactivarlo o borrar todo, se pide al sistema que olvide la llave (si no sabe, se puede borrar a mano en Contraseñas).
 
 ## Tecnología
 
@@ -75,7 +78,7 @@ src/
   features/          Pantallas: onboarding, inicio, calendario, registro, búsqueda, estadísticas, informe, ajustes, bloqueo
   components/        Componentes reutilizables (botones, chips, PIN, diálogos…)
   push/              Suscripción push y sincronización de recordatorios con el servidor
-  security/          Hash y verificación del PIN
+  security/          Hash y verificación del PIN, cifrado y Face ID / huella (WebAuthn)
   i18n/              Textos: es.ts (español, por defecto) y en.ts (inglés, misma estructura comprobada por TypeScript)
   db/vault.ts        Cifrado de los datos con el PIN
   sw.ts              Service worker: modo offline y notificaciones

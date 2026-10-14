@@ -150,7 +150,7 @@ export function SettingsScreen() {
       </Section>
 
       <RemindersSection settings={settings} />
-      <PinSection pinHash={settings.pinHash} />
+      <PinSection pinHash={settings.pinHash} biometricId={settings.biometric?.credentialId ?? null} />
       <DataSection lastBackup={settings.lastBackup} />
 
       <Section title={s.about}>

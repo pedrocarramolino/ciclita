@@ -58,4 +58,47 @@ describe('Pantalla de bloqueo', () => {
     expect(screen.getByText(/no se puede recuperar el PIN/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Borrar todos mis datos' })).toBeInTheDocument()
   })
+
+  it('con Face ID o huella desbloquea al abrir, sin teclear el PIN', async () => {
+    await setPin('2580')
+    await setSettings({ pinFailures: 2 })
+    const onUnlock = vi.fn()
+    const biometric = vi.fn().mockResolvedValue(true)
+    render(<LockScreen onUnlock={onUnlock} biometric={biometric} />)
+
+    await waitFor(() => expect(onUnlock).toHaveBeenCalledOnce())
+    expect(biometric).toHaveBeenCalledOnce()
+    expect((await getSettings()).pinFailures).toBe(0)
+  })
+
+  it('si se cancela Face ID queda el botón para reintentarlo y el PIN', async () => {
+    await setPin('2580')
+    const onUnlock = vi.fn()
+    const biometric = vi
+      .fn()
+      .mockRejectedValueOnce(new DOMException('cancelado', 'NotAllowedError'))
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true)
+    const user = userEvent.setup()
+    render(<LockScreen onUnlock={onUnlock} biometric={biometric} />)
+
+    const button = await screen.findByRole('button', { name: 'Usar Face ID o huella' })
+    await waitFor(() => expect(button).toBeEnabled())
+    expect(screen.getByRole('alert')).toHaveTextContent('')
+
+    await user.click(button)
+    expect(await screen.findByText('No se ha podido comprobar. Usa tu PIN.')).toBeInTheDocument()
+    expect(onUnlock).not.toHaveBeenCalled()
+
+    await user.click(button)
+    await waitFor(() => expect(onUnlock).toHaveBeenCalledOnce())
+  })
+
+  it('sin Face ID activado no aparece el botón', async () => {
+    await setPin('2580')
+    render(<LockScreen onUnlock={vi.fn()} />)
+    await screen.findByRole('button', { name: 'Dígito 1' })
+    expect(screen.queryByRole('button', { name: 'Usar Face ID o huella' })).toBeNull()
+  })
 })
+

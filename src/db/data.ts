@@ -22,6 +22,7 @@ export async function exportJSON(database: AppDB = db): Promise<string> {
     pushError: _e,
     pinFailures: _f,
     pinLockedUntil: _u,
+    biometric: _bio,
     lastBackup: _b,
     backupSnoozedOn: _n,
     periodEndSnooze: _p,

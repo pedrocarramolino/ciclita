@@ -13,6 +13,7 @@
 import Dexie from 'dexie'
 import { AppDB, diskDb, setActiveDb, type DayLog, type Period, type SettingRow, type Symptom, type VaultRow } from './db'
 import { decryptJSON, deriveKey, encryptJSON, KDF_ITERATIONS, randomBytes, WrongKeyError } from '../security/crypto'
+import type { WrappedPin } from '../security/biometric'
 
 export interface Snapshot {
   periods: Period[]
@@ -222,6 +223,17 @@ export async function closeVaultSession(): Promise<void> {
   setActiveDb(s.disk)
   s.mem.close()
   await Dexie.delete('ciclita-mem').catch(() => {})
+}
+
+/** Guarda (o quita) el PIN cifrado para desbloquear la bóveda con Face ID o huella. */
+export async function setVaultBio(bio: WrappedPin | null, disk: AppDB = diskDb): Promise<void> {
+  const row = await getVaultRow(disk)
+  if (!row) return
+  if (bio) await disk.vault.update('vault', { bio })
+  else {
+    const { bio: _old, ...rest } = row
+    await disk.vault.put(rest)
+  }
 }
 
 /** Intentos fallidos y bloqueo temporal, guardados en la bóveda (en claro, sin datos). */

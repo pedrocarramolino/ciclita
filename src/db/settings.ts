@@ -23,6 +23,8 @@ export interface Settings {
   /** Intentos fallidos seguidos y momento (ms) hasta el que el PIN está bloqueado. */
   pinFailures: number
   pinLockedUntil: number
+  /** Llave de acceso de este dispositivo para desbloquear con Face ID o huella. */
+  biometric: { credentialId: string } | null
   reminders: ReminderSettings
   /** Datos opcionales que se muestran en el registro diario. */
   tracking: TrackingSettings
@@ -113,6 +115,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pinHash: null,
   pinFailures: 0,
   pinLockedUntil: 0,
+  biometric: null,
   reminders: DEFAULT_REMINDERS,
   tracking: DEFAULT_TRACKING,
   mode: 'cycle',

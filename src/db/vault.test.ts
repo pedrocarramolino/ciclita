@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { AppDB, db } from './db'
 import { saveDay } from './repo'
+import { unwrapPin, wrapPin } from '../security/biometric'
 import { getSettings, setSettings } from './settings'
 import {
   closeVaultSession,
@@ -11,6 +12,7 @@ import {
   isEncrypted,
   isVaultUnlocked,
   rekeyVault,
+  setVaultBio,
   unlockVault,
   vaultLockStore,
 } from './vault'
@@ -114,5 +116,29 @@ describe('bóveda cifrada', () => {
     const store = vaultLockStore(disk)
     await store.set({ failures: 3, lockedUntil: 123 })
     expect(await store.get()).toEqual({ failures: 3, lockedUntil: 123 })
+  })
+
+  it('Face ID o huella: el PIN cifrado con la llave abre la bóveda y sobrevive a los guardados', async () => {
+    const disk = await seededDisk()
+    await enableEncryption('2580', { disk, iterations: ITER })
+    const prf = crypto.getRandomValues(new Uint8Array(32)).buffer
+    await setVaultBio(await wrapPin('2580', prf, 'cred', new Uint8Array(32)), disk)
+
+    // Un cambio tras desbloquear vuelve a guardar la bóveda sin perder el PIN cifrado.
+    await unlockVault('2580', { disk })
+    await saveDay('2026-09-03', { notes: 'otra' }, false)
+    await flushVault()
+    await closeVaultSession()
+
+    const bio = (await getVaultRow(disk))?.bio
+    expect(bio?.credentialId).toBe('cred')
+    const pin = await unwrapPin(bio!, prf)
+    expect(pin).toBe('2580')
+    expect(await unlockVault(pin!, { disk })).toBe(true)
+    await closeVaultSession()
+
+    await setVaultBio(null, disk)
+    expect((await getVaultRow(disk))?.bio).toBeUndefined()
+    expect(await unlockVault('2580', { disk })).toBe(true)
   })
 })

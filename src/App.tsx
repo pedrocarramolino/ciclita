@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { BottomNav } from './components/BottomNav'
 import { Splash } from './components/Splash'
 import { UpdatePrompt } from './components/UpdatePrompt'
@@ -10,6 +10,7 @@ import { LockScreen } from './features/lock/LockScreen'
 import type { PinCheck } from './features/lock/pinCheck'
 import { flushVault, getVaultRow, isVaultUnlocked, unlockVault, vaultLockStore } from './db/vault'
 import { requestPersistence } from './db/persist'
+import { authenticateBiometric, unwrapPin } from './security/biometric'
 import { reminderPillPack } from './domain/pill'
 import { usePushSync } from './push/usePushSync'
 import { preloadable } from './preloadable'
@@ -115,11 +116,22 @@ const vaultPinCheck = (): PinCheck => {
 
 function VaultGate({ onUnlock }: { onUnlock: () => void }) {
   const [check] = useState(vaultPinCheck)
-  const theme = useLiveQuery(async () => ((await getVaultRow())?.theme ?? 'system') as Theme)
-  useTheme(theme)
+  const row = useLiveQuery(() => getVaultRow())
+  useTheme(row?.theme as Theme | undefined)
+  // Con Face ID o huella: la llave da el secreto que descifra el PIN, y el PIN la bóveda.
+  const bio = row?.bio
+  const credentialId = bio?.credentialId
+  const biometric = useCallback(async () => {
+    if (!bio) return false
+    const r = await authenticateBiometric(bio.credentialId, bio.prfSalt)
+    if (!r.verified || !r.prf) return false
+    const pin = await unwrapPin(bio, r.prf)
+    return !!pin && (await unlockVault(pin))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [credentialId])
   return (
     <>
-      <LockScreen onUnlock={onUnlock} check={check} encrypted />
+      <LockScreen onUnlock={onUnlock} check={check} encrypted biometric={bio ? biometric : undefined} />
       <UpdatePrompt />
       <Splash ready />
     </>
@@ -131,6 +143,8 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
   const [route, navigate] = useHashRoute()
   const [locked, unlock] = useAppLock(settings?.pinHash, startUnlocked)
   useTheme(settings?.theme)
+  const bioId = settings?.biometric?.credentialId
+  const biometric = useCallback(async () => !!bioId && (await authenticateBiometric(bioId)).verified, [bioId])
   // Al cambiar de día (app retomada al día siguiente) se recalcula todo y las pantallas
   // se vuelven a montar, para que "hoy" nunca se quede en ayer.
   const day = useToday()
@@ -150,7 +164,7 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
 
   let screen: ReactNode
   if (!settings) screen = null // cargando IndexedDB
-  else if (locked) screen = <LockScreen onUnlock={unlock} />
+  else if (locked) screen = <LockScreen onUnlock={unlock} biometric={bioId ? biometric : undefined} />
   else if (!settings.onboardingDone)
     screen = (
       <Suspense fallback={null}>
