@@ -5,7 +5,7 @@ import { LegalNotice } from '../../components/LegalNotice'
 import { NumberStepper } from '../../components/NumberStepper'
 import { completeOnboarding } from '../../db/settings'
 import { addDays, today } from '../../domain/dates'
-import { t } from '../../i18n'
+import { LANGS, lang, setLanguage, t } from '../../i18n'
 
 const TOTAL_STEPS = 3
 const PRIVACY_ICONS: IconName[] = ['phone', 'shield', 'lock']
@@ -45,7 +45,20 @@ export function Onboarding() {
             {t.common.back}
           </Button>
         ) : (
-          <span />
+          <div role="group" aria-label={t.settings.language} className="-ml-1 flex gap-1">
+            {LANGS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                lang={l}
+                aria-pressed={l === lang}
+                onClick={() => l !== lang && setLanguage(l)}
+                className="min-h-11 rounded-full px-3 text-sm font-bold text-muted aria-pressed:bg-primary-soft aria-pressed:text-ink"
+              >
+                {t.settings.languages[l]}
+              </button>
+            ))}
+          </div>
         )}
         <p className="text-sm font-semibold text-muted">{o.stepOf(step + 1, TOTAL_STEPS)}</p>
       </div>
