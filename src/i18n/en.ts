@@ -422,6 +422,7 @@ export const en: Messages = {
     colCycle: 'Cycle',
     colPeriod: 'Period',
     noCycles: 'There are no complete cycles in this period.',
+    missedNote: (n) => `* Possibly a period not logged: ${n === 1 ? 'this cycle is' : 'these cycles are'} left out of the summary.`,
     flowTitle: 'Days by flow intensity',
     painTitle: 'Pain (0–10 scale)',
     painDays: 'Days with pain',

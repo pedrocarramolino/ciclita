@@ -113,3 +113,21 @@ describe('buildReport: píldora', () => {
     expect(r.missedTotal).toBeGreaterThan(31)
   })
 })
+
+describe('buildReport: periodos olvidados', () => {
+  // Ciclos de 28, 29, 56 (periodo sin registrar) y 28 días.
+  const starts = ['2026-05-01', '2026-05-29', '2026-06-27', '2026-08-22', '2026-09-19']
+  const ps = starts.map((s) => ({ startDate: s, endDate: addDays(s, 4) }))
+  const pred = predict({ periods: ps, today: TODAY })
+
+  it('aparta del resumen el ciclo sospechoso y lo marca', () => {
+    const r = buildReport(ps, [], pred, { months: 'all', includeNotes: false }, TODAY)
+    expect(r.summary).toMatchObject({ cyclesCount: 3, missedCount: 1, longest: 29, isIrregular: false })
+    expect(r.cycles.find((c) => c.length === 56)?.suspectedMissed).toBe(true)
+  })
+
+  it('si se confirmó como ciclo largo, cuenta normal', () => {
+    const r = buildReport(ps, [], pred, { months: 'all', includeNotes: false, confirmedLongCycles: ['2026-06-27'] }, TODAY)
+    expect(r.summary).toMatchObject({ cyclesCount: 4, missedCount: 0, longest: 56, isIrregular: true })
+  })
+})

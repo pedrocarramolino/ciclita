@@ -33,12 +33,30 @@ export function ReportScreen() {
   const data = useLiveQuery(async () => {
     const [periods, days, settings] = await Promise.all([db.periods.toArray(), db.days.toArray(), getSettings()])
     const pill = settings.tracking.pill && settings.pill.start ? { pack: settings.pill.pack, start: settings.pill.start } : null
-    return { periods, days, pill }
+    return {
+      periods,
+      days,
+      pill,
+      userCycleLength: settings.cycleLength,
+      confirmedLongCycles: settings.confirmedLongCycles,
+    }
   })
   const R = t.report
 
   const report = useMemo(
-    () => (prediction && data ? buildReport(data.periods, data.days, prediction, { months, includeNotes, pill: data.pill }, today()) : null),
+    () => (prediction && data ? buildReport(
+            data.periods,
+            data.days,
+            prediction,
+            {
+              months,
+              includeNotes,
+              pill: data.pill,
+              userCycleLength: data.userCycleLength,
+              confirmedLongCycles: data.confirmedLongCycles,
+            },
+            today(),
+          ) : null),
     [prediction, data, months, includeNotes],
   )
 

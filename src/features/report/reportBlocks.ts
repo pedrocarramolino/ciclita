@@ -58,12 +58,13 @@ export function reportBlocks(r: Report, name?: string): ReportBlock[] {
           numeric: [false, true, true],
           rows: r.cycles.map((c) => [
             formatFullDate(c.start),
-            R.days(c.length),
+            R.days(c.length) + (c.suspectedMissed ? ' *' : ''),
             c.periodLength === null ? '—' : R.days(c.periodLength),
           ]),
         }
       : { kind: 'empty', text: R.noCycles },
   )
+  if (s.missedCount) out.push({ kind: 'meta', text: R.missedNote(s.missedCount) })
 
   out.push({ kind: 'h2', text: R.flowTitle })
   out.push({

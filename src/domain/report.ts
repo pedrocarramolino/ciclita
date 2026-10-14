@@ -5,7 +5,7 @@
 import { lang } from '../i18n'
 import type { DayLog, Flow, Period } from '../db/db'
 import { parseISODate, toISODate, type ISODate } from './dates'
-import type { PredictedPeriod, Prediction } from './prediction'
+import { splitMissed, type PredictedPeriod, type Prediction } from './prediction'
 import { pillAdherence, type PillAdherence, type PillConfig } from './pill'
 import { completedCycles, symptomStats, type CycleRecord, type Phase, type SymptomTiming } from './stats'
 
@@ -16,6 +16,14 @@ export interface ReportOptions {
   includeNotes: boolean
   /** Envase de la píldora, si se registran las tomas. */
   pill?: PillConfig | null
+  /** Para reconocer periodos olvidados (ver splitMissed en prediction.ts). */
+  userCycleLength?: number | null
+  confirmedLongCycles?: ISODate[]
+}
+
+/** Ciclo del informe; `suspectedMissed`: tan largo que probablemente falta un periodo. */
+export interface ReportCycle extends CycleRecord {
+  suspectedMissed: boolean
 }
 
 /** Olvidos de la píldora que se listan como mucho en el informe (los más recientes). */
@@ -33,11 +41,13 @@ export interface Report {
     longest: number | null
     variation: number | null
     isIrregular: boolean
+    /** Ciclos apartados de las medias por un posible periodo sin registrar. */
+    missedCount: number
     lastStart: ISODate | null
     nextPeriod: PredictedPeriod | null
   }
   /** Ciclos completos del intervalo, del más reciente al más antiguo. */
-  cycles: CycleRecord[]
+  cycles: ReportCycle[]
   /** Días registrados con cada intensidad de flujo. */
   flowDays: Record<Flow, number>
   pain: { daysWithPain: number; average: number; max: number; severeDays: number } | null
@@ -77,10 +87,15 @@ export function buildReport(
   const from = opts.months === 'all' ? firstData : monthsAgo(today, opts.months)
   const inRange = (date: ISODate) => date >= from && date <= today
 
-  const cycles = completedCycles(periods)
-    .filter((c) => inRange(c.start))
+  const inRangeCycles = completedCycles(periods).filter((c) => inRange(c.start))
+  // Los ciclos que parecen esconder un periodo olvidado no cuentan para las medias.
+  const { missed } = splitMissed(inRangeCycles, opts.userCycleLength, opts.confirmedLongCycles)
+  const missedStarts = new Set(missed.map((c) => c.start))
+  const cycles: ReportCycle[] = inRangeCycles
+    .map((c) => ({ ...c, suspectedMissed: missedStarts.has(c.start) }))
     .reverse()
-  const lengths = cycles.map((c) => c.length)
+  const counted = cycles.filter((c) => !c.suspectedMissed)
+  const lengths = counted.map((c) => c.length)
   const periodLengths = cycles.flatMap((c) => (c.periodLength === null ? [] : [c.periodLength]))
   const variation = lengths.length >= 2 ? Math.max(...lengths) - Math.min(...lengths) : null
 
@@ -152,7 +167,8 @@ export function buildReport(
     from,
     to: today,
     summary: {
-      cyclesCount: cycles.length,
+      cyclesCount: counted.length,
+      missedCount: cycles.length - counted.length,
       avgCycle: avg(lengths),
       avgPeriod: avg(periodLengths),
       shortest: lengths.length ? Math.min(...lengths) : null,

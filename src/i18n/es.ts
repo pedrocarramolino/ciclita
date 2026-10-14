@@ -402,6 +402,8 @@ export const es = {
     colCycle: 'Ciclo',
     colPeriod: 'Periodo',
     noCycles: 'No hay ciclos completos en este periodo.',
+    missedNote: (n: number) =>
+      `* Posible periodo sin registrar: ${n === 1 ? 'este ciclo no se tiene' : 'estos ciclos no se tienen'} en cuenta en el resumen.`,
     flowTitle: 'Días según la intensidad del flujo',
     painTitle: 'Dolor (escala 0–10)',
     painDays: 'Días con dolor',
