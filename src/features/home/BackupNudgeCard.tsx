@@ -48,7 +48,7 @@ export function BackupNudgeCard() {
         <Button variant="ghost" onClick={() => void setSettings({ backupSnoozedOn: todayISO() })}>
           {b.later}
         </Button>
-        <Button variant="secondary" onClick={() => void downloadBackupJSON().then(() => setDone(true))}>
+        <Button variant="secondary" onClick={() => void downloadBackupJSON().then(setDone)}>
           {b.now}
         </Button>
       </div>

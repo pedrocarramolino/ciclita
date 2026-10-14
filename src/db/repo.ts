@@ -16,7 +16,8 @@ function isEmpty(f: DayForm): boolean {
     f.temperature === undefined &&
     !f.mucus &&
     !f.sex &&
-    f.weight === undefined
+    f.weight === undefined &&
+    !f.pillTaken
   )
 }
 
@@ -45,6 +46,16 @@ export async function saveDay(
     }
     if (isEmpty(clean)) await database.days.delete(date)
     else await database.days.put({ ...clean, date, updatedAt: Date.now() })
+  })
+}
+
+/** Marca (o desmarca) la píldora de un día sin tocar el resto del registro. */
+export async function setPillTaken(date: ISODate, taken: boolean, database: AppDB = db): Promise<void> {
+  await database.transaction('rw', database.days, async () => {
+    const { date: _d, updatedAt: _u, ...form } = (await database.days.get(date)) ?? { date, updatedAt: 0 }
+    const next: DayForm = { ...form, pillTaken: taken || undefined }
+    if (isEmpty(next)) await database.days.delete(date)
+    else await database.days.put({ ...next, date, updatedAt: Date.now() })
   })
 }
 

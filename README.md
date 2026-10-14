@@ -11,9 +11,10 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 - **Registro diario** (todo opcional): flujo, síntomas, estado de ánimo, dolor 0–10, medicación y notas.
   - **Síntomas por categorías**: catálogo de unos 30 síntomas (dolor, digestión, piel y pelo, energía y sueño, apetito, otros), con los más usados arriba y los personalizados aparte.
   - **Fertilidad y peso** (se activan en *Ajustes → Qué registras*): temperatura basal, moco cervical, relaciones sexuales con o sin protección y peso.
+  - **Píldora anticonceptiva** (también en *Qué registras*): según el envase (21 + 7, 24 + 4 o 28 seguidas), el inicio muestra "Píldora de hoy" para marcarla con un toque; los días sin marcar aparecen en el calendario y en el informe.
 - **Predicciones**: medias de los últimos 6 ciclos (28/5 días por defecto), próximos 3 periodos y ventana fértil, con un **margen** (±días) calculado a partir de lo que varían tus ciclos.
 - **Estadísticas**: gráfica de los últimos ciclos, medias, ciclo más corto y más largo, síntomas frecuentes por fase y aviso suave si los ciclos varían más de 7 días.
-- **Informe para el médico**: resumen de 3, 6 o 12 meses (o todo) con ciclos, flujo, dolor, síntomas, medicación, fertilidad y, si quieres, notas. Se genera en el dispositivo y se puede imprimir, guardar en PDF o descargar como HTML.
+- **Informe para el médico**: resumen de 3, 6 o 12 meses (o todo) con ciclos, flujo, dolor, píldora, síntomas, medicación, fertilidad y, si quieres, notas. Se genera en el dispositivo como **PDF** (con pdf-lib), que se puede compartir (WhatsApp, correo, Archivos…), descargar o imprimir.
 - **Modos de la app** (*Ajustes → Modo de la app*):
   - **Ciclo menstrual** (por defecto).
   - **Embarazo**: semanas y días, trimestre y fecha probable de parto (a partir de la última regla o de la fecha de parto). Se pausan las previsiones y los avisos del ciclo.
@@ -48,6 +49,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 - React 19 + TypeScript + Vite, Tailwind CSS v4
 - IndexedDB con Dexie
 - Gráfica de barras propia en SVG (sin librerías de gráficas)
+- pdf-lib para el informe en PDF (se carga solo al abrir el informe)
 - vite-plugin-pwa (service worker propio con Workbox, manifest)
 - Funciones serverless de Vercel (`/api`) + Upstash Redis, Upstash QStash y Web Push (`web-push`)
 - Vitest para los tests
@@ -139,6 +141,8 @@ La app debe servirse por **HTTPS** (Vercel ya lo hace).
 3. Abre la app desde el icono y activa los recordatorios en *Ajustes* (en iOS las notificaciones solo funcionan con la app instalada).
 
 Una vez instalada, la app funciona sin conexión. Cuando haya una versión nueva, aparecerá un aviso para actualizarla.
+
+En iPhone/iPad con la app instalada, iOS no permite descargas ni imprimir desde la app; por eso las copias de seguridad y el informe en PDF se guardan con el menú **Compartir** del sistema (*Guardar en Archivos*, *Imprimir*, enviar…).
 
 ## Copias de seguridad
 

@@ -71,6 +71,7 @@ function sanitizeDay(raw: unknown): DayLog | null {
     mucus: MUCUS.has(d.mucus as Mucus) ? (d.mucus as Mucus) : undefined,
     sex: SEXES.has(d.sex as Sex) ? (d.sex as Sex) : undefined,
     weight: inRange(d.weight, WEIGHT_RANGE),
+    pillTaken: d.pillTaken === true ? true : undefined,
     updatedAt: typeof d.updatedAt === 'number' ? d.updatedAt : Date.now(),
   }
 }
@@ -141,6 +142,7 @@ const symptomFromCSV = (name: string) =>
   Object.entries(en.symptomNames).find(([, l]) => norm(l) === norm(name))?.[0] ?? name
 // Decimales con coma en español (como espera Excel) y con punto en inglés.
 const decimal = (n?: number) => (n === undefined ? '' : lang === 'en' ? String(n) : String(n).replace('.', ','))
+const isYes = (s: string) => ['sí', 'si', 'yes', '1', 'true'].includes(norm(s))
 const parseNum = (s: string) => (s === '' ? undefined : Number(s.replace(',', '.')))
 
 /**
@@ -171,6 +173,7 @@ export function toCSV(periodDays: Set<ISODate>, days: DayLog[]): string {
       optionLabel('mucus', d?.mucus),
       optionLabel('sex', d?.sex),
       decimal(d?.weight),
+      d?.pillTaken ? t.csv.yes : '',
     ]
       .map(csvCell)
       .join(SEP)
@@ -243,7 +246,7 @@ export function parseCSV(text: string): CSVImport {
   for (const r of rows) {
     const date = get(r, 'fecha')
     if (!DATE_RE.test(date)) continue
-    if (['sí', 'si', 'yes', '1', 'true'].includes(norm(get(r, 'periodo')))) periodDates.push(date)
+    if (isYes(get(r, 'periodo'))) periodDates.push(date)
 
     const sym = get(r, 'sintomas')
       .split(',')
@@ -264,6 +267,7 @@ export function parseCSV(text: string): CSVImport {
       mucus: optionValue<Mucus>('mucus', get(r, 'moco')),
       sex: optionValue<Sex>('sex', get(r, 'relaciones')),
       weight: parseNum(get(r, 'peso')),
+      pillTaken: isYes(get(r, 'pildora')) || undefined,
     })
     const hasData =
       day &&
@@ -276,7 +280,8 @@ export function parseCSV(text: string): CSVImport {
         day.temperature !== undefined ||
         day.mucus ||
         day.sex ||
-        day.weight !== undefined)
+        day.weight !== undefined ||
+        day.pillTaken)
     if (day && hasData) {
       days.push(day)
     }

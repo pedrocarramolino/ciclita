@@ -1,4 +1,5 @@
 import { db, diskDb, type AppDB } from './db'
+import { saveFile } from '../files'
 import { clearLanguage } from '../i18n'
 import { closeVaultSession } from './vault'
 import { getSettings, setSettings, type Settings } from './settings'
@@ -38,16 +39,21 @@ export async function exportCSV(database: AppDB = db): Promise<string> {
   return toCSV(periodDateSet(periods, today()), days)
 }
 
-/** Descarga la copia completa (JSON) y apunta la fecha para el aviso de copias. */
-export async function downloadBackupJSON(): Promise<void> {
-  downloadText(`ciclita-${today()}.json`, await exportJSON(), 'application/json')
-  await setSettings({ lastBackup: today(), backupSnoozedOn: null })
+/**
+ * Descarga la copia completa (JSON) y apunta la fecha para el aviso de copias.
+ * Devuelve false si no se llegó a guardar.
+ */
+export async function downloadBackupJSON(): Promise<boolean> {
+  const saved = await downloadText(`ciclita-${today()}.json`, await exportJSON(), 'application/json')
+  if (saved) await setSettings({ lastBackup: today(), backupSnoozedOn: null })
+  return saved
 }
 
 /** Descarga los registros en CSV (también cuenta como copia: se puede importar). */
-export async function downloadBackupCSV(): Promise<void> {
-  downloadText(`ciclita-${today()}.csv`, await exportCSV(), 'text/csv;charset=utf-8')
-  await setSettings({ lastBackup: today(), backupSnoozedOn: null })
+export async function downloadBackupCSV(): Promise<boolean> {
+  const saved = await downloadText(`ciclita-${today()}.csv`, await exportCSV(), 'text/csv;charset=utf-8')
+  if (saved) await setSettings({ lastBackup: today(), backupSnoozedOn: null })
+  return saved
 }
 
 export interface ImportSummary {
@@ -64,6 +70,7 @@ const RESTORABLE: (keyof Settings)[] = [
   'tracking',
   'mode',
   'pregnancyStart',
+  'pill',
 ]
 
 async function replaceAll(
@@ -120,13 +127,6 @@ export async function wipeAll(disk: AppDB = diskDb): Promise<void> {
 }
 
 /** Descarga un texto como archivo, sin pasar por ningún servidor. */
-export function downloadText(filename: string, text: string, type: string) {
-  const url = URL.createObjectURL(new Blob([text], { type }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.append(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+export function downloadText(filename: string, text: string, type: string): Promise<boolean> {
+  return saveFile(new File([text], filename, { type }))
 }

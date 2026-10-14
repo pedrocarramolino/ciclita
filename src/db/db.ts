@@ -29,6 +29,8 @@ export interface DayLog {
   sex?: Sex
   /** Peso en kg. */
   weight?: number
+  /** Píldora anticonceptiva marcada como tomada. */
+  pillTaken?: boolean
   updatedAt: number
 }
 

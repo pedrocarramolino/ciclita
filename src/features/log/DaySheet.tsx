@@ -8,6 +8,7 @@ import { db, type DayLog } from '../../db/db'
 import { addCustomSymptom, saveDay, type DayForm } from '../../db/repo'
 import { formatLong, today, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
+import { pillDay } from '../../domain/pill'
 import { symptomLabel, t } from '../../i18n'
 import {
   FLOW_OPTIONS,
@@ -116,12 +117,19 @@ function DayFormView({
     mucus: initial?.mucus,
     sex: initial?.sex,
     weight: initial?.weight,
+    pillTaken: initial?.pillTaken,
   }))
   // Texto de los campos numéricos (admiten coma decimal); el número se valida al escribir.
-  const toText = (n?: number) => (n === undefined ? '' : String(n).replace('.', ','))
+  const toText = (n?: number) => (n === undefined ? '' : t.report.decimal(n))
   const [tempText, setTempText] = useState(() => toText(initial?.temperature))
   const [weightText, setWeightText] = useState(() => toText(initial?.weight))
   const tracking = useLiveQuery(() => getSettings().then((s) => s.tracking))
+  // La píldora solo se pregunta los días en que toca (no en los de descanso).
+  const showPill = useLiveQuery(async () => {
+    const s = await getSettings()
+    if (!s.tracking.pill) return false
+    return !s.pill.start || !!pillDay(date, { pack: s.pill.pack, start: s.pill.start })?.active
+  }, [date])
   const [newSymptom, setNewSymptom] = useState('')
   const [saving, setSaving] = useState(false)
   const customSymptoms = useLiveQuery(async () => {
@@ -171,6 +179,15 @@ function DayFormView({
   return (
     <>
       <div className="max-h-[calc(92dvh-8.5rem)] space-y-6 overflow-y-auto px-4 py-5">
+        {showPill && (
+          <div className="flex items-center justify-between gap-4 rounded-2xl bg-surface p-4">
+            <h3 id="sec-pill" className="font-bold">
+              {t.pill.logLabel}
+            </h3>
+            <Switch checked={!!form.pillTaken} onChange={(v) => set('pillTaken', v || undefined)} labelledBy="sec-pill" />
+          </div>
+        )}
+
         {/* Periodo */}
         <section aria-labelledby="sec-period">
           <div className="flex items-center justify-between gap-4 rounded-2xl bg-surface p-4">

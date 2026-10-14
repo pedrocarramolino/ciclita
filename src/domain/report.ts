@@ -6,6 +6,7 @@ import { lang } from '../i18n'
 import type { DayLog, Flow, Period } from '../db/db'
 import { parseISODate, toISODate, type ISODate } from './dates'
 import type { PredictedPeriod, Prediction } from './prediction'
+import { pillAdherence, type PillAdherence, type PillConfig } from './pill'
 import { completedCycles, symptomStats, type CycleRecord, type Phase } from './stats'
 
 export type ReportMonths = 3 | 6 | 12 | 'all'
@@ -13,7 +14,12 @@ export type ReportMonths = 3 | 6 | 12 | 'all'
 export interface ReportOptions {
   months: ReportMonths
   includeNotes: boolean
+  /** Envase de la píldora, si se registran las tomas. */
+  pill?: PillConfig | null
 }
+
+/** Olvidos de la píldora que se listan como mucho en el informe (los más recientes). */
+export const MAX_PILL_MISSED_LISTED = 31
 
 export interface Report {
   generatedOn: ISODate
@@ -45,6 +51,8 @@ export interface Report {
     weight: { first: number; last: number; firstDate: ISODate; lastDate: ISODate } | null
   } | null
   notes: { date: ISODate; text: string }[]
+  /** Tomas de la píldora; null si no se registran. `missed` va limitado a los más recientes. */
+  pill: (PillAdherence & { missedTotal: number }) | null
 }
 
 /** Dolor a partir del cual se considera intenso (escala 0–10). */
@@ -161,9 +169,16 @@ export function buildReport(
     medication: [...meds.values()].sort((a, b) => b.count - a.count || b.last.localeCompare(a.last)),
     fertility,
     notes,
+    pill: pillSummary(days, opts.pill, from, today),
   }
 }
 
+function pillSummary(days: DayLog[], cfg: PillConfig | null | undefined, from: ISODate, today: ISODate): Report['pill'] {
+  if (!cfg) return null
+  const a = pillAdherence(days, cfg, from, today)
+  return { ...a, missed: a.missed.slice(0, MAX_PILL_MISSED_LISTED), missedTotal: a.missed.length }
+}
+
 /** Nombre de archivo para descargar el informe. */
-export const reportFileName = (r: Report) => `ciclita-${lang === 'en' ? 'report' : 'informe'}-${r.generatedOn}.html`
+export const reportFileName = (r: Report) => `ciclita-${lang === 'en' ? 'report' : 'informe'}-${r.generatedOn}.pdf`
 

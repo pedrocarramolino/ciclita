@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { AppDB } from './db'
-import { addCustomSymptom, endPeriod, saveDay, startPeriod } from './repo'
+import { addCustomSymptom, endPeriod, saveDay, setPillTaken, startPeriod } from './repo'
 
 const TODAY = '2026-10-13'
 let database: AppDB
@@ -75,5 +75,23 @@ describe('addCustomSymptom', () => {
   it('reutiliza un síntoma predefinido', async () => {
     const d = await freshDB()
     expect(await addCustomSymptom('acné', d)).toBe('Acné')
+  })
+})
+
+describe('setPillTaken', () => {
+  it('marca la píldora sin tocar el resto del día y al desmarcar no deja un día vacío', async () => {
+    const d = await freshDB()
+    await setPillTaken('2026-10-10', true, d)
+    expect(await d.days.get('2026-10-10')).toMatchObject({ pillTaken: true })
+    await setPillTaken('2026-10-10', false, d)
+    expect(await d.days.get('2026-10-10')).toBeUndefined()
+
+    await saveDay('2026-10-11', { mood: 'calm' }, false, d, TODAY)
+    await setPillTaken('2026-10-11', true, d)
+    expect(await d.days.get('2026-10-11')).toMatchObject({ mood: 'calm', pillTaken: true })
+    await setPillTaken('2026-10-11', false, d)
+    const day = await d.days.get('2026-10-11')
+    expect(day).toMatchObject({ mood: 'calm' })
+    expect(day?.pillTaken).toBeUndefined()
   })
 })

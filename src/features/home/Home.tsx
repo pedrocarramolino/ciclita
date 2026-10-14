@@ -12,6 +12,7 @@ import { getSettings } from '../../db/settings'
 import { perimenopauseInfo, pregnancyInfo } from '../../domain/modes'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { BackupNudgeCard } from './BackupNudgeCard'
+import { PillCard } from './PillCard'
 import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
 
 /** Dirección del atajo "Registrar hoy" (manifest). */
@@ -87,6 +88,7 @@ export function Home() {
         </Button>
       </div>
 
+      {mode !== 'pregnancy' && <PillCard />}
       <BackupNudgeCard />
 
       {mode === 'cycle' && p.nextPeriods.length > 0 && <Upcoming p={p} />}

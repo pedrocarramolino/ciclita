@@ -3,6 +3,7 @@ import { db, type AppDB } from './db'
 import type { ISODate } from '../domain/dates'
 import type { ContraceptionMethod } from '../domain/reminderEvents'
 import type { AppMode } from '../domain/modes'
+import type { PillPack } from '../domain/pill'
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -24,6 +25,8 @@ export interface Settings {
   tracking: TrackingSettings
   /** Modo de la app: ciclo menstrual, embarazo o perimenopausia. */
   mode: AppMode
+  /** Envase de la píldora (si se registra en "Qué registras"). */
+  pill: { pack: PillPack; start: ISODate | null }
   /** Embarazo: primer día de la última regla (base de las semanas y la fecha de parto). */
   pregnancyStart: ISODate | null
   /**
@@ -69,6 +72,7 @@ export interface TrackingSettings {
   mucus: boolean
   sex: boolean
   weight: boolean
+  pill: boolean
 }
 
 export const DEFAULT_TRACKING: TrackingSettings = {
@@ -76,6 +80,7 @@ export const DEFAULT_TRACKING: TrackingSettings = {
   mucus: false,
   sex: false,
   weight: false,
+  pill: false,
 }
 
 export const DEFAULT_REMINDERS: ReminderSettings = {
@@ -103,6 +108,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reminders: DEFAULT_REMINDERS,
   tracking: DEFAULT_TRACKING,
   mode: 'cycle',
+  pill: { pack: 21, start: null },
   pregnancyStart: null,
   pushDevice: null,
   pushSync: null,
@@ -123,6 +129,7 @@ export async function getSettings(database: AppDB = db): Promise<Settings> {
       contraception: { ...DEFAULT_REMINDERS.contraception, ...stored.reminders?.contraception },
     },
     tracking: { ...DEFAULT_TRACKING, ...stored.tracking },
+    pill: { ...DEFAULT_SETTINGS.pill, ...stored.pill },
   }
 }
 

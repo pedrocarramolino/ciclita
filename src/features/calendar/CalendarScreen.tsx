@@ -6,6 +6,7 @@ import { getSettings } from '../../db/settings'
 import { monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
 import { formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
+import { missedPillDates } from '../../domain/pill'
 import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
@@ -20,6 +21,7 @@ interface DayState {
   isPossiblePeriod: boolean
   isPossibleFertile: boolean
   isLogged: boolean
+  pillMissed: boolean
 }
 
 export function CalendarScreen() {
@@ -34,11 +36,17 @@ export function CalendarScreen() {
   const last = weeks.at(-1)!.at(-1)!.date
 
   const data = useLiveQuery(async () => {
-    const [periods, loggedKeys] = await Promise.all([
+    const [periods, days, settings] = await Promise.all([
       db.periods.toArray(),
-      db.days.where('date').between(first, last, true, true).primaryKeys(),
+      db.days.where('date').between(first, last, true, true).toArray(),
+      getSettings(),
     ])
-    return { periodDays: periodDateSet(periods, today), logged: new Set(loggedKeys) }
+    const pill = settings.tracking.pill && settings.pill.start ? { pack: settings.pill.pack, start: settings.pill.start } : null
+    return {
+      periodDays: periodDateSet(periods, today),
+      logged: new Set(days.map((d) => d.date)),
+      pillMissed: pill ? missedPillDates(days, pill, first, last, today) : null,
+    }
   }, [first, last, today])
 
   const prediction = usePrediction()
@@ -62,6 +70,7 @@ export function CalendarScreen() {
       isPossiblePeriod: !isPeriod && !!predicted?.possiblePeriod.has(date),
       isPossibleFertile: !isPeriod && !!predicted?.possibleFertile.has(date),
       isLogged: !!data?.logged.has(date),
+      pillMissed: !!data?.pillMissed?.has(date),
     }
   }
 
@@ -136,7 +145,7 @@ export function CalendarScreen() {
       </div>
 
       <p className="mt-3 text-center text-sm text-muted">{c.hint}</p>
-      <Legend withMargin={!!predicted?.hasMargin} withPredictions={mode === 'cycle'} />
+      <Legend withMargin={!!predicted?.hasMargin} withPredictions={mode === 'cycle'} withPill={!!data?.pillMissed} />
 
       {selected && <DaySheet date={selected} onClose={() => setSelected(null)} />}
     </main>
@@ -154,6 +163,7 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
   else if (s.isFertile) parts.push(c.fertile)
   else if (s.isPossibleFertile) parts.push(c.possibleFertile)
   if (s.isLogged) parts.push(c.logged)
+  if (s.pillMissed) parts.push(t.pill.calendarMissed)
 
   const look = s.isPeriod
     ? 'bg-primary text-on-primary'
@@ -182,6 +192,9 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
         disabled:cursor-default`}
     >
       {gd.day}
+      {s.pillMissed && (
+        <span aria-hidden="true" className="absolute top-0.5 right-0.5 size-2.5 rounded-full border-2 border-danger bg-surface" />
+      )}
       {s.isLogged && (
         <span
           aria-hidden="true"
@@ -192,7 +205,15 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
   )
 }
 
-function Legend({ withMargin, withPredictions }: { withMargin: boolean; withPredictions: boolean }) {
+function Legend({
+  withMargin,
+  withPredictions,
+  withPill,
+}: {
+  withMargin: boolean
+  withPredictions: boolean
+  withPill: boolean
+}) {
   const c = t.calendar
   const item = (swatch: string, label: string) => (
     <li className="flex items-center gap-2">
@@ -216,6 +237,14 @@ function Legend({ withMargin, withPredictions }: { withMargin: boolean; withPred
           </span>
           {c.logged}
         </li>
+        {withPill && (
+          <li className="flex items-center gap-2">
+            <span aria-hidden="true" className="grid size-5 place-items-center">
+              <span className="size-2.5 rounded-full border-2 border-danger bg-surface" />
+            </span>
+            {t.pill.calendarMissed}
+          </li>
+        )}
       </ul>
       {withPredictions ? (
         <p className="mt-3 text-xs text-muted">{c.estimatesNote}</p>

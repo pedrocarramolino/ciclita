@@ -66,7 +66,7 @@ export function SettingsScreen() {
 
       <ModeSection settings={settings} />
 
-      <TrackingSection tracking={settings.tracking} />
+      <TrackingSection settings={settings} />
 
       <Section title={s.appearance}>
         <fieldset>

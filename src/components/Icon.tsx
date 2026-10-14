@@ -15,6 +15,7 @@ const PATHS = {
     'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
   x: 'M6 6l12 12M18 6L6 18',
   plus: 'M12 5v14M5 12h14',
+  share: 'M12 15V3M8 7l4-4 4 4M6 11H5v10h14V11h-1',
 } as const
 
 export type IconName = keyof typeof PATHS

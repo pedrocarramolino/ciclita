@@ -92,3 +92,24 @@ describe('buildReport', () => {
     expect(empty.pain).toBeNull()
   })
 })
+
+describe('buildReport: píldora', () => {
+  it('sin envase configurado no hay sección', () => {
+    expect(buildReport(periods, days, prediction, { months: 3, includeNotes: false }, TODAY).pill).toBeNull()
+  })
+
+  it('cuenta tomas y lista los olvidos más recientes', () => {
+    const taken: DayLog[] = ['2026-10-10', '2026-10-12'].map((date) => ({ date, pillTaken: true, updatedAt: 0 }))
+    const pill = { pack: 28 as const, start: '2026-10-10' }
+    const r = buildReport(periods, taken, prediction, { months: 3, includeNotes: false, pill }, TODAY).pill
+    expect(r).toEqual({ expected: 3, taken: 2, missed: ['2026-10-11'], missedTotal: 1 })
+  })
+
+  it('limita la lista de olvidos pero no el total', () => {
+    const pill = { pack: 28 as const, start: '2026-07-01' }
+    const r = buildReport(periods, [], prediction, { months: 'all', includeNotes: false, pill }, TODAY).pill!
+    expect(r.missed).toHaveLength(31)
+    expect(r.missed[0]).toBe('2026-10-12')
+    expect(r.missedTotal).toBeGreaterThan(31)
+  })
+})

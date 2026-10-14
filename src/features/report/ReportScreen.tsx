@@ -1,23 +1,29 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { Switch } from '../../components/Switch'
-import { downloadText } from '../../db/data'
 import { db } from '../../db/db'
+import { getSettings } from '../../db/settings'
 import { today } from '../../domain/dates'
-import { buildReport, reportFileName, type ReportMonths } from '../../domain/report'
+import { buildReport, reportFileName, type Report, type ReportMonths } from '../../domain/report'
 import { lang, t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
+import { canShareFile, isIOSStandalone, saveFile, shareFile } from '../../files'
 import { ReportDocument } from './ReportDocument'
+import { reportBlocks } from './reportBlocks'
 import './report.css'
-import reportCss from './report.css?raw'
 
 const RANGES: ReportMonths[] = [3, 6, 12, 'all']
 
+/** Se puede pasar un PDF al menú Compartir del sistema (móviles, sobre todo). */
+const CAN_SHARE_PDF = canShareFile(new File([new Uint8Array(1)], 'informe.pdf', { type: 'application/pdf' }))
+/** En iOS con la app instalada, window.print() no hace nada. */
+const CAN_PRINT = !isIOSStandalone()
+
 /**
  * Informe para el médico. Se genera en el dispositivo (no sale nada hacia ningún
- * servidor) y se puede imprimir / guardar como PDF o descargar como archivo.
+ * servidor) como PDF, que se puede compartir, descargar o imprimir.
  */
 export function ReportScreen() {
   const [months, setMonths] = useState<ReportMonths>(6)
@@ -25,35 +31,49 @@ export function ReportScreen() {
   const [name, setName] = useState('')
   const prediction = usePrediction()
   const data = useLiveQuery(async () => {
-    const [periods, days] = await Promise.all([db.periods.toArray(), db.days.toArray()])
-    return { periods, days }
+    const [periods, days, settings] = await Promise.all([db.periods.toArray(), db.days.toArray(), getSettings()])
+    const pill = settings.tracking.pill && settings.pill.start ? { pack: settings.pill.pack, start: settings.pill.start } : null
+    return { periods, days, pill }
   })
   const R = t.report
 
   const report = useMemo(
-    () => (prediction && data ? buildReport(data.periods, data.days, prediction, { months, includeNotes }, today()) : null),
+    () => (prediction && data ? buildReport(data.periods, data.days, prediction, { months, includeNotes, pill: data.pill }, today()) : null),
     [prediction, data, months, includeNotes],
   )
 
-  const docRef = useRef<HTMLDivElement>(null)
+  // El PDF se prepara por adelantado: iOS solo abre el menú Compartir si se llama
+  // justo al pulsar el botón, sin esperas de por medio.
+  // Resultado ligado al informe y al nombre con los que se generó: si cambian, el PDF
+  // anterior deja de valer sin necesidad de borrarlo.
+  const [generated, setGenerated] = useState<{ report: Report; name: string; file: File | null } | null>(null)
+  const current = generated && report && generated.report === report && generated.name === name ? generated : null
+  const pdf = current?.file ?? null
+  const pdfError = !!current && !current.file
+  useEffect(() => {
+    if (!report) return
+    let cancelled = false
+    const id = setTimeout(() => {
+      import('./reportPdf')
+        .then(({ reportPdf }) => reportPdf(reportBlocks(report, name), { title: R.docTitle, lang }))
+        .then((bytes) => new File([bytes as BlobPart], reportFileName(report), { type: 'application/pdf' }))
+        .catch((e: unknown) => {
+          console.error('No se pudo crear el PDF', e)
+          return null
+        })
+        .then((file) => {
+          if (!cancelled) setGenerated({ report, name, file })
+        })
+    }, 400)
+    return () => {
+      cancelled = true
+      clearTimeout(id)
+    }
+  }, [report, name, R.docTitle])
 
-  // El archivo descargable reutiliza el HTML del informe que ya está en pantalla.
-  const download = () => {
-    const body = docRef.current?.innerHTML
-    if (!report || !body) return
-    const html = `<!doctype html>
-<html lang="${lang}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${R.docTitle}</title>
-<style>${reportCss}
-body { margin: 0; padding: 16px; background: #f4eef0; }
-@media print { body { padding: 0; background: #fff; } }</style>
-</head>
-<body>${body}</body>
-</html>`
-    downloadText(reportFileName(report), html, 'text/html;charset=utf-8')
+  const share = async () => {
+    if (!pdf) return
+    if ((await shareFile(pdf, R.docTitle)) === 'unavailable') await saveFile(pdf)
   }
 
   return (
@@ -114,18 +134,33 @@ body { margin: 0; padding: 16px; background: #f4eef0; }
         </section>
 
         <div className="grid gap-2 sm:grid-cols-2">
-          <Button disabled={!report} onClick={() => window.print()}>
-            {R.print}
-          </Button>
-          <Button variant="secondary" disabled={!report} onClick={download}>
+          {CAN_SHARE_PDF && (
+            <Button disabled={!pdf} onClick={() => void share()}>
+              <Icon name="share" />
+              {R.share}
+            </Button>
+          )}
+          <Button
+            variant={CAN_SHARE_PDF ? 'secondary' : 'primary'}
+            disabled={!pdf}
+            onClick={() => pdf && void saveFile(pdf)}
+          >
             {R.download}
           </Button>
+          {CAN_PRINT && (
+            <Button variant="secondary" disabled={!report} onClick={() => window.print()}>
+              {R.print}
+            </Button>
+          )}
         </div>
-        <p className="text-xs text-muted">{R.printHint}</p>
+        <p role="status" className="text-sm font-bold empty:hidden">
+          {pdfError ? R.pdfError : !pdf && report ? R.preparing : ''}
+        </p>
+        <p className="text-xs text-muted">{CAN_SHARE_PDF ? R.shareHint : R.printHint}</p>
       </div>
 
       {report && (
-        <div ref={docRef} className="overflow-x-auto rounded-2xl shadow-sm">
+        <div className="overflow-x-auto rounded-2xl shadow-sm">
           <ReportDocument report={report} name={name} />
         </div>
       )}

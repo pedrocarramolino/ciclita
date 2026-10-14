@@ -66,9 +66,9 @@ describe('CSV', () => {
   it('exporta cabecera, una fila por día y escapa correctamente', () => {
     const rows = parseCSVRows(csv)
     expect(rows[0]).toEqual(CSV_HEADER)
-    expect(CSV_HEADER.slice(-4)).toEqual(['temperatura', 'moco', 'relaciones', 'peso'])
+    expect(CSV_HEADER.slice(-5)).toEqual(['temperatura', 'moco', 'relaciones', 'peso', 'pildora'])
     expect(rows).toHaveLength(1 + 3 + 2 + 2) // cabecera + periodo 1 + periodo 2 + 2 días sueltos
-    expect(rows[1]).toEqual(['2026-09-01', 'sí', 'Abundante', 'Dolor abdominal, Cansancio', '', '7', '', '', '', '', '', ''])
+    expect(rows[1]).toEqual(['2026-09-01', 'sí', 'Abundante', 'Dolor abdominal, Cansancio', '', '7', '', '', '', '', '', '', ''])
     const notes = rows.find((r) => r[0] === '2026-09-15')!
     expect(notes[4]).toBe('Calma')
     expect(notes[7]).toBe('Notas con "comillas"; punto y coma\ny salto')
@@ -106,7 +106,7 @@ describe('datos de fertilidad', () => {
 
   it('CSV: se exportan con coma decimal y vuelven intactos', () => {
     const csv = toCSV(new Set(), [fertile])
-    expect(parseCSVRows(csv)[1].slice(-4)).toEqual(['36,55', 'Clara de huevo', 'Sin protección', '62,5'])
+    expect(parseCSVRows(csv)[1].slice(-5, -1)).toEqual(['36,55', 'Clara de huevo', 'Sin protección', '62,5'])
     const { updatedAt: _u, ...expected } = fertile
     expect(parseCSV(csv).days[0]).toMatchObject(expected)
   })
@@ -126,5 +126,28 @@ describe('datos de fertilidad', () => {
   it('un CSV antiguo sin las columnas nuevas se sigue importando', () => {
     const old = ['fecha;periodo;flujo;sintomas;animo;dolor;medicacion;notas', '2026-01-01;sí;Ligero;;;;;', ''].join('\r\n')
     expect(parseCSV(old).periods).toEqual([{ startDate: '2026-01-01', endDate: '2026-01-01' }])
+  })
+})
+
+describe('píldora', () => {
+  it('CSV: la toma va y vuelve en la columna "pildora"', () => {
+    const csv = toCSV(new Set(), [{ date: '2026-10-01', pillTaken: true, updatedAt: 1 }])
+    expect(parseCSVRows(csv)[1].at(-1)).toBe('sí')
+    expect(parseCSV(csv).days).toEqual([expect.objectContaining({ date: '2026-10-01', pillTaken: true })])
+  })
+
+  it('JSON: solo acepta pillTaken verdadero', () => {
+    const b = parseBackup(
+      JSON.stringify({
+        app: 'ciclita',
+        version: 1,
+        periods: [],
+        days: [
+          { date: '2026-10-01', pillTaken: true },
+          { date: '2026-10-02', pillTaken: 'sí', notes: 'x' },
+        ],
+      }),
+    )
+    expect(b.days.map((d) => d.pillTaken)).toEqual([true, undefined])
   })
 })
