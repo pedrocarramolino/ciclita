@@ -180,7 +180,7 @@ export const en: Messages = {
     daysBefore: 'Days in advance',
     dailyReminder: 'Daily reminder to log',
     pillReminder: 'Birth control pill reminder',
-    pillSkipsBreak: "It won't go off on your pack's break days.",
+    pillSkipsBreak: "It won't go off on break days; on the last one it will remind you that you start a new pack the next day.",
     pillBreakHint: "So it doesn't go off on break days, set your pack in What you track → Birth control pill.",
     fertileReminder: 'Fertile window reminder',
     fertileReminderHint: 'The day before the estimated fertile window, at 9:00.',
@@ -501,6 +501,7 @@ export const en: Messages = {
       'injection-due': { title: 'Injection', body: 'Your contraceptive injection is due today.' },
       fertile: { title: 'Fertile window', body: 'Your estimated fertile window starts tomorrow.' },
       breast: { title: 'Self-exam', body: "It's a good time for your breast self-exam." },
+      'pill-new-pack': { title: 'Pill', body: 'You start a new pill pack tomorrow.' },
     },
     period: (n) =>
       n === 0 ? 'Your period could start today.' : n === 1 ? 'Your period could start tomorrow.' : `Your period could start in ${n} days.`,

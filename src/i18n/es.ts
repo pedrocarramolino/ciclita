@@ -153,7 +153,7 @@ export const es = {
     daysBefore: 'Días de antelación',
     dailyReminder: 'Recordatorio diario para registrar',
     pillReminder: 'Recordatorio de píldora anticonceptiva',
-    pillSkipsBreak: 'No sonará en los días de descanso de tu envase.',
+    pillSkipsBreak: 'No sonará en los días de descanso; el último te recordará que al día siguiente empiezas un envase nuevo.',
     pillBreakHint: 'Para que no suene en los días de descanso, indica tu envase en Qué registras → Píldora anticonceptiva.',
     fertileReminder: 'Aviso de ventana fértil',
     fertileReminderHint: 'El día antes de la ventana fértil estimada, a las 9:00.',
@@ -484,6 +484,7 @@ export const es = {
       'injection-due': { title: 'Inyección', body: 'Hoy toca la inyección anticonceptiva.' },
       fertile: { title: 'Ventana fértil', body: 'Tu ventana fértil estimada empieza mañana.' },
       breast: { title: 'Autoexploración', body: 'Es un buen momento para la autoexploración de mama.' },
+      'pill-new-pack': { title: 'Píldora', body: 'Mañana empiezas un envase nuevo de la píldora.' },
     },
     period: (n: number) =>
       n === 0 ? 'Tu periodo podría empezar hoy.' : n === 1 ? 'Tu periodo podría empezar mañana.' : `Tu periodo podría empezar en ${n} días.`,

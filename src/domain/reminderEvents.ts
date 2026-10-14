@@ -8,6 +8,8 @@
  *      · Inyección trimestral: cada 12 semanas, con aviso una semana antes.
  *  - El día antes de cada ventana fértil prevista.
  *  - Autoexploración de mama: una semana después del inicio de cada periodo.
+ *  - Píldora con descanso (21 + 7, 24 + 4): el último día de descanso, a la hora de la
+ *    píldora, "mañana empiezas un envase nuevo" (retrasarlo es el olvido más arriesgado).
  * Solo se generan las de los próximos meses (el servidor admite un máximo).
  */
 import { addDays, diffDays, type ISODate } from './dates'
@@ -25,6 +27,7 @@ export type EventType =
   | 'injection-due'
   | 'fertile'
   | 'breast'
+  | 'pill-new-pack'
 
 export interface ReminderEvent {
   date: ISODate
@@ -36,6 +39,8 @@ export interface EventSettings {
   fertileEnabled: boolean
   breastExamEnabled: boolean
   contraception: { method: ContraceptionMethod; start: ISODate | null; time: string }
+  /** Envase de la píldora con descanso, si hay recordatorio de píldora. */
+  pillPack?: { active: number; start: ISODate; time: string } | null
 }
 
 /** Hora de los avisos que no son de anticonceptivos. */
@@ -111,6 +116,17 @@ export function buildEventReminders(s: EventSettings, prediction: Prediction | n
     for (const start of starts) {
       const date = addDays(start, 7)
       if (date >= today && date <= to) events.push({ date, time: EVENT_TIME, type: 'breast' })
+    }
+  }
+
+  const pill = s.pillPack
+  if (pill && pill.active < CYCLE) {
+    // Último día de descanso de cada envase: día 28 (desde el primer envase que pueda caer en el intervalo).
+    let n = Math.max(0, Math.floor(diffDays(pill.start, today) / CYCLE) - 1)
+    for (; ; n++) {
+      const date = addDays(pill.start, n * CYCLE + CYCLE - 1)
+      if (date > to) break
+      if (date >= today) events.push({ date, time: pill.time, type: 'pill-new-pack' })
     }
   }
 

@@ -103,3 +103,13 @@ describe('píldora con envase', () => {
     expect(buildReminders({ ...on, discreet: true }, null, '2026-10-20', 'cycle', { trackTaken: true }).pill?.takenAction).toBe('Hecho')
   })
 })
+
+describe('envase nuevo en los avisos', () => {
+  it('solo con recordatorio de píldora y envase con descanso', () => {
+    const pack = { active: 24, start: '2026-10-01' }
+    const on = buildReminders({ ...DEFAULT_REMINDERS, pillEnabled: true, discreet: false }, null, '2026-10-20', 'cycle', { pack })
+    expect(on.events?.[0]).toMatchObject({ date: '2026-10-28', body: 'Mañana empiezas un envase nuevo de la píldora.' })
+    const off = buildReminders({ ...DEFAULT_REMINDERS, pillEnabled: false }, null, '2026-10-20', 'cycle', { pack })
+    expect(off.events).toBeUndefined()
+  })
+})

@@ -78,3 +78,25 @@ describe('buildEventReminders', () => {
     expect(e.length).toBeLessThanOrEqual(MAX_EVENTS)
   })
 })
+
+describe('aviso de envase nuevo de la píldora', () => {
+  const off: EventSettings = {
+    fertileEnabled: false,
+    breastExamEnabled: false,
+    contraception: { method: 'none', start: null, time: '09:00' },
+  }
+
+  it('el último día de descanso de cada envase, a la hora de la píldora', () => {
+    const e = buildEventReminders({ ...off, pillPack: { active: 21, start: '2026-10-01', time: '22:00' } }, null, '2026-10-20')
+    expect(e.slice(0, 3)).toEqual([
+      { date: '2026-10-28', time: '22:00', type: 'pill-new-pack' },
+      { date: '2026-11-25', time: '22:00', type: 'pill-new-pack' },
+      { date: '2026-12-23', time: '22:00', type: 'pill-new-pack' },
+    ])
+  })
+
+  it('con envase de 28 seguidas o sin envase no hay aviso', () => {
+    expect(buildEventReminders({ ...off, pillPack: { active: 28, start: '2026-10-01', time: '22:00' } }, null, '2026-10-20')).toEqual([])
+    expect(buildEventReminders({ ...off, pillPack: null }, null, '2026-10-20')).toEqual([])
+  })
+})

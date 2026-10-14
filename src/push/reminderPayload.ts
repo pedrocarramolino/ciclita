@@ -90,7 +90,8 @@ export function buildReminders(
   }
 
   // Recordatorios con fecha: anticonceptivo con pauta, ventana fértil, autoexploración.
-  const events = buildEventReminders(r, prediction, today).map((e) => ({
+  const pillPack = r.pillEnabled && pill.pack ? { ...pill.pack, time: r.pillTime } : null
+  const events = buildEventReminders({ ...r, pillPack }, prediction, today).map((e) => ({
     date: e.date,
     time: e.time,
     title: r.discreet ? n.discreetTitle : n.events[e.type].title,
