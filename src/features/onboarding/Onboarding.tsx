@@ -4,6 +4,7 @@ import { Icon, type IconName } from '../../components/Icon'
 import { LegalNotice } from '../../components/LegalNotice'
 import { NumberStepper } from '../../components/NumberStepper'
 import { completeOnboarding } from '../../db/settings'
+import { useBackupImport } from '../settings/useBackupImport'
 import { addDays, today } from '../../domain/dates'
 import { LANGS, lang, setLanguage, t } from '../../i18n'
 
@@ -35,6 +36,7 @@ export function Onboarding() {
   }
 
   const o = t.onboarding
+  const importer = useBackupImport({ confirmReplace: false })
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
@@ -105,6 +107,14 @@ export function Onboarding() {
             <Button className="w-full" onClick={() => setStep(1)}>
               {o.start}
             </Button>
+            {/* Móvil nuevo: se recupera una copia y se salta la bienvenida (al importar, la app pasa al inicio). */}
+            <Button variant="ghost" className="mt-2 w-full" onClick={importer.open}>
+              {o.importBackup}
+            </Button>
+            {importer.ui}
+            <p role="status" className="mt-1 text-center text-sm font-bold empty:hidden">
+              {importer.status}
+            </p>
           </div>
         </section>
       )}

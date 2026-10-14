@@ -75,4 +75,20 @@ describe('App', () => {
       vi.useRealTimers()
     }
   })
+
+  it('desde la bienvenida se puede importar una copia y pasar directo al inicio', async () => {
+    // Copia hecha en otro móvil.
+    const { exportJSON } = await import('./db/data')
+    await db.periods.add({ startDate: addDays(today(), -10), endDate: addDays(today(), -6) })
+    const json = await exportJSON()
+    await db.periods.clear()
+
+    const user = userEvent.setup()
+    const { container } = render(<App encrypted={false} />)
+    await user.click(await screen.findByRole('button', { name: '¿Ya usabas Ciclita? Importar una copia' }))
+    await user.upload(container.querySelector<HTMLInputElement>('input[type="file"]')!, new File([json], 'copia.json'))
+
+    expect(await screen.findByText('Día 11 de tu ciclo', {}, { timeout: 3000 })).toBeInTheDocument()
+    expect((await getSettings()).onboardingDone).toBe(true)
+  })
 })

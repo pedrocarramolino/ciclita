@@ -27,6 +27,7 @@ export const es = {
       'Puedes exportar o borrar tus datos cuando quieras.',
     ],
     start: 'Empezar',
+    importBackup: '¿Ya usabas Ciclita? Importar una copia',
     lastPeriodTitle: '¿Cuándo empezó tu último periodo?',
     lastPeriodHint: 'Nos sirve para estimar tu próximo periodo. Podrás cambiarlo después.',
     lastPeriodLabel: 'Fecha de inicio',

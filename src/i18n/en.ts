@@ -25,6 +25,7 @@ export const en: Messages = {
       'You can export or delete your data whenever you want.',
     ],
     start: 'Get started',
+    importBackup: 'Already used Ciclita? Import a backup',
     lastPeriodTitle: 'When did your last period start?',
     lastPeriodHint: 'This helps us estimate your next period. You can change it later.',
     lastPeriodLabel: 'Start date',
