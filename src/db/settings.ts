@@ -1,6 +1,7 @@
 import type { Lang } from '../i18n'
 import { db, type AppDB } from './db'
-import type { ISODate } from '../domain/dates'
+import { addDays, today as todayISO, type ISODate } from '../domain/dates'
+import { DEFAULT_PERIOD_LENGTH } from '../domain/prediction'
 import type { ContraceptionMethod } from '../domain/reminderEvents'
 import type { AppMode } from '../domain/modes'
 import type { PillPack } from '../domain/pill'
@@ -152,12 +153,16 @@ export interface OnboardingResult {
 export async function completeOnboarding(
   r: OnboardingResult,
   database: AppDB = db,
+  today: ISODate = todayISO(),
 ): Promise<void> {
   await database.transaction('rw', database.periods, database.settings, async () => {
     if (r.lastPeriodStart) {
       const exists = await database.periods.where('startDate').equals(r.lastPeriodStart).count()
       if (!exists) {
-        await database.periods.add({ startDate: r.lastPeriodStart, endDate: null })
+        // Si ya han pasado los días que suele durar, se da por terminado; si no, sigue
+        // en curso y se cierra con "Ha terminado mi periodo".
+        const end = addDays(r.lastPeriodStart, (r.periodLength ?? DEFAULT_PERIOD_LENGTH) - 1)
+        await database.periods.add({ startDate: r.lastPeriodStart, endDate: end < today ? end : null })
       }
     }
     await setSettings(

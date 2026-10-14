@@ -53,7 +53,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 - pdf-lib para el informe en PDF (se carga solo al abrir el informe)
 - vite-plugin-pwa (service worker propio con Workbox, manifest)
 - Funciones serverless de Vercel (`/api`) + Upstash Redis, Upstash QStash y Web Push (`web-push`)
-- Vitest para los tests
+- Vitest para los tests; las pantallas se prueban con Testing Library en jsdom (`src/test/ui.ts`)
 
 ## Estructura
 
@@ -102,7 +102,7 @@ Otros comandos:
 
 | Comando | Qué hace |
 | --- | --- |
-| `npm test` | Tests unitarios (Vitest) |
+| `npm test` | Tests (Vitest): lógica pura y pantallas (Testing Library sobre jsdom, con IndexedDB simulada) |
 | `npm run build` | Comprobación de tipos y build de producción en `dist/` |
 | `npm run preview` | Sirve el build (con las mismas cabeceras de seguridad que Vercel) para probar la PWA y el modo offline |
 | `npm run lint` | Linter (oxlint) |

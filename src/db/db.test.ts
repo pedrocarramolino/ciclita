@@ -28,17 +28,18 @@ describe('base de datos', () => {
     expect(s.cycleLength).toBeNull()
   })
 
-  it('el onboarding guarda el último periodo y las duraciones', async () => {
+  it('el onboarding guarda el último periodo (ya terminado) y las duraciones', async () => {
     const d = await freshDB()
-    await completeOnboarding(
-      { lastPeriodStart: '2026-09-20', cycleLength: 30, periodLength: 4 },
-      d,
-    )
+    await completeOnboarding({ lastPeriodStart: '2026-09-20', cycleLength: 30, periodLength: 4 }, d, '2026-10-14')
     const s = await getSettings(d)
     expect(s).toMatchObject({ onboardingDone: true, cycleLength: 30, periodLength: 4 })
-    expect(await d.periods.toArray()).toEqual([
-      { id: 1, startDate: '2026-09-20', endDate: null },
-    ])
+    expect(await d.periods.toArray()).toEqual([{ id: 1, startDate: '2026-09-20', endDate: '2026-09-23' }])
+  })
+
+  it('si el periodo empezó hace menos de lo que suele durar, queda en curso', async () => {
+    const d = await freshDB()
+    await completeOnboarding({ lastPeriodStart: '2026-10-12', cycleLength: null, periodLength: null }, d, '2026-10-14')
+    expect(await d.periods.toArray()).toEqual([{ id: 1, startDate: '2026-10-12', endDate: null }])
   })
 
   it('el onboarding con "No lo sé" no crea periodo ni duraciones', async () => {
