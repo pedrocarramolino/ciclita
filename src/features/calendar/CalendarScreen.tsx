@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Icon } from '../../components/Icon'
 import { db } from '../../db/db'
 import { getSettings } from '../../db/settings'
@@ -7,7 +7,7 @@ import { monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
 import { formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
 import { missedPillDates } from '../../domain/pill'
-import { takeCalendarFocus } from './calendarFocus'
+import { clearCalendarFocus, peekCalendarFocus } from './calendarFocus'
 import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
@@ -27,7 +27,8 @@ interface DayState {
 
 export function CalendarScreen() {
   const [now] = useState(() => new Date())
-  const [ym, setYm] = useState(() => takeCalendarFocus() ?? { y: now.getFullYear(), m: now.getMonth() })
+  const [ym, setYm] = useState(() => peekCalendarFocus() ?? { y: now.getFullYear(), m: now.getMonth() })
+  useEffect(clearCalendarFocus, [])
   const [selected, setSelected] = useState<ISODate | null>(null)
   const today = todayISO()
   const c = t.calendar

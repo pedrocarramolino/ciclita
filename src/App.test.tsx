@@ -56,4 +56,23 @@ describe('App', () => {
     for (const d of '1357') await user.click(screen.getByRole('button', { name: `Dígito ${d}` }))
     expect(await screen.findByRole('navigation', { name: 'Navegación principal' })).toBeInTheDocument()
   })
+
+  it('al retomar la app otro día, "hoy" se actualiza', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      vi.setSystemTime(new Date(2026, 9, 14, 23, 50))
+      const { setSettings } = await import('./db/settings')
+      await setSettings({ onboardingDone: true })
+      await db.periods.add({ startDate: '2026-10-01', endDate: '2026-10-05' })
+      render(<App encrypted={false} />)
+      expect(await screen.findByText('Día 14 de tu ciclo')).toBeInTheDocument()
+
+      // La app pasa la noche en segundo plano y se vuelve a abrir.
+      vi.setSystemTime(new Date(2026, 9, 15, 8, 0))
+      document.dispatchEvent(new Event('visibilitychange'))
+      expect(await screen.findByText('Día 15 de tu ciclo')).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

@@ -15,6 +15,7 @@ import { usePushSync } from './push/usePushSync'
 import { preloadable } from './preloadable'
 import { useHashRoute } from './useHashRoute'
 import { usePrediction } from './usePrediction'
+import { useToday } from './useToday'
 
 // Pantallas que no hacen falta al arrancar: se cargan cuando se abren (el service
 // worker ya las tiene en caché, así que aparecen al instante). Ajustes incluye PIN,
@@ -130,7 +131,10 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
   const [route, navigate] = useHashRoute()
   const [locked, unlock] = useAppLock(settings?.pinHash, startUnlocked)
   useTheme(settings?.theme)
-  const prediction = usePrediction()
+  // Al cambiar de día (app retomada al día siguiente) se recalcula todo y las pantallas
+  // se vuelven a montar, para que "hoy" nunca se quede en ayer.
+  const day = useToday()
+  const prediction = usePrediction(day)
   usePushSync(
     settings?.onboardingDone ? settings.reminders : undefined,
     prediction,
@@ -155,7 +159,7 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
     )
   else
     screen = (
-      <div className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))]">
+      <div key={day} className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))]">
         {route === 'home' && <Home />}
         {route === 'calendar' && <CalendarScreen />}
         {route === 'stats' && (
