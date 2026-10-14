@@ -10,16 +10,13 @@ export const LANGS: Lang[] = ['es', 'en']
 
 const KEY = 'ciclita-lang'
 
-/** El elegido en Ajustes; si no hay, inglés solo para navegadores en inglés. */
+/** El elegido en la bienvenida o en Ajustes; si no hay, siempre español. */
 function readLang(): Lang {
-  let saved: string | null = null
   try {
-    saved = globalThis.localStorage?.getItem(KEY) ?? null
+    return globalThis.localStorage?.getItem(KEY) === 'en' ? 'en' : 'es'
   } catch {
-    // Almacenamiento bloqueado: se decide por el navegador.
+    return 'es'
   }
-  if (saved === 'es' || saved === 'en') return saved
-  return globalThis.navigator?.language?.toLowerCase().startsWith('en') ? 'en' : 'es'
 }
 
 export const lang: Lang = readLang()
