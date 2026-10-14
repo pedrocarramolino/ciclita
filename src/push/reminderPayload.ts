@@ -22,6 +22,8 @@ export interface PeriodReminder {
   bodies: string[]
   /** Periodos previstos siguientes: el servidor sigue avisando aunque no se abra la app. */
   next?: { from: ISODate; until: ISODate }[]
+  /** Texto del botón "Ha empezado" de la notificación. */
+  startedAction?: string
 }
 
 export interface EventReminder {
@@ -83,6 +85,7 @@ export function buildReminders(
       title: title('period'),
       ...window(next.start),
       ...(following.length ? { next: following } : {}),
+      startedAction: r.discreet ? n.discreet.markToday : n.periodStarted,
       bodies: Array.from({ length: r.periodDaysBefore + 1 }, (_, i) =>
         r.discreet ? n.discreet.period : n.period(i),
       ),

@@ -34,8 +34,11 @@ interface PushPayload {
 }
 
 /** Botón "Ya la he tomado" del aviso de la píldora: abre la app y la marca (ver Home). */
-const PILL_TAKEN_ACTION = 'pill-taken'
-const PILL_TAKEN_URL = '/#/pill-taken'
+/** Botones de las notificaciones y la dirección que abren (las acciones las hace Home). */
+const ACTION_URLS: Record<string, string> = {
+  'pill-taken': '/#/pill-taken',
+  'period-started': '/#/period-started',
+}
 
 self.addEventListener('push', (event) => {
   let data: PushPayload = { title: 'Ciclita', body: 'Tienes un recordatorio.' }
@@ -52,7 +55,7 @@ self.addEventListener('push', (event) => {
       badge: '/icons/badge-96.png',
       data: { url: data.url ?? '/' },
       // Solo se aceptan acciones conocidas; iOS no muestra botones en avisos web.
-      actions: (data.actions ?? []).filter((a) => a.action === PILL_TAKEN_ACTION).slice(0, 1),
+      actions: (data.actions ?? []).filter((a) => a.action in ACTION_URLS).slice(0, 1),
     } as NotificationOptions),
   )
 })
@@ -61,7 +64,7 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close()
   // Solo se abren páginas de la propia app, aunque el aviso dijera otra cosa.
   let url = new URL('/', self.location.origin).href
-  const wanted = event.action === PILL_TAKEN_ACTION ? PILL_TAKEN_URL : ((event.notification.data?.url as string) ?? '/')
+  const wanted = ACTION_URLS[event.action] ?? ((event.notification.data?.url as string) ?? '/')
   try {
     const target = new URL(wanted, self.location.origin)
     if (target.origin === self.location.origin) url = target.href

@@ -24,6 +24,8 @@ import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
 export const LOG_TODAY_HASH = '#/log'
 /** Dirección del botón "Ya la he tomado" de la notificación de la píldora (sw.ts). */
 export const PILL_TAKEN_HASH = '#/pill-taken'
+/** Dirección del botón "Ha empezado" de la notificación del periodo (sw.ts). */
+export const PERIOD_STARTED_HASH = '#/period-started'
 
 /** Días de retraso a partir de los que se sugiere un test de embarazo. */
 const LATE_TEST_DAYS = 7
@@ -66,6 +68,8 @@ export function Home() {
 
   // El atajo "Registrar hoy" del icono de la app abre el registro de hoy.
   useHashAction(LOG_TODAY_HASH, () => setLogOpen(true))
+  // "Ha empezado" en la notificación del periodo: se marca el inicio hoy.
+  useHashAction(PERIOD_STARTED_HASH, () => void startPeriod().then(undoPeriods(t.home.startedToast)))
   // "Ya la he tomado" en la notificación: se marca la píldora de hoy.
   useHashAction(PILL_TAKEN_HASH, () => {
     const day = todayISO()

@@ -15,6 +15,7 @@ import { createHash, randomUUID, timingSafeEqual } from 'node:crypto'
 import { localDate, nextOccurrence, zonedToUtc } from './time.js'
 import {
   periodWindows,
+  PERIOD_STARTED_ACTION,
   PILL_TAKEN_ACTION,
   REMINDER_KINDS,
   type DeliverMessage,
@@ -213,6 +214,7 @@ export async function deliver(deps: Deps, msg: DeliverMessage): Promise<DeliverR
     if (w && today >= w.from && record.periodSentFor !== w.until) {
       const body = r.period.bodies[Math.min(left, r.period.bodies.length - 1)]
       payload = { title: r.period.title, body, tag: 'ciclita-period', url: '/#/home' }
+      if (r.period.startedAction) payload.actions = [{ action: PERIOD_STARTED_ACTION, title: r.period.startedAction }]
       sentFor = w.until
       ttl = 12 * 3600
     }

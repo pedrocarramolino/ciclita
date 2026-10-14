@@ -472,8 +472,10 @@ export const es = {
       pill: 'Recordatorio diario.',
       event: 'Tienes un recordatorio. Abre la app para verlo.',
       done: 'Hecho',
+      markToday: 'Marcar hoy',
     },
     pillTaken: 'Ya la he tomado',
+    periodStarted: 'Ha empezado',
     events: {
       'ring-remove': { title: 'Anillo', body: 'Hoy toca retirar el anillo vaginal (semana de descanso).' },
       'ring-insert': { title: 'Anillo', body: 'Hoy toca colocar un anillo vaginal nuevo.' },

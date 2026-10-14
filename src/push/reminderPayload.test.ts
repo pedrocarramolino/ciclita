@@ -113,3 +113,11 @@ describe('envase nuevo en los avisos', () => {
     expect(off.events).toBeUndefined()
   })
 })
+
+describe('botón "Ha empezado" del aviso de periodo', () => {
+  it('lleva el texto normal o el neutro en modo discreto', () => {
+    const on = { ...DEFAULT_REMINDERS, periodEnabled: true }
+    expect(buildReminders({ ...on, discreet: false }, upcoming).period?.startedAction).toBe('Ha empezado')
+    expect(buildReminders({ ...on, discreet: true }, upcoming).period?.startedAction).toBe('Marcar hoy')
+  })
+})

@@ -198,6 +198,15 @@ describe('deliver', () => {
     expect(f.published.length).toBe(before)
   })
 
+  it('el aviso de periodo lleva el botón "Ha empezado" si se envía su texto', async () => {
+    const period = { title: 'Periodo', from: '2026-10-27', until: '2026-10-28', bodies: ['hoy', 'mañana'], startedAction: 'Ha empezado' }
+    const f = fakeDeps('2026-10-25T20:00:00Z')
+    await register(f.deps, input({ period }))
+    f.setNow('2026-10-27T08:00:00Z')
+    expect(await deliver(f.deps, { deviceId: ID, kind: 'period', version: 'v1' })).toBe('sent')
+    expect(f.sent[0].actions).toEqual([{ action: 'period-started', title: 'Ha empezado' }])
+  })
+
   it('valida los periodos siguientes', () => {
     const base = input({})
     const p = { title: 'T', from: '2026-10-27', until: '2026-10-28', bodies: ['a'] }

@@ -42,6 +42,8 @@ export interface PeriodReminder extends PeriodWindow {
    * meses. (`from`/`until` son el primero; las versiones antiguas solo envían ese.)
    */
   next?: PeriodWindow[]
+  /** Texto del botón "Ha empezado" de la notificación. */
+  startedAction?: string
 }
 
 /** Todos los intervalos de aviso de periodo, en orden. */
@@ -75,6 +77,8 @@ export interface PillReminder extends TimedReminder {
 
 /** Acción del botón de la notificación de la píldora (la entiende el service worker). */
 export const PILL_TAKEN_ACTION = 'pill-taken'
+/** Acción del botón "Ha empezado" de la notificación del periodo. */
+export const PERIOD_STARTED_ACTION = 'period-started'
 
 export interface Reminders {
   daily?: TimedReminder

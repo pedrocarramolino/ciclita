@@ -489,8 +489,10 @@ export const en: Messages = {
       pill: 'Daily reminder.',
       event: 'You have a reminder. Open the app to see it.',
       done: 'Done',
+      markToday: 'Mark today',
     },
     pillTaken: "I've taken it",
+    periodStarted: 'It started',
     events: {
       'ring-remove': { title: 'Ring', body: 'Time to remove the vaginal ring today (week off).' },
       'ring-insert': { title: 'Ring', body: 'Time to insert a new vaginal ring today.' },

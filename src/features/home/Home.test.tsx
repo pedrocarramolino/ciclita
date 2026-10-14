@@ -94,6 +94,18 @@ describe('Inicio: acciones desde fuera', () => {
     await waitFor(async () => expect(await db.days.get(T)).toBeUndefined())
   })
 
+  it('#/period-started (botón del aviso de periodo) marca el inicio hoy y se puede deshacer', async () => {
+    await db.periods.add({ startDate: addDays(T, -27), endDate: addDays(T, -23) })
+    location.hash = '#/period-started'
+    const user = userEvent.setup()
+    render(<Home />)
+
+    expect(await screen.findByText('Has marcado el inicio de tu periodo.')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Día 1 de tu periodo' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Deshacer' }))
+    await waitFor(async () => expect(await db.periods.where('startDate').equals(T).count()).toBe(0))
+  })
+
   it('#/log abre el registro de hoy también con la app ya abierta', async () => {
     render(<Home />)
     await screen.findByRole('button', { name: 'Registrar hoy' })

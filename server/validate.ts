@@ -107,6 +107,9 @@ function period(v: unknown): PeriodReminder | undefined {
     until,
     bodies: bodies.map((b, i) => text(b, `period.bodies[${i}]`)),
   }
+  if (v.startedAction !== undefined && v.startedAction !== null) {
+    out.startedAction = text(v.startedAction, 'period.startedAction')
+  }
   if (v.next !== undefined && v.next !== null) {
     if (!Array.isArray(v.next) || v.next.length > MAX_NEXT_PERIODS) fail('period.next no válido')
     let prev = until
