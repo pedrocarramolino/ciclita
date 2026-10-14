@@ -50,6 +50,36 @@ describe('Inicio: avisos de periodo', () => {
   })
 })
 
+describe('Inicio: retraso largo', () => {
+  it('con más de una semana de retraso sugiere un test y permite pasar a modo embarazo', async () => {
+    // Ciclos de 28 días; el último periodo empezó hace 40: 12 días de retraso.
+    await db.periods.bulkAdd([
+      { startDate: addDays(T, -68), endDate: addDays(T, -64) },
+      { startDate: addDays(T, -40), endDate: addDays(T, -36) },
+    ])
+    const user = userEvent.setup()
+    render(<Home />)
+
+    expect(await screen.findByText(/un test puede salir de dudas/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Pasar a modo embarazo' }))
+    await waitFor(async () => expect((await getSettings()).mode).toBe('pregnancy'))
+    expect((await getSettings()).pregnancyStart).toBe(addDays(T, -40))
+
+    await user.click(await screen.findByRole('button', { name: 'Deshacer' }))
+    await waitFor(async () => expect((await getSettings()).mode).toBe('cycle'))
+  })
+
+  it('con pocos días de retraso no lo sugiere', async () => {
+    await db.periods.bulkAdd([
+      { startDate: addDays(T, -59), endDate: addDays(T, -55) },
+      { startDate: addDays(T, -31), endDate: addDays(T, -27) },
+    ])
+    render(<Home />)
+    expect(await screen.findByText(/Tu periodo se retrasa 3 días/)).toBeInTheDocument()
+    expect(screen.queryByText(/un test puede salir de dudas/)).toBeNull()
+  })
+})
+
 describe('Inicio: acciones desde fuera', () => {
   it('#/pill-taken (botón de la notificación) marca la píldora de hoy y se puede deshacer', async () => {
     await setSettings({ onboardingDone: true })

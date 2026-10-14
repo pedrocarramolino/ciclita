@@ -653,6 +653,10 @@ export const es = {
           : `Tu periodo empieza en ${n} días`,
     late: (n: number) => `Tu periodo se retrasa ${n} ${n === 1 ? 'día' : 'días'}`,
     lateHint: 'Los ciclos pueden variar por estrés, viajes, cambios de rutina u otros motivos.',
+    lateTest:
+      'Si hay posibilidad de embarazo, un test puede salir de dudas. Si da positivo, puedes pasar la app al modo embarazo.',
+    toPregnancy: 'Pasar a modo embarazo',
+    pregnancyOn: 'Modo embarazo activado.',
     cycleDay: (n: number) => `Día ${n} de tu ciclo`,
     fertile: 'Ventana fértil estimada',
     started: 'Ha empezado mi periodo',

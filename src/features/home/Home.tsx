@@ -10,7 +10,7 @@ import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
 import { db, type Period } from '../../db/db'
 import { UndoToast } from '../../components/UndoToast'
-import { getSettings } from '../../db/settings'
+import { getSettings, setSettings } from '../../db/settings'
 import { perimenopauseInfo, pregnancyInfo } from '../../domain/modes'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { BackupNudgeCard } from './BackupNudgeCard'
@@ -22,6 +22,9 @@ import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
 export const LOG_TODAY_HASH = '#/log'
 /** Dirección del botón "Ya la he tomado" de la notificación de la píldora (sw.ts). */
 export const PILL_TAKEN_HASH = '#/pill-taken'
+
+/** Días de retraso a partir de los que se sugiere un test de embarazo. */
+const LATE_TEST_DAYS = 7
 
 /** Última acción que se puede deshacer desde el aviso flotante. */
 interface Undoable {
@@ -85,6 +88,22 @@ export function Home() {
           </p>
         )}
         {s.kind === 'late' && <p className="mt-3 text-sm text-muted">{h.lateHint}</p>}
+        {s.kind === 'late' && s.daysLate >= LATE_TEST_DAYS && (
+          <div className="mt-3 rounded-2xl bg-surface-soft p-3 text-left text-sm">
+            <p>{h.lateTest}</p>
+            <Button
+              variant="secondary"
+              className="mt-2 w-full"
+              onClick={() =>
+                void setSettings({ mode: 'pregnancy', pregnancyStart: p.lastStart }).then(() =>
+                  setUndo({ message: h.pregnancyOn, undo: () => setSettings({ mode: 'cycle' }) }),
+                )
+              }
+            >
+              {h.toPregnancy}
+            </Button>
+          </div>
+        )}
       </section>
       )}
 
