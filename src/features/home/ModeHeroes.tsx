@@ -1,7 +1,8 @@
+import { babySize } from '../../domain/babySize'
 import { formatFullDate } from '../../domain/dates'
 import type { PerimenopauseInfo, PregnancyInfo } from '../../domain/modes'
 import type { Prediction } from '../../domain/prediction'
-import { t } from '../../i18n'
+import { lang, t } from '../../i18n'
 
 /** Anillo de progreso sencillo (decorativo: el texto ya lo describe). */
 function ProgressRing({ progress, center, color }: { progress: number; center: string; color: string }) {
@@ -40,7 +41,35 @@ export function PregnancyHero({ info }: { info: PregnancyInfo }) {
         <br />
         {info.daysLeft >= 0 ? g.daysLeft(info.daysLeft) : g.daysPast(-info.daysLeft)}
       </p>
+      <BabySizeCard weeks={info.weeks} />
     </section>
+  )
+}
+
+const number = (n: number) => new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }).format(n)
+const formatLength = (cm: number) => (cm < 1 ? `${number(cm * 10)} mm` : `${number(cm)} cm`)
+const formatWeight = (g: number) => (g < 1000 ? `${number(g)} g` : `${number(g / 1000)} kg`)
+
+/** "Tu bebé es como una cereza": comparación y medidas aproximadas de la semana. */
+function BabySizeCard({ weeks }: { weeks: number }) {
+  const size = babySize(weeks)
+  const g = t.modes.pregnancy
+  if (!size) return null
+  return (
+    <div className="mt-5 flex items-center gap-4 rounded-2xl bg-lavender-soft p-4 text-left">
+      <span aria-hidden="true" className="text-5xl leading-none">
+        {size.emoji}
+      </span>
+      <div>
+        <p className="text-xs font-bold text-muted uppercase">{g.sizeTitle(size.week)}</p>
+        <p className="font-extrabold">{g.sizeAs(g.sizes[size.week])}</p>
+        <p className="text-sm">
+          {g.sizeLength(formatLength(size.lengthCm))}
+          {size.weightG !== null && ` ${g.sizeWeight(formatWeight(size.weightG))}`}
+        </p>
+        <p className="mt-1 text-xs text-muted">{g.sizeNote}</p>
+      </div>
+    </div>
   )
 }
 

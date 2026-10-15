@@ -113,3 +113,14 @@ describe('Inicio: acciones desde fuera', () => {
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
   })
 })
+
+describe('Inicio: embarazo', () => {
+  it('muestra a qué se parece el bebé esta semana y cuánto mide más o menos', async () => {
+    await setSettings({ onboardingDone: true, mode: 'pregnancy', pregnancyStart: addDays(T, -(10 * 7 + 3)) })
+    render(<Home />)
+    expect(await screen.findByText('Tu bebé es como una aceituna')).toBeInTheDocument()
+    expect(screen.getByText('Semana 10')).toBeInTheDocument()
+    expect(screen.getByText('Mide unos 3,1 cm y pesa unos 4 g')).toBeInTheDocument()
+  })
+})
+

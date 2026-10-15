@@ -29,7 +29,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 - **Informe para el médico** (los ciclos con un posible periodo sin registrar se marcan y no cuentan en el resumen): resumen de 3, 6 o 12 meses (o todo) con ciclos, flujo, dolor, píldora, síntomas, medicación, fertilidad y, si quieres, notas. Se genera en el dispositivo como **PDF** (con pdf-lib), que se puede compartir (WhatsApp, correo, Archivos…), descargar o imprimir.
 - **Modos de la app** (se elige en la bienvenida y se cambia en *Ajustes → Modo de la app*):
   - **Ciclo menstrual** (por defecto).
-  - **Embarazo**: semanas y días, trimestre y fecha probable de parto (a partir de la última regla o de la fecha de parto). Se pausan las previsiones y los avisos del ciclo.
+  - **Embarazo**: semanas y días, trimestre y fecha probable de parto (a partir de la última regla o de la fecha de parto), y cada semana (de la 4 a la 40) a qué se parece el bebé con un emoji (una cereza, un hámster, una piña…) y cuánto mide y pesa más o menos (`domain/babySize.ts`). Se pausan las previsiones y los avisos del ciclo.
   - **Perimenopausia**: días desde el último periodo, periodos en los últimos 12 meses, aviso al llegar a 12 meses sin periodo y síntomas propios de esta etapa. Sin previsiones.
 - **Recordatorios** por notificación push, aunque la app esté cerrada:
   - antes del próximo periodo, registro diario y píldora anticonceptiva;
