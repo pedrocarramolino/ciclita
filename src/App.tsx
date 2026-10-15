@@ -10,6 +10,8 @@ import { LockScreen } from './features/lock/LockScreen'
 import type { PinCheck } from './features/lock/pinCheck'
 import { flushVault, getVaultRow, isVaultUnlocked, unlockVault, vaultLockStore } from './db/vault'
 import { requestPersistence } from './db/persist'
+import { useAccount, useAutoSync } from './account/useAccount'
+import { AuthScreen } from './features/auth/AuthScreen'
 import { authenticateBiometric, unwrapPin } from './security/biometric'
 import { reminderPillPack } from './domain/pill'
 import { usePushSync } from './push/usePushSync'
@@ -149,6 +151,10 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
   // se vuelven a montar, para que "hoy" nunca se quede en ayer.
   const day = useToday()
   const prediction = usePrediction(day)
+  // Cuenta obligatoria: sin sesión se muestra el registro / inicio de sesión.
+  const account = useAccount()
+  const uid = account.status === 'signedIn' ? account.user.uid : null
+  const synced = useAutoSync(uid, !!settings && !locked, settings?.sync?.uid === uid && !!uid)
   usePushSync(
     settings?.onboardingDone ? settings.reminders : undefined,
     prediction,
@@ -165,6 +171,9 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
   let screen: ReactNode
   if (!settings) screen = null // cargando IndexedDB
   else if (locked) screen = <LockScreen onUnlock={unlock} biometric={bioId ? biometric : undefined} />
+  else if (account.status === 'loading') screen = null
+  else if (account.status === 'signedOut') screen = <AuthScreen hasLocalData={settings.onboardingDone} />
+  else if (!synced) screen = null // trayendo los datos de la cuenta
   else if (!settings.onboardingDone)
     screen = (
       <Suspense fallback={null}>
@@ -206,7 +215,7 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
       {screen}
       <UpdatePrompt />
       {/* Animación de apertura: tapa la carga inicial y se desvanece. */}
-      <Splash ready={!!settings} />
+      <Splash ready={!!settings && (locked || account.status === 'signedOut' || synced)} />
     </>
   )
 }

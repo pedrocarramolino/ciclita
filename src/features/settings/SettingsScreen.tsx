@@ -4,6 +4,8 @@ import { NumberStepper } from '../../components/NumberStepper'
 import { getSettings, setSettings, type Theme } from '../../db/settings'
 import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../../domain/prediction'
 import { LANGS, lang, setLanguage, t, type Lang } from '../../i18n'
+import { useAccount } from '../../account/useAccount'
+import { AccountSection } from './AccountSection'
 import { DataSection } from './DataSection'
 import { InstallSection } from './InstallSection'
 import { PinSection } from './PinSection'
@@ -16,6 +18,7 @@ const THEMES: Theme[] = ['system', 'light', 'dark']
 
 export function SettingsScreen() {
   const settings = useLiveQuery(() => getSettings())
+  const account = useAccount()
   const s = t.settings
   if (!settings) return null
 
@@ -24,6 +27,8 @@ export function SettingsScreen() {
   return (
     <main className="mx-auto w-full max-w-md space-y-4 px-4 pt-6 pb-4">
       <h1 className="text-2xl font-extrabold">{s.title}</h1>
+
+      {account.status === 'signedIn' && <AccountSection user={account.user} />}
 
       <InstallSection />
 

@@ -9,6 +9,7 @@ import { setSettings } from './db/settings'
 import { addDays, today } from './domain/dates'
 import { hashPin } from './security/pin'
 import { axeViolations } from './test/axe'
+import { AuthScreen } from './features/auth/AuthScreen'
 
 // Sin service worker en jsdom.
 vi.mock('./components/UpdatePrompt', () => ({ UpdatePrompt: () => null }))
@@ -54,6 +55,21 @@ describe('accesibilidad (axe)', () => {
     const v = await axeViolations()
     expect(v.some((x) => x.startsWith('button-name'))).toBe(true)
     expect(v.some((x) => x.startsWith('label'))).toBe(true)
+  })
+
+  it('registro (con errores), inicio de sesión, recuperar contraseña y política de privacidad', async () => {
+    const user = userEvent.setup()
+    render(<AuthScreen />)
+    await expectNoViolations()
+    await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+    await expectNoViolations()
+    await user.click(screen.getByRole('button', { name: 'Inicia sesión' }))
+    await expectNoViolations()
+    await user.click(screen.getByRole('button', { name: '¿Has olvidado tu contraseña?' }))
+    await expectNoViolations()
+    await user.click(screen.getByRole('button', { name: 'Volver' }))
+    await user.click(screen.getByRole('button', { name: 'Política de privacidad' }))
+    await expectNoViolations()
   })
 
   it('bienvenida: todos los pasos', async () => {

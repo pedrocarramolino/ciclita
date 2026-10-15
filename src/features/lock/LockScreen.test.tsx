@@ -55,8 +55,8 @@ describe('Pantalla de bloqueo', () => {
     render(<LockScreen onUnlock={vi.fn()} />)
 
     await user.click(screen.getByRole('button', { name: '¿Has olvidado tu PIN?' }))
-    expect(screen.getByText(/no se puede recuperar el PIN/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Borrar todos mis datos' })).toBeInTheDocument()
+    expect(screen.getByText(/recuperarás tus registros/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cerrar sesión en este dispositivo' })).toBeInTheDocument()
   })
 
   it('con Face ID o huella desbloquea al abrir, sin teclear el PIN', async () => {

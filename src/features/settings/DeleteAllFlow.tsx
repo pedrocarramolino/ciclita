@@ -1,34 +1,40 @@
 import { useState } from 'react'
+import { currentUid } from '../../account/account'
+import { wipeDevice } from '../../account/leave'
+import { deleteCloudData } from '../../account/sync'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
-import { wipeAll } from '../../db/data'
-import { getSettings } from '../../db/settings'
-import { getVaultRow } from '../../db/vault'
-import { forgetCredential } from '../../security/biometric'
-import { unregisterPush, unsubscribeBrowserPush } from '../../push/pushClient'
 import { t } from '../../i18n'
 
 /** Borrado total con doble confirmación: aviso + escribir "BORRAR". */
 export function DeleteAllFlow({ onCancel }: { onCancel: () => void }) {
   const [step, setStep] = useState<1 | 2>(1)
+  const [error, setError] = useState('')
   const s = t.settings
 
   const wipe = async () => {
-    // Primero se borra lo que haya en el servidor de avisos (si falla, se borra igual en local).
-    // Con los datos cifrados y bloqueados no hay credenciales: al menos se cancela la
-    // suscripción del navegador para que dejen de llegar avisos.
-    const { pushDevice, biometric } = await getSettings().catch(() => ({ pushDevice: null, biometric: null }))
-    // La llave de Face ID o huella ya no sirve: se pide al sistema que la olvide.
-    const bioId = biometric?.credentialId ?? (await getVaultRow().catch(() => undefined))?.bio?.credentialId
-    if (bioId) forgetCredential(bioId)
-    await unregisterPush(pushDevice).catch(() => {})
-    await unsubscribeBrowserPush().catch(() => {})
-    await wipeAll()
-    history.replaceState(null, '', location.pathname)
-    location.reload()
+    // Primero los registros de la cuenta (si no, volverían al sincronizar). Sin conexión
+    // no se borra nada, para no dejar la nube y el dispositivo distintos.
+    const uid = currentUid()
+    if (uid) {
+      try {
+        await deleteCloudData(uid, { withProfile: false })
+      } catch (e) {
+        console.error(e)
+        setError(s.deleteCloudFailed)
+        setStep(1)
+        return
+      }
+    }
+    await wipeDevice()
   }
 
   return step === 1 ? (
     <ConfirmDialog title={s.deleteTitle} danger onConfirm={() => setStep(2)} onCancel={onCancel}>
+      {error && (
+        <span role="alert" className="mb-2 block font-bold text-danger">
+          {error}
+        </span>
+      )}
       {s.deleteBody}
     </ConfirmDialog>
   ) : (

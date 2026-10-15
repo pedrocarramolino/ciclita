@@ -5,6 +5,7 @@ import { DEFAULT_PERIOD_LENGTH } from '../domain/prediction'
 import type { ContraceptionMethod } from '../domain/reminderEvents'
 import type { AppMode } from '../domain/modes'
 import type { PillPack } from '../domain/pill'
+import type { SyncState } from '../account/syncCore'
 
 export type Theme = 'light' | 'dark' | 'system'
 
@@ -51,6 +52,8 @@ export interface Settings {
   confirmedLongCycles: ISODate[]
   /** "¿Ha terminado tu periodo?" pospuesto: periodo al que se refiere y día hasta el que no se pregunta. */
   periodEndSnooze: { start: ISODate; until: ISODate } | null
+  /** Qué tiene la nube de la cuenta (ver account/syncCore.ts). Nunca se exporta. */
+  sync: SyncState | null
 }
 
 export interface PushDevice {
@@ -154,6 +157,7 @@ export const DEFAULT_SETTINGS: Settings = {
   backupSnoozedOn: null,
   confirmedLongCycles: [],
   periodEndSnooze: null,
+  sync: null,
 }
 
 export async function getSettings(database: AppDB = db): Promise<Settings> {

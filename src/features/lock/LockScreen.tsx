@@ -6,7 +6,9 @@ import { isCancel } from '../../security/biometric'
 import { lockoutMs, MAX_ATTEMPTS } from '../../security/pin'
 import { settingsPinCheck, type PinCheck } from './pinCheck'
 import { t } from '../../i18n'
-import { DeleteAllFlow } from '../settings/DeleteAllFlow'
+import { signOutHere } from '../../account/account'
+import { wipeDevice } from '../../account/leave'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 
 /** Pantalla de bloqueo con teclado numérico, esperas tras fallos y "¿Has olvidado tu PIN?". */
 export function LockScreen({
@@ -112,11 +114,21 @@ export function LockScreen({
         <section className="mt-2 rounded-3xl bg-surface p-5 text-sm shadow-sm">
           <p>{encrypted ? l.forgotEncrypted : l.forgotBody}</p>
           <Button variant="danger" className="mt-4 w-full" onClick={() => setWiping(true)}>
-            {t.settings.deleteAll}
+            {l.forgotAction}
           </Button>
         </section>
       )}
-      {wiping && <DeleteAllFlow onCancel={() => setWiping(false)} />}
+      {wiping && (
+        <ConfirmDialog
+          title={l.forgotTitle}
+          danger
+          confirmLabel={l.forgotConfirm}
+          onConfirm={() => void signOutHere().catch(() => {}).then(wipeDevice)}
+          onCancel={() => setWiping(false)}
+        >
+          {l.forgotConfirmBody}
+        </ConfirmDialog>
+      )}
     </main>
   )
 }

@@ -6,6 +6,9 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 
 ## Funcionalidades
 
+- **Cuenta obligatoria** (Firebase): registro con nombre, apellidos, correo, contraseña (con confirmación e indicador de seguridad), fecha de nacimiento (mínimo 14 años), país opcional, aceptación de la política de privacidad, consentimiento explícito para los datos de salud y novedades por correo opcional. Inicio de sesión, "¿Has olvidado tu contraseña?" (correo de Firebase) y correo de confirmación. En *Ajustes → Tu cuenta*: reenviar la confirmación, cerrar sesión (borra los datos del dispositivo; siguen en la cuenta) y eliminar la cuenta (pide la contraseña y borra todo de la nube y del dispositivo).
+  - **Sincronización**: la app sigue trabajando con su base de datos local (funciona sin conexión) y sube cada cambio a la cuenta; al abrirla, al volver a ella y cada 5 minutos descarga los cambios de otros dispositivos. Gana el cambio más reciente de cada día. Al iniciar sesión en un dispositivo que ya tenía datos se juntan con los de la cuenta.
+  - Con el PIN olvidado, "Cerrar sesión en este dispositivo" borra los datos locales y el PIN; al volver a entrar se recuperan de la cuenta.
 - **Inicio**: "Tu periodo empieza en X días" / "Día X de tu periodo" y botones grandes de *Ha empezado* / *Ha terminado mi periodo*, que se pueden deshacer durante unos segundos.
 - **Calendario** mensual con días de periodo, periodos previstos, ventana fértil y ovulación estimadas, con leyenda. Si los ciclos varían, también se marcan los días en que el periodo o la ventana fértil podrían adelantarse o retrasarse.
   - **Editar periodos**: tocando el primer y el último día se marca un periodo pasado entero (hasta 14 días); tocar un día marcado lo quita. Se puede deshacer. El aviso "¿Se te olvidó registrar un periodo?" abre el calendario directamente en este modo.
@@ -42,11 +45,15 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 
 | Dato | Dónde |
 | --- | --- |
-| Periodos, registros diarios, síntomas, notas, ajustes, PIN (hash PBKDF2) | **Solo en el dispositivo** (IndexedDB) |
+| Nombre, apellidos, correo, contraseña (Firebase guarda solo su hash), fecha de nacimiento, país, novedades y fecha/versión de los consentimientos | Cuenta en **Firebase** (Authentication y Firestore) |
+| Periodos, registros diarios, síntomas personalizados y ajustes de la app | En el dispositivo (IndexedDB) **y en la cuenta** (Firestore, ubicación eur3, Unión Europea) |
+| PIN (hash PBKDF2), Face ID / huella, idioma, tema | Solo en el dispositivo |
 | Idioma elegido | En el dispositivo (localStorage), sin cifrar, para mostrar la pantalla del PIN en ese idioma |
 | Suscripción push del navegador, zona horaria, hora y texto de cada recordatorio activo y, para los avisos de periodo, ventana fértil, autoexploración y anticonceptivos, las fechas en que deben sonar; para la píldora, el tipo de envase y su primer día (para no avisar en los días de descanso) | Servidor (Upstash Redis + QStash), **solo si se activa algún recordatorio** |
 
-- Sin cuentas, sin analítica ni rastreadores. La fuente tipográfica está incluida en la app (no se carga de Google Fonts).
+- Sin analítica ni rastreadores (el proyecto de Firebase tiene Analytics, pero la app no lo carga). La fuente tipográfica está incluida en la app (no se carga de Google Fonts).
+- **Reglas de Firestore** (`firestore.rules`): cada cuenta solo puede leer y escribir `users/{uid}` y lo que cuelga de ahí. Se publican en la consola de Firebase (*Firestore Database → Reglas*).
+- Datos de salud en un servidor: el registro pide consentimiento explícito (art. 9 RGPD) además de aceptar la política de privacidad (pantalla *Política de privacidad*, `t.privacy`). Firebase Authentication puede tratar los datos de acceso fuera de la UE (cláusulas contractuales tipo de Google).
 - Cada dispositivo se identifica en el servidor con un id aleatorio y un secreto (en Redis solo se guarda su hash). Los registros caducan a los 90 días sin actividad.
 - Al desactivar todos los recordatorios o al borrar los datos, se elimina también lo guardado en el servidor.
 - Con **Notificaciones discretas** (activado por defecto) los textos enviados al servidor y mostrados en la pantalla de bloqueo son neutros.
@@ -59,6 +66,8 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - Al cambiar el PIN con el cifrado activado, al cifrar los datos o al quitar el PIN, hay que volver a activarlo. Al desactivarlo o borrar todo, se pide al sistema que olvide la llave (si no sabe, se puede borrar a mano en Contraseñas).
 
 ## Tecnología
+
+- Firebase (Auth + Firestore *lite*, sin caché ni conexión permanente) para las cuentas: `src/account/` (`firebase.ts` configuración, `account.ts` registro y sesión, `sync.ts` sincronización, `syncCore.ts` sus reglas, probadas sin red).
 
 - React 19 + TypeScript + Vite, Tailwind CSS v4
 - IndexedDB con Dexie

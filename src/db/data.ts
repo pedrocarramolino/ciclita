@@ -26,6 +26,7 @@ export async function exportJSON(database: AppDB = db): Promise<string> {
     lastBackup: _b,
     backupSnoozedOn: _n,
     periodEndSnooze: _p,
+    sync: _sync,
     ...rest
   } = settings
   const backup = buildBackup({
