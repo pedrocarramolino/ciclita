@@ -18,6 +18,7 @@ export function usePrediction(day?: string): Prediction | undefined {
       userPeriodLength: settings.periodLength,
       confirmedLongCycles: settings.confirmedLongCycles,
       manual: settings.manualPrediction,
+      ignoreCyclesOver: settings.ignoreCyclesOver,
     })
   }, [day])
 }

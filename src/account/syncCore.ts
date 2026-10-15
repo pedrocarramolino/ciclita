@@ -52,6 +52,8 @@ export const SYNCED_SETTINGS = [
   'cycleLength',
   'periodLength',
   'manualPrediction',
+  'ignoreCyclesOver',
+  'showCycleDays',
   'reminders',
   'tracking',
   'mode',

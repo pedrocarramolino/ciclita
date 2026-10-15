@@ -164,6 +164,12 @@ export const es = {
       reportSummary: 'PDF para compartir, descargar o imprimir',
     },
     cycleSection: 'Tu ciclo',
+    showCycleDays: 'Numerar los días del ciclo',
+    showCycleDaysHint: 'En el calendario, cada día lleva un número pequeño con su día del ciclo.',
+    ignoreLong: 'Ciclos muy largos',
+    ignoreLongHint: 'Un ciclo mucho más largo de lo normal suele ser un periodo sin registrar.',
+    ignoreLongAuto: 'Automático: preguntar si dura 1,7 veces lo habitual',
+    ignoreLongOver: (n: number) => `Ignorar los de más de ${n} días`,
     cycleHint: 'Se usan mientras no haya suficientes registros. Con tus registros, las duraciones se calculan solas.',
     cycleHintManual: 'Las previsiones usan siempre estas duraciones.',
     predictionMode: 'Previsiones',
@@ -764,6 +770,7 @@ export const es = {
     marginNote:
       'Como tus ciclos varían, también se marcan los días en los que el periodo o la ventana fértil podrían adelantarse o retrasarse.',
     hint: 'Toca un día para registrar cómo te sientes.',
+    cycleDay: (n: number) => `día ${n} del ciclo`,
     edit: {
       open: 'Editar periodos',
       title: 'Editar periodos',

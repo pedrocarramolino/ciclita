@@ -39,6 +39,7 @@ export function ReportScreen() {
       pill,
       userCycleLength: settings.cycleLength,
       confirmedLongCycles: settings.confirmedLongCycles,
+      ignoreCyclesOver: settings.ignoreCyclesOver,
     }
   })
   const R = t.report
@@ -54,6 +55,7 @@ export function ReportScreen() {
               pill: data.pill,
               userCycleLength: data.userCycleLength,
               confirmedLongCycles: data.confirmedLongCycles,
+              ignoreCyclesOver: data.ignoreCyclesOver,
             },
             today(),
           ) : null),

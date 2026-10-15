@@ -87,6 +87,8 @@ const RESTORABLE: (keyof Settings)[] = [
   'cycleLength',
   'periodLength',
   'manualPrediction',
+  'ignoreCyclesOver',
+  'showCycleDays',
   'theme',
   'reminders',
   'tracking',

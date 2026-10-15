@@ -317,3 +317,30 @@ describe('previsión manual', () => {
     expect(predict({ periods, today: '2026-10-05', manual: true }).cycleSource).toBe('history')
   })
 })
+
+describe('ignorar ciclos de más de N días (elección de la usuaria)', () => {
+  const periods = [
+    { startDate: '2026-05-01', endDate: '2026-05-05' },
+    { startDate: '2026-05-31', endDate: '2026-06-04' }, // 30
+    { startDate: '2026-07-25', endDate: '2026-07-29' }, // 55
+    { startDate: '2026-08-24', endDate: '2026-08-28' }, // 30
+    { startDate: '2026-09-24', endDate: '2026-09-28' }, // 31
+  ]
+
+  it('los ciclos más largos no cuentan y no se pregunta por periodos olvidados', () => {
+    const p = predict({ periods, today: '2026-10-05', ignoreCyclesOver: 45 })
+    expect(p.recentCycles).toEqual([30, 30, 31])
+    expect(p.suspectedMissed).toEqual([])
+    expect(p.cycleLength).toBe(30)
+  })
+
+  it('en automático, el de 55 días se toma por un periodo olvidado', () => {
+    const p = predict({ periods, today: '2026-10-05' })
+    expect(p.suspectedMissed.map((m) => m.length)).toEqual([55])
+  })
+
+  it('con un límite alto, el ciclo largo cuenta', () => {
+    expect(predict({ periods, today: '2026-10-05', ignoreCyclesOver: 60 }).recentCycles).toEqual([30, 55, 30, 31])
+  })
+})
+

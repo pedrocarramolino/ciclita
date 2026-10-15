@@ -19,6 +19,8 @@ export interface ReportOptions {
   /** Para reconocer periodos olvidados (ver splitMissed en prediction.ts). */
   userCycleLength?: number | null
   confirmedLongCycles?: ISODate[]
+  /** Ciclos de más de estos días no cuentan en el resumen (elección de la usuaria). */
+  ignoreCyclesOver?: number | null
 }
 
 /** Ciclo del informe; `suspectedMissed`: tan largo que probablemente falta un periodo. */
@@ -89,12 +91,18 @@ export function buildReport(
 
   const inRangeCycles = completedCycles(periods).filter((c) => inRange(c.start))
   // Los ciclos que parecen esconder un periodo olvidado no cuentan para las medias.
-  const { missed } = splitMissed(inRangeCycles, opts.userCycleLength, opts.confirmedLongCycles)
+  const { missed, ignored } = splitMissed(
+    inRangeCycles,
+    opts.userCycleLength,
+    opts.confirmedLongCycles,
+    opts.ignoreCyclesOver ?? null,
+  )
   const missedStarts = new Set(missed.map((c) => c.start))
+  const ignoredStarts = new Set(ignored.map((c) => c.start))
   const cycles: ReportCycle[] = inRangeCycles
     .map((c) => ({ ...c, suspectedMissed: missedStarts.has(c.start) }))
     .reverse()
-  const counted = cycles.filter((c) => !c.suspectedMissed)
+  const counted = cycles.filter((c) => !c.suspectedMissed && !ignoredStarts.has(c.start))
   const lengths = counted.map((c) => c.length)
   const periodLengths = cycles.flatMap((c) => (c.periodLength === null ? [] : [c.periodLength]))
   const variation = lengths.length >= 2 ? Math.max(...lengths) - Math.min(...lengths) : null

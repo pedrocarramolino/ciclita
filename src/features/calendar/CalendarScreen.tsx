@@ -5,7 +5,7 @@ import { Icon } from '../../components/Icon'
 import { db } from '../../db/db'
 import { markPeriodRange, undoPeriodEdit, unmarkPeriodDay, type PeriodEditUndo } from '../../db/repo'
 import { getSettings } from '../../db/settings'
-import { monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
+import { cycleDayOf, monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
 import { diffDays, formatDayMonth, formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
 import { MAX_ONGOING_DAYS, periodDateSet } from '../../domain/periods'
 import { missedPillDates } from '../../domain/pill'
@@ -27,6 +27,8 @@ interface DayState {
   pillMissed: boolean
   /** Primer día elegido al marcar un tramo en "Editar periodos". */
   isAnchor: boolean
+  /** Día del ciclo (si se numeran). */
+  cycleDay: number | null
 }
 
 /** Tramo más largo que se puede marcar de una vez (evita marcar meses por un toque equivocado). */
@@ -60,6 +62,7 @@ export function CalendarScreen() {
     ])
     const pill = settings.tracking.pill && settings.pill.start ? { pack: settings.pill.pack, start: settings.pill.start } : null
     return {
+      starts: periods.map((p) => p.startDate),
       periodDays: periodDateSet(periods, today),
       logged: new Set(days.map((d) => d.date)),
       pillMissed: pill ? missedPillDates(days, pill, first, last, today) : null,
@@ -67,7 +70,16 @@ export function CalendarScreen() {
   }, [first, last, today])
 
   const prediction = usePrediction()
-  const mode = useLiveQuery(() => getSettings().then((s) => s.mode))
+  const prefs = useLiveQuery(() => getSettings().then((s) => ({ mode: s.mode, showCycleDays: s.showCycleDays })))
+  const mode = prefs?.mode
+  // Inicios registrados y, después del último, los previstos: para numerar los días del ciclo.
+  const cycleStarts = useMemo(() => {
+    if (!data || !prefs?.showCycleDays || mode !== 'cycle') return null
+    const real = [...data.starts].sort()
+    const last = real.at(-1)
+    const predictedStarts = (prediction?.nextPeriods ?? []).map((p) => p.start).filter((s) => !last || s > last)
+    return [...real, ...predictedStarts]
+  }, [data, prefs, mode, prediction])
   // En embarazo y perimenopausia no se marcan periodos previstos ni ventana fértil.
   const predicted = useMemo(
     () => (prediction && mode === 'cycle' ? predictionDates(prediction) : undefined),
@@ -89,6 +101,7 @@ export function CalendarScreen() {
       isLogged: !!data?.logged.has(date),
       pillMissed: !!data?.pillMissed?.has(date),
       isAnchor: editing && date === anchor,
+      cycleDay: cycleStarts ? cycleDayOf(date, cycleStarts) : null,
     }
   }
 
@@ -265,6 +278,7 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
   if (s.isLogged) parts.push(c.logged)
   if (s.pillMissed) parts.push(t.pill.calendarMissed)
   if (s.isAnchor) parts.push(c.edit.anchor)
+  if (s.cycleDay) parts.push(c.cycleDay(s.cycleDay))
 
   const look = s.isPeriod
     ? 'bg-primary text-on-primary'
@@ -296,7 +310,14 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
         ${s.isAnchor ? 'bg-primary-soft text-ink ring-3 ring-primary' : ''}
         disabled:cursor-default`}
     >
-      {gd.day}
+      <span>
+        {gd.day}
+        {s.cycleDay && (
+          <sup aria-hidden="true" className="ml-px text-[0.6rem] font-semibold">
+            {s.cycleDay}
+          </sup>
+        )}
+      </span>
       {s.pillMissed && (
         <span aria-hidden="true" className="absolute top-0.5 right-0.5 size-2.5 rounded-full border-2 border-danger bg-surface" />
       )}

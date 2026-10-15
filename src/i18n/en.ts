@@ -191,6 +191,12 @@ export const en: Messages = {
       reportSummary: 'PDF to share, download or print',
     },
     cycleSection: 'Your cycle',
+    showCycleDays: 'Number the cycle days',
+    showCycleDaysHint: 'In the calendar, each day shows a small number with its cycle day.',
+    ignoreLong: 'Very long cycles',
+    ignoreLongHint: 'A cycle much longer than usual is often a period that was not logged.',
+    ignoreLongAuto: 'Automatic: ask if it lasts 1.7 times your usual',
+    ignoreLongOver: (n) => `Ignore those over ${n} days`,
     cycleHint: "Used until there are enough logs. Once you've logged periods, lengths are calculated automatically.",
     cycleHintManual: 'Predictions always use these lengths.',
     predictionMode: 'Predictions',
@@ -775,6 +781,7 @@ export const en: Messages = {
     marginNote:
       'Because your cycles vary, the days when your period or fertile window could come earlier or later are also marked.',
     hint: 'Tap a day to log how you feel.',
+    cycleDay: (n) => `cycle day ${n}`,
     edit: {
       open: 'Edit periods',
       title: 'Edit periods',

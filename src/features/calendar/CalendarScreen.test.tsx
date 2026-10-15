@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { db } from '../../db/db'
+import { setSettings } from '../../db/settings'
 import { formatLong, toISODate, type ISODate } from '../../domain/dates'
 import { CalendarScreen } from './CalendarScreen'
 import { openCalendarAt } from './calendarFocus'
@@ -55,3 +56,22 @@ describe('Calendario: editar periodos', () => {
     expect(screen.queryByRole('heading', { name: 'Editar periodos' })).toBeNull()
   })
 })
+
+describe('Calendario: días del ciclo', () => {
+  it('cada día lleva su número del ciclo y se puede quitar en Ajustes', async () => {
+    await db.periods.add({ startDate: lastMonth(10), endDate: lastMonth(14) })
+    openCalendarAt(lastMonth(15))
+    const { unmount } = render(<CalendarScreen />)
+    await waitFor(() => expect(dayButton(lastMonth(12))).toHaveAccessibleName(/día 3 del ciclo/))
+    expect(dayButton(lastMonth(12))).toHaveTextContent('123')
+    expect(dayButton(lastMonth(9))).not.toHaveAccessibleName(/del ciclo/)
+    unmount()
+
+    await setSettings({ showCycleDays: false })
+    openCalendarAt(lastMonth(15))
+    render(<CalendarScreen />)
+    await waitFor(() => expect(dayButton(lastMonth(12))).toHaveAccessibleName(/Periodo/))
+    expect(dayButton(lastMonth(12))).not.toHaveAccessibleName(/del ciclo/)
+  })
+})
+

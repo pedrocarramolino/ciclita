@@ -117,6 +117,8 @@ export interface PredictionInput {
   confirmedLongCycles?: ISODate[]
   /** Previsión manual: se usan userCycleLength/userPeriodLength aunque haya historial. */
   manual?: boolean
+  /** Ciclos de más de estos días no cuentan (null = automático). */
+  ignoreCyclesOver?: number | null
 }
 
 export interface SuspectedMissed {
@@ -155,15 +157,25 @@ export function cycleLengths(periods: Period[]): number[] {
  * ciclos si hay al menos 3, o la duración que indicó la usuaria.
  */
 export function splitMissed(
-  spans: { start: ISODate; length: number }[],
+  allSpans: { start: ISODate; length: number }[],
   userCycleLength: number | null | undefined,
   confirmed: ISODate[] = [],
-): { used: { start: ISODate; length: number }[]; missed: { start: ISODate; length: number }[] } {
+  /** Si la usuaria lo elige: los ciclos de más de estos días se ignoran sin preguntar. */
+  ignoreOver: number | null = null,
+): {
+  used: { start: ISODate; length: number }[]
+  missed: { start: ISODate; length: number }[]
+  ignored: { start: ISODate; length: number }[]
+} {
+  const ignored = ignoreOver ? allSpans.filter((c) => c.length > ignoreOver) : []
+  const spans = ignoreOver ? allSpans.filter((c) => c.length <= ignoreOver) : allSpans
+  // Con un límite elegido no se pregunta por periodos olvidados: decide la usuaria.
+  if (ignoreOver) return { used: spans, missed: [], ignored }
   const ref = spans.length >= 3 ? median(spans.map((c) => c.length)) : (userCycleLength ?? null)
-  if (!ref) return { used: spans, missed: [] }
+  if (!ref) return { used: spans, missed: [], ignored }
   const limit = ref * MISSED_PERIOD_RATIO
   const isMissed = (c: { start: ISODate; length: number }) => c.length >= limit && !confirmed.includes(c.start)
-  return { used: spans.filter((c) => !isMissed(c)), missed: spans.filter(isMissed) }
+  return { used: spans.filter((c) => !isMissed(c)), missed: spans.filter(isMissed), ignored }
 }
 
 /** Duraciones de los periodos ya terminados, de más antiguo a más reciente. */
@@ -217,6 +229,7 @@ export function predict(input: PredictionInput): Prediction {
     cycleSpans(periods).slice(-HISTORY_SIZE),
     input.userCycleLength,
     input.confirmedLongCycles,
+    input.ignoreCyclesOver ?? null,
   )
   const recentCycles = used.map((c) => c.length)
   const suspectedMissed: SuspectedMissed[] = missed.map((c) => ({

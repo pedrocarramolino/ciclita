@@ -12,6 +12,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - Con el PIN olvidado, "Cerrar sesión en este dispositivo" borra los datos locales y el PIN; al volver a entrar se recuperan de la cuenta.
 - **Inicio**: "Tu periodo empieza en X días" / "Día X de tu periodo" y botones grandes de *Ha empezado* / *Ha terminado mi periodo*, que se pueden deshacer durante unos segundos.
 - **Calendario** mensual con días de periodo, periodos previstos, ventana fértil y ovulación estimadas, con leyenda. Si los ciclos varían, también se marcan los días en que el periodo o la ventana fértil podrían adelantarse o retrasarse.
+  - **Días del ciclo**: cada día lleva un número pequeño con su día del ciclo (desde los periodos registrados y, después, los previstos). Se puede quitar en *Ajustes → Tu ciclo → Numerar los días del ciclo*.
   - **Editar periodos**: tocando el primer y el último día se marca un periodo pasado entero (hasta 14 días); tocar un día marcado lo quita. Se puede deshacer. El aviso "¿Se te olvidó registrar un periodo?" abre el calendario directamente en este modo.
 - **Registro diario** (todo opcional): flujo, síntomas, estado de ánimo, dolor 0–10, medicación y notas.
   - **Síntomas por categorías**: catálogo de unos 30 síntomas (dolor, digestión, piel y pelo, energía y sueño, apetito, otros), con los más usados arriba y los personalizados aparte.
@@ -20,6 +21,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 - **Predicciones**: mediana de los últimos 6 ciclos (28/5 días por defecto; un ciclo aislado raro no la desplaza), próximos 3 periodos y ventana fértil, con un **margen** (±días) calculado a partir de lo que varían tus ciclos.
   - Con menos de 3 ciclos registrados, la mediana incluye también la duración indicada en la bienvenida (o 28 días): un único ciclo de 36 días no lleva la previsión hasta el día 36. *Tu ciclo* en el inicio dice en qué se basa ("Según tu único ciclo registrado, combinado con 28 días") y ofrece *Añadir periodos anteriores*, que abre el calendario en modo edición.
   - Previsión automática (por defecto) o manual: en *Ajustes → Tu ciclo* se puede fijar la duración del ciclo y del periodo para que las fechas se calculen siempre con ella, sin margen.
+  - *Ajustes → Tu ciclo → Ciclos muy largos*: automático (lo de abajo) o «Ignorar los de más de 35/40/45/50/60 días», que los aparta de la previsión y del resumen del informe sin preguntar.
   - Si un ciclo dura 1,7 veces lo habitual o más, se aparta del cálculo y el inicio pregunta si se olvidó registrar un periodo (con acceso al calendario en ese mes, o "No, fue un ciclo largo").
   - Si un periodo sigue "en curso" 2 días más de lo habitual, el inicio pregunta si ya terminó.
   - El inicio muestra una sola de estas preguntas a la vez (fin de periodo → periodo olvidado → copia de seguridad).
