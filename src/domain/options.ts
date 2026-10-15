@@ -59,3 +59,7 @@ export const MOOD_OPTIONS: { value: keyof typeof o.mood; emoji: string; label: s
     ['unwell', '🤒'],
   ] as const
 ).map(([value, emoji]) => ({ value, emoji, label: o.mood[value] }))
+
+/** Estados de ánimo de un día (también los guardados con la versión de uno solo). */
+export const dayMoods = (d?: { moods?: string[]; mood?: string }): string[] =>
+  d?.moods ?? (d?.mood ? [d.mood] : [])

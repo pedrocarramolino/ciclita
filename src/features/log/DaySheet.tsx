@@ -12,6 +12,7 @@ import { pillDay } from '../../domain/pill'
 import { symptomLabel, t } from '../../i18n'
 import {
   FLOW_OPTIONS,
+  dayMoods,
   MOOD_OPTIONS,
   MUCUS_OPTIONS,
   parseDecimal,
@@ -109,7 +110,7 @@ function DayFormView({
   const [form, setForm] = useState<DayForm>(() => ({
     flow: initial?.flow,
     symptoms: initial?.symptoms ?? [],
-    mood: initial?.mood,
+    moods: dayMoods(initial),
     pain: initial?.pain,
     medication: initial?.medication ?? '',
     notes: initial?.notes ?? '',
@@ -153,6 +154,12 @@ function DayFormView({
   const l = t.log
 
   const set = <K extends keyof DayForm>(k: K, v: DayForm[K]) => setForm((f) => ({ ...f, [k]: v }))
+  // Se pueden marcar varios estados de ánimo; tocar uno marcado lo quita.
+  const toggleMood = (value: string) =>
+    setForm((f) => ({
+      ...f,
+      moods: f.moods?.includes(value) ? f.moods.filter((m) => m !== value) : [...(f.moods ?? []), value],
+    }))
   const toggleSymptom = (name: string) =>
     set(
       'symptoms',
@@ -275,16 +282,17 @@ function DayFormView({
 
         {/* Estado de ánimo */}
         <fieldset>
-          <legend className="mb-2 font-bold">{l.mood}</legend>
+          <legend className="font-bold">{l.mood}</legend>
+          <p className="mb-2 text-sm text-muted">{l.moodHint}</p>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
             {MOOD_OPTIONS.map((m) => (
               <button
                 key={m.value}
                 type="button"
-                aria-pressed={form.mood === m.value}
-                onClick={() => set('mood', form.mood === m.value ? undefined : m.value)}
+                aria-pressed={!!form.moods?.includes(m.value)}
+                onClick={() => toggleMood(m.value)}
                 className={`flex flex-col items-center gap-1 rounded-2xl border px-1 py-2 text-xs font-bold transition ${
-                  form.mood === m.value ? 'border-primary bg-primary-soft' : 'border-line bg-surface'
+                  form.moods?.includes(m.value) ? 'border-primary bg-primary-soft' : 'border-line bg-surface'
                 }`}
               >
                 <span aria-hidden="true" className="text-2xl">

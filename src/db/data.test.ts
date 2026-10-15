@@ -21,7 +21,7 @@ async function seed(d: AppDB) {
   ])
   await d.days.bulkPut([
     { date: '2026-09-01', flow: 'heavy', symptoms: ['Migraña'], updatedAt: 1 },
-    { date: '2026-09-15', mood: 'calm', notes: 'Todo bien', updatedAt: 2 },
+    { date: '2026-09-15', mood: 'calm', notes: 'Todo bien', updatedAt: 2 }, // formato antiguo: un solo ánimo
   ])
   await d.symptoms.add({ name: 'Migraña', builtin: false })
   await setSettings(
@@ -55,7 +55,7 @@ describe('exportar / importar', () => {
 
     expect(r).toEqual({ periods: 2, days: 2 })
     expect((await b.periods.toArray()).map((p) => p.startDate)).toEqual(['2026-09-01', '2026-09-29'])
-    expect(await b.days.get('2026-09-15')).toMatchObject({ mood: 'calm', notes: 'Todo bien' })
+    expect(await b.days.get('2026-09-15')).toMatchObject({ moods: ['calm'], notes: 'Todo bien' })
     expect(await b.symptoms.where('name').equals('Migraña').count()).toBe(1)
     const s = await getSettings(b)
     expect(s).toMatchObject({ cycleLength: 29, theme: 'dark', onboardingDone: true, pinHash: 'pin-de-b' })

@@ -793,6 +793,7 @@ export const es = {
     selectedCount: (n: number) => `${n} ${n === 1 ? 'marcado' : 'marcados'}`,
     addSymptomPlaceholder: 'Otro síntoma…',
     mood: 'Estado de ánimo',
+    moodHint: 'Puedes marcar varios.',
     pain: 'Nivel de dolor',
     painUnset: 'Sin registrar',
     painValue: (n: number) => `${n} de 10`,

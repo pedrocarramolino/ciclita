@@ -19,6 +19,9 @@ export interface DayLog {
   date: ISODate
   flow?: Flow
   symptoms?: string[]
+  /** Estados de ánimo del día (se pueden marcar varios). */
+  moods?: string[]
+  /** Versiones anteriores: un solo estado de ánimo. Se lee con dayMoods() y al guardar pasa a `moods`. */
   mood?: string
   /** Nivel de dolor 0–10. */
   pain?: number

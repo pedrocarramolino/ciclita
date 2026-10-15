@@ -5,7 +5,7 @@
 import type { DayLog, Flow, Mucus, Period, Sex } from '../db/db'
 import { diffDays, type ISODate } from './dates'
 import { en, es, lang, symptomLabel, t, type Messages } from '../i18n'
-import { MOOD_OPTIONS, MUCUS_OPTIONS, SEX_OPTIONS, TEMPERATURE_RANGE, WEIGHT_RANGE } from './options'
+import { dayMoods, MOOD_OPTIONS, MUCUS_OPTIONS, SEX_OPTIONS, TEMPERATURE_RANGE, WEIGHT_RANGE } from './options'
 
 export const BACKUP_APP = 'ciclita'
 /** Identificador de las copias hechas antes del cambio de nombre (se siguen aceptando). */
@@ -56,6 +56,14 @@ function sanitizeDay(raw: unknown): DayLog | null {
   const d = raw as Record<string, unknown>
   if (!isDate(d.date)) return null
   const pain = typeof d.pain === 'number' && d.pain >= 0 && d.pain <= 10 ? Math.round(d.pain) : undefined
+  // Varios estados de ánimo (o uno solo, en copias antiguas), sin repetir y solo los conocidos.
+  const moods = [
+    ...new Set(
+      (Array.isArray(d.moods) ? d.moods : typeof d.mood === 'string' ? [d.mood] : []).filter(
+        (m): m is string => typeof m === 'string' && MOOD_OPTIONS.some((o) => o.value === m),
+      ),
+    ),
+  ]
   const symptoms = Array.isArray(d.symptoms)
     ? d.symptoms.filter((s): s is string => typeof s === 'string' && !!s.trim()).map((s) => s.trim().slice(0, 40))
     : undefined
@@ -63,7 +71,7 @@ function sanitizeDay(raw: unknown): DayLog | null {
     date: d.date,
     flow: FLOWS.has(d.flow as Flow) ? (d.flow as Flow) : undefined,
     symptoms: symptoms?.length ? symptoms : undefined,
-    mood: MOOD_OPTIONS.some((m) => m.value === d.mood) ? (d.mood as string) : undefined,
+    moods: moods.length ? moods : undefined,
     pain,
     medication: optStr(d.medication, 200),
     notes: optStr(d.notes, 2000),
@@ -165,7 +173,7 @@ export function toCSV(periodDays: Set<ISODate>, days: DayLog[]): string {
       periodDays.has(date) ? t.csv.yes : t.csv.no,
       optionLabel('flow', d?.flow),
       (d?.symptoms ?? []).map(symptomLabel).join(', '),
-      optionLabel('mood', d?.mood),
+      dayMoods(d).map((m) => optionLabel('mood', m)).join(', '),
       d?.pain === undefined ? '' : String(d.pain),
       d?.medication ?? '',
       d?.notes ?? '',
@@ -259,7 +267,10 @@ export function parseCSV(text: string): CSVImport {
       date,
       flow: optionValue<Flow>('flow', get(r, 'flujo')),
       symptoms: sym,
-      mood: optionValue('mood', get(r, 'animo')),
+      moods: get(r, 'animo')
+        .split(',')
+        .map((m) => optionValue('mood', m))
+        .filter(Boolean),
       pain: painRaw === '' ? undefined : Number(painRaw),
       medication: get(r, 'medicacion'),
       notes: get(r, 'notas'),
@@ -273,7 +284,7 @@ export function parseCSV(text: string): CSVImport {
       day &&
       (day.flow ||
         day.symptoms ||
-        day.mood ||
+        day.moods ||
         day.pain !== undefined ||
         day.medication ||
         day.notes ||

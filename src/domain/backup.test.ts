@@ -9,7 +9,7 @@ const periods: Period[] = [
 ]
 const days: DayLog[] = [
   { date: '2026-09-01', flow: 'heavy', symptoms: ['Dolor abdominal', 'Cansancio'], pain: 7, updatedAt: 1 },
-  { date: '2026-09-15', mood: 'calm', notes: 'Notas con "comillas"; punto y coma\ny salto', updatedAt: 2 },
+  { date: '2026-09-15', moods: ['calm', 'tired'], notes: 'Notas con "comillas"; punto y coma\ny salto', updatedAt: 2 },
   { date: '2026-09-20', medication: 'Ibuprofeno, 400 mg', symptoms: ['Migraña'], updatedAt: 3 },
 ]
 
@@ -70,7 +70,7 @@ describe('CSV', () => {
     expect(rows).toHaveLength(1 + 3 + 2 + 2) // cabecera + periodo 1 + periodo 2 + 2 días sueltos
     expect(rows[1]).toEqual(['2026-09-01', 'sí', 'Abundante', 'Dolor abdominal, Cansancio', '', '7', '', '', '', '', '', '', ''])
     const notes = rows.find((r) => r[0] === '2026-09-15')!
-    expect(notes[4]).toBe('Calma')
+    expect(notes[4]).toBe('Calma, Sin energía')
     expect(notes[7]).toBe('Notas con "comillas"; punto y coma\ny salto')
   })
 
@@ -82,8 +82,10 @@ describe('CSV', () => {
   })
 
   it('los estados de ánimo nuevos también van y vuelven en el CSV', () => {
-    const back = parseCSV(toCSV(new Set(), [{ date: '2026-09-02', mood: 'moodSwings', updatedAt: 0 }]))
-    expect(back.days[0].mood).toBe('moodSwings')
+    const back = parseCSV(toCSV(new Set(), [{ date: '2026-09-02', moods: ['moodSwings', 'stressed'], updatedAt: 0 }]))
+    expect(back.days[0].moods).toEqual(['moodSwings', 'stressed'])
+    // Las copias antiguas (un solo ánimo) se siguen leyendo.
+    expect(parseBackup(JSON.stringify(buildBackup({ periods: [], days: [{ date: '2026-09-02', mood: 'sad', updatedAt: 0 }], customSymptoms: [], settings: {} as never }))).days[0].moods).toEqual(['sad'])
   })
 
   it('neutraliza celdas que Excel ejecutaría como fórmulas', () => {

@@ -35,10 +35,31 @@ describe('Registro del día', () => {
     expect(await db.days.get(DAY)).toMatchObject({
       flow: 'heavy',
       symptoms: ['Dolor de cabeza'],
-      mood: 'calm',
+      moods: ['calm'],
       notes: 'Día largo',
     })
     expect(await db.periods.toArray()).toMatchObject([{ startDate: DAY, endDate: DAY }])
+  })
+
+  it('se pueden marcar varios estados de ánimo y quitar uno tocándolo otra vez', async () => {
+    const user = userEvent.setup()
+    render(<DaySheet date={DAY} onClose={() => {}} />)
+    const group = within(await screen.findByRole('group', { name: 'Estado de ánimo' }))
+    await user.click(group.getByRole('button', { name: /Estrés/ }))
+    await user.click(group.getByRole('button', { name: /Sin energía/ }))
+    await user.click(group.getByRole('button', { name: /Agobio/ }))
+    await user.click(group.getByRole('button', { name: /Agobio/ }))
+    expect(group.getByRole('button', { name: /Estrés/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(group.getByRole('button', { name: /Agobio/ })).toHaveAttribute('aria-pressed', 'false')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(async () => expect((await db.days.get(DAY))?.moods).toEqual(['stressed', 'tired']))
+  })
+
+  it('un día guardado con un solo ánimo (versión anterior) se carga marcado', async () => {
+    await db.days.put({ date: DAY, mood: 'sad', updatedAt: 1 })
+    render(<DaySheet date={DAY} onClose={() => {}} />)
+    const group = within(await screen.findByRole('group', { name: 'Estado de ánimo' }))
+    expect(group.getByRole('button', { name: /Tristeza/ })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('ofrece 16 estados de ánimo para elegir', async () => {

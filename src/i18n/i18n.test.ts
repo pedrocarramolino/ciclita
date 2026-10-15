@@ -35,7 +35,7 @@ describe('idiomas', () => {
     expect(r.days[0]).toMatchObject({
       flow: 'heavy',
       symptoms: ['Dolor de cabeza', 'Something else'],
-      mood: 'calm',
+      moods: ['calm'],
       pain: 6,
       temperature: 36.6,
       mucus: 'eggwhite',

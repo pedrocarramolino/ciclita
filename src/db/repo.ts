@@ -9,6 +9,7 @@ function isEmpty(f: DayForm): boolean {
   return (
     !f.flow &&
     !f.symptoms?.length &&
+    !f.moods?.length &&
     !f.mood &&
     f.pain === undefined &&
     !f.medication?.trim() &&
@@ -40,6 +41,8 @@ export async function saveDay(
 
     const clean: DayForm = {
       ...form,
+      moods: form.moods?.length ? form.moods : undefined,
+      mood: undefined, // el formato antiguo se sustituye por `moods`
       flow: isPeriod ? form.flow : undefined,
       medication: form.medication?.trim() || undefined,
       notes: form.notes?.trim() || undefined,

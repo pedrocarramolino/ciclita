@@ -804,6 +804,7 @@ export const en: Messages = {
     selectedCount: (n) => `${n} selected`,
     addSymptomPlaceholder: 'Other symptom…',
     mood: 'Mood',
+    moodHint: 'You can pick more than one.',
     pain: 'Pain level',
     painUnset: 'Not logged',
     painValue: (n) => `${n} out of 10`,
