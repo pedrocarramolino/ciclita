@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/Button'
 import { t } from '../../i18n'
+import { isIOS, isStandalone } from '../../platform'
 import { Section } from './Section'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -8,12 +9,6 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-const isStandalone = () =>
-  window.matchMedia('(display-mode: standalone)').matches ||
-  (navigator as Navigator & { standalone?: boolean }).standalone === true
-
-const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
 /** "Instalar la app": botón en Android/escritorio e instrucciones en iPhone/iPad. */
 export function InstallSection() {

@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { Button } from '../../components/Button'
 import { NumberStepper } from '../../components/NumberStepper'
 import { Switch } from '../../components/Switch'
@@ -7,29 +7,30 @@ import { reminderPillPack } from '../../domain/pill'
 import { permission, requestPermission, showTestNotification, syncPush } from '../../push/pushClient'
 import { MEDICATION_NAME_MAX } from '../../push/reminderPayload'
 import { formatLong, today } from '../../domain/dates'
-import { addYears, buildEventReminders, checkupEvents, type ContraceptionMethod } from '../../domain/reminderEvents'
+import {
+  addYears,
+  buildEventReminders,
+  checkupEvents,
+  type ContraceptionMethod,
+} from '../../domain/reminderEvents'
 import { t } from '../../i18n'
+import { isIOS, isStandalone } from '../../platform'
 import { usePrediction } from '../../usePrediction'
 import { Row, Section } from './Section'
 
+const INPUT = 'min-h-12 w-full rounded-2xl border border-line bg-surface px-4'
+
+/**
+ * Ajustes → Recordatorios, agrupados: los del ciclo, los de cada día y otros avisos.
+ * Cada uno es un interruptor; sus opciones solo aparecen al activarlo.
+ */
 export function RemindersSection({ settings }: { settings: Settings }) {
   const { reminders, pushError, pushSync } = settings
   const [perm, setPerm] = useState(permission)
   const [busy, setBusy] = useState(false)
   const prediction = usePrediction()
   const s = t.settings
-  const ids = {
-    period: useId(),
-    daily: useId(),
-    pill: useId(),
-    discreet: useId(),
-    fertile: useId(),
-    breast: useId(),
-    temperature: useId(),
-    weight: useId(),
-    medication: useId(),
-    checkup: useId(),
-  }
+  const u = s.reminderUi
 
   // La sincronización con el servidor la hace usePushSync (App) al cambiar los ajustes.
   const update = async (patch: Partial<ReminderSettings>) => {
@@ -45,10 +46,13 @@ export function RemindersSection({ settings }: { settings: Settings }) {
     setBusy(false)
   }
 
+  // En iPhone los avisos solo llegan con la app instalada en la pantalla de inicio.
+  const iosHint = isIOS() && !isStandalone() && <p className="rounded-2xl bg-lavender-soft p-4 text-sm">{u.ios}</p>
+
   if (perm === 'unsupported') {
     return (
       <Section title={s.reminders}>
-        <p className="text-sm text-muted">{s.remindersUnsupported}</p>
+        {iosHint || <p className="text-sm text-muted">{s.remindersUnsupported}</p>}
       </Section>
     )
   }
@@ -66,12 +70,11 @@ export function RemindersSection({ settings }: { settings: Settings }) {
     reminders.medicationEnabled ||
     (reminders.checkupEnabled && !!reminders.checkupDate) ||
     (c.method !== 'none' && !!c.start)
-  // Próximo aviso del anticonceptivo, para que se vea que la pauta está bien.
+  // Próximos avisos del anticonceptivo y de la revisión, para comprobar las fechas.
   const nextContraception =
     c.method !== 'none' && c.start
       ? buildEventReminders({ fertileEnabled: false, breastExamEnabled: false, contraception: c }, null, today())[0]
       : undefined
-  // Próximo aviso de la revisión (para comprobar la fecha y si se repite).
   const nextCheckup =
     reminders.checkupEnabled && reminders.checkupDate
       ? checkupEvents({ date: reminders.checkupDate, yearly: reminders.checkupYearly }, today(), addYears(today(), 2))[0]
@@ -79,303 +82,299 @@ export function RemindersSection({ settings }: { settings: Settings }) {
   const updateContraception = (patch: Partial<ReminderSettings['contraception']>) =>
     void update({ contraception: { ...c, ...patch } })
 
-  return (
-    <Section title={s.reminders} hint={s.remindersHow}>
-      <details className="rounded-2xl bg-lavender-soft px-4 py-2 text-sm">
-        <summary className="min-h-9 cursor-pointer py-1 font-bold">{s.remindersDataTitle}</summary>
-        <p className="pb-2">{s.remindersData}</p>
-      </details>
+  /** Interruptor de un recordatorio (desactivado si las notificaciones están bloqueadas). */
+  const item = (key: keyof ReminderSettings, label: string, hint: string | undefined, options?: ReactNode) => (
+    <Item
+      label={label}
+      hint={hint}
+      checked={reminders[key] as boolean}
+      disabled={blocked && !reminders[key]}
+      onChange={(v) => void update({ [key]: v })}
+    >
+      {options}
+    </Item>
+  )
 
+  return (
+    <>
+      {iosHint}
       {blocked && (
-        <p role="alert" className="rounded-2xl bg-rose-soft p-3 text-sm">
+        <p role="alert" className="rounded-2xl bg-rose-soft p-4 text-sm">
           {s.remindersDenied}
         </p>
       )}
 
-      {settings.mode !== 'cycle' && (
-        <p className="rounded-2xl bg-lavender-soft p-3 text-sm">
+      {settings.mode === 'cycle' ? (
+        <Section title={u.groups.cycle}>
+          {item(
+            'periodEnabled',
+            u.period,
+            undefined,
+            <NumberStepper
+              id="days-before"
+              label={s.daysBefore}
+              value={reminders.periodDaysBefore}
+              min={1}
+              max={7}
+              unit={t.common.days}
+              onChange={(n) => void update({ periodDaysBefore: n })}
+            />,
+          )}
+          {item('fertileEnabled', u.fertile, u.fertileHint)}
+          {item('breastExamEnabled', u.breast, u.breastHint)}
+        </Section>
+      ) : (
+        <p className="rounded-2xl bg-lavender-soft p-4 text-sm">
           {settings.mode === 'pregnancy' ? t.modes.pregnancyPaused : t.modes.otherModePaused}
         </p>
       )}
 
-      <Row id={ids.period} label={s.periodReminder}>
-        <Switch
-          labelledBy={ids.period}
-          checked={reminders.periodEnabled}
-          disabled={blocked && !reminders.periodEnabled}
-          onChange={(v) => void update({ periodEnabled: v })}
-        />
-      </Row>
-      {reminders.periodEnabled && (
-        <NumberStepper
-          id="days-before"
-          label={s.daysBefore}
-          value={reminders.periodDaysBefore}
-          min={1}
-          max={7}
-          unit={t.common.days}
-          onChange={(n) => void update({ periodDaysBefore: n })}
-        />
-      )}
-
-      <Row id={ids.daily} label={s.dailyReminder}>
-        <Switch
-          labelledBy={ids.daily}
-          checked={reminders.dailyEnabled}
-          disabled={blocked && !reminders.dailyEnabled}
-          onChange={(v) => void update({ dailyEnabled: v })}
-        />
-      </Row>
-      {reminders.dailyEnabled && (
-        <TimeField id="daily-time" value={reminders.dailyTime} onChange={(v) => void update({ dailyTime: v })} />
-      )}
-
-      <Row id={ids.pill} label={s.pillReminder}>
-        <Switch
-          labelledBy={ids.pill}
-          checked={reminders.pillEnabled}
-          disabled={blocked && !reminders.pillEnabled}
-          onChange={(v) => void update({ pillEnabled: v })}
-        />
-      </Row>
-      {reminders.pillEnabled && (
-        <>
-          <TimeField id="pill-time" value={reminders.pillTime} onChange={(v) => void update({ pillTime: v })} />
-          {!(settings.tracking.pill && settings.pill.pack === 28) && (
-            <p className="text-sm text-muted">
-              {reminderPillPack(settings.tracking.pill, settings.pill) ? s.pillSkipsBreak : s.pillBreakHint}
-            </p>
-          )}
-        </>
-      )}
-
-      <Row id={ids.fertile} label={s.fertileReminder} hint={s.fertileReminderHint}>
-        <Switch
-          labelledBy={ids.fertile}
-          checked={reminders.fertileEnabled}
-          disabled={blocked && !reminders.fertileEnabled}
-          onChange={(v) => void update({ fertileEnabled: v })}
-        />
-      </Row>
-
-      <Row id={ids.breast} label={s.breastReminder} hint={s.breastReminderHint}>
-        <Switch
-          labelledBy={ids.breast}
-          checked={reminders.breastExamEnabled}
-          disabled={blocked && !reminders.breastExamEnabled}
-          onChange={(v) => void update({ breastExamEnabled: v })}
-        />
-      </Row>
-
-      <Row id={ids.temperature} label={s.temperatureReminder} hint={s.temperatureReminderHint}>
-        <Switch
-          labelledBy={ids.temperature}
-          checked={reminders.temperatureEnabled}
-          disabled={blocked && !reminders.temperatureEnabled}
-          onChange={(v) => void update({ temperatureEnabled: v })}
-        />
-      </Row>
-      {reminders.temperatureEnabled && (
-        <TimeField
-          id="temperature-time"
-          value={reminders.temperatureTime}
-          onChange={(v) => void update({ temperatureTime: v })}
-        />
-      )}
-
-      <Row id={ids.weight} label={s.weightReminder}>
-        <Switch
-          labelledBy={ids.weight}
-          checked={reminders.weightEnabled}
-          disabled={blocked && !reminders.weightEnabled}
-          onChange={(v) => void update({ weightEnabled: v })}
-        />
-      </Row>
-      {reminders.weightEnabled && (
-        <>
-          <div className="flex items-center gap-3">
-            <label htmlFor="weight-day" className="font-bold text-muted">
-              {s.weightDay}
-            </label>
-            <select
-              id="weight-day"
-              value={reminders.weightDay ?? 'all'}
-              onChange={(e) => void update({ weightDay: e.target.value === 'all' ? null : Number(e.target.value) })}
-              className="min-h-12 flex-1 rounded-2xl border border-line bg-surface px-4"
-            >
-              <option value="all">{s.everyDay}</option>
-              {/* Lunes primero; el valor es el día de la semana con 0 = domingo. */}
-              {t.calendar.weekdaysLong.map((name, i) => (
-                <option key={name} value={(i + 1) % 7}>
-                  {s.everyWeekday(name)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <TimeField id="weight-time" value={reminders.weightTime} onChange={(v) => void update({ weightTime: v })} />
-        </>
-      )}
-
-      <Row id={ids.medication} label={s.medicationReminder} hint={s.medicationReminderHint}>
-        <Switch
-          labelledBy={ids.medication}
-          checked={reminders.medicationEnabled}
-          disabled={blocked && !reminders.medicationEnabled}
-          onChange={(v) => void update({ medicationEnabled: v })}
-        />
-      </Row>
-      {reminders.medicationEnabled && (
-        <>
-          <div>
-            <label htmlFor="medication-name" className="mb-1 block text-sm font-bold text-muted">
-              {s.medicationName}
-            </label>
-            <input
-              id="medication-name"
-              type="text"
-              value={reminders.medicationName}
-              maxLength={MEDICATION_NAME_MAX}
-              placeholder={s.medicationPlaceholder}
-              onChange={(e) => void update({ medicationName: e.target.value })}
-              className="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
-            />
-          </div>
-          <TimeField
-            id="medication-time"
-            value={reminders.medicationTime}
-            onChange={(v) => void update({ medicationTime: v })}
-          />
-        </>
-      )}
-
-      <Row id={ids.checkup} label={s.checkupReminder} hint={s.checkupReminderHint}>
-        <Switch
-          labelledBy={ids.checkup}
-          checked={reminders.checkupEnabled}
-          disabled={blocked && !reminders.checkupEnabled}
-          onChange={(v) => void update({ checkupEnabled: v })}
-        />
-      </Row>
-      {reminders.checkupEnabled && (
-        <>
-          <div>
-            <label htmlFor="checkup-date" className="mb-1 block text-sm font-bold text-muted">
-              {s.checkupDate}
-            </label>
-            <input
-              id="checkup-date"
-              type="date"
-              value={reminders.checkupDate ?? ''}
-              onChange={(e) => void update({ checkupDate: e.target.value || null })}
-              className="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
-            />
-          </div>
-          <label className="flex min-h-11 items-center gap-3">
-            <input
-              type="checkbox"
-              checked={reminders.checkupYearly}
-              onChange={(e) => void update({ checkupYearly: e.target.checked })}
-              className="size-5 accent-[var(--primary)]"
-            />
-            {s.checkupYearly}
-          </label>
-          {nextCheckup && (
-            <p className="text-sm font-bold">
-              {s.nextEvent(formatLong(nextCheckup.date))} · {t.notifications.events[nextCheckup.type].body}
-            </p>
-          )}
-        </>
-      )}
-
-      <fieldset className="space-y-3 rounded-2xl bg-surface-soft p-4">
-        <legend className="sr-only">{s.contraception}</legend>
-        <div>
-          <label htmlFor="contraception-method" className="block font-bold">
-            {s.contraception}
-          </label>
-          <p className="text-sm text-muted">{s.contraceptionHint}</p>
-        </div>
-        <select
-          id="contraception-method"
-          value={c.method}
-          disabled={blocked && c.method === 'none'}
-          onChange={(e) => {
-            const method = e.target.value as ContraceptionMethod
-            // Al activar un método por primera vez se pide permiso de notificaciones.
-            if (method !== 'none' && perm === 'default') void requestPermission().then(setPerm)
-            updateContraception({ method })
-          }}
-          className="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
-        >
-          {(Object.keys(s.contraceptionMethods) as ContraceptionMethod[]).map((m) => (
-            <option key={m} value={m}>
-              {s.contraceptionMethods[m]}
-            </option>
-          ))}
-        </select>
-        {c.method !== 'none' && (
+      <Section title={u.groups.daily}>
+        {item(
+          'dailyEnabled',
+          u.daily,
+          undefined,
+          <TimeField id="daily-time" value={reminders.dailyTime} onChange={(v) => void update({ dailyTime: v })} />,
+        )}
+        {item(
+          'pillEnabled',
+          u.pill,
+          undefined,
           <>
-            <p className="text-sm">{s.contraceptionSchedule[c.method]}</p>
-            <div>
-              <label htmlFor="contraception-start" className="mb-1 block text-sm font-bold text-muted">
-                {s.contraceptionStart[c.method]}
-              </label>
-              <input
-                id="contraception-start"
-                type="date"
-                value={c.start ?? ''}
-                max={today()}
-                onChange={(e) => updateContraception({ start: e.target.value || null })}
-                className="min-h-12 w-full rounded-2xl border border-line bg-surface px-4"
-              />
-            </div>
-            <TimeField id="contraception-time" value={c.time} onChange={(v) => updateContraception({ time: v })} />
-            {nextContraception && (
-              <p className="text-sm font-bold">
-                {s.nextEvent(formatLong(nextContraception.date))} ·{' '}
-                {t.notifications.events[nextContraception.type].body}
+            <TimeField id="pill-time" value={reminders.pillTime} onChange={(v) => void update({ pillTime: v })} />
+            {!(settings.tracking.pill && settings.pill.pack === 28) && (
+              <p className="text-sm text-muted">
+                {reminderPillPack(settings.tracking.pill, settings.pill) ? s.pillSkipsBreak : s.pillBreakHint}
               </p>
             )}
-          </>
+          </>,
         )}
-      </fieldset>
-
-      <Row id={ids.discreet} label={s.discreet} hint={s.discreetHint}>
-        <Switch
-          labelledBy={ids.discreet}
-          checked={reminders.discreet}
-          onChange={(v) => void update({ discreet: v })}
-        />
-      </Row>
-
-      {anyOn && !blocked && (
-        <div role="status" aria-live="polite">
-          {pushError ? (
-            <div className="rounded-2xl bg-rose-soft p-3 text-sm">
-              <p className="font-bold">{s.pushErrorTitle}</p>
-              <p>{pushError}</p>
-              <Button variant="secondary" className="mt-2 min-h-11" disabled={busy} onClick={() => void retry()}>
-                {busy ? s.pushSyncing : perm === 'default' ? s.allowNotifications : s.pushRetry}
-              </Button>
+        {item(
+          'temperatureEnabled',
+          u.temperature,
+          undefined,
+          <TimeField
+            id="temperature-time"
+            value={reminders.temperatureTime}
+            onChange={(v) => void update({ temperatureTime: v })}
+          />,
+        )}
+        {item(
+          'medicationEnabled',
+          u.medication,
+          undefined,
+          <>
+            <div>
+              <label htmlFor="medication-name" className="mb-1 block text-sm font-bold text-muted">
+                {s.medicationName}
+              </label>
+              <input
+                id="medication-name"
+                type="text"
+                value={reminders.medicationName}
+                maxLength={MEDICATION_NAME_MAX}
+                placeholder={s.medicationPlaceholder}
+                onChange={(e) => void update({ medicationName: e.target.value })}
+                className={INPUT}
+              />
             </div>
-          ) : (
-            <p className="text-sm font-bold">{pushSync ? s.pushSynced : s.pushSyncing}</p>
+            <TimeField
+              id="medication-time"
+              value={reminders.medicationTime}
+              onChange={(v) => void update({ medicationTime: v })}
+            />
+          </>,
+        )}
+        {item(
+          'weightEnabled',
+          u.weight,
+          undefined,
+          <>
+            <div className="flex items-center gap-3">
+              <label htmlFor="weight-day" className="font-bold text-muted">
+                {s.weightDay}
+              </label>
+              <select
+                id="weight-day"
+                value={reminders.weightDay ?? 'all'}
+                onChange={(e) => void update({ weightDay: e.target.value === 'all' ? null : Number(e.target.value) })}
+                className="min-h-12 flex-1 rounded-2xl border border-line bg-surface px-4"
+              >
+                <option value="all">{s.everyDay}</option>
+                {/* Lunes primero; el valor es el día de la semana con 0 = domingo. */}
+                {t.calendar.weekdaysLong.map((name, i) => (
+                  <option key={name} value={(i + 1) % 7}>
+                    {s.everyWeekday(name)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <TimeField id="weight-time" value={reminders.weightTime} onChange={(v) => void update({ weightTime: v })} />
+          </>,
+        )}
+      </Section>
+
+      <Section title={u.groups.other}>
+        {item(
+          'checkupEnabled',
+          u.checkup,
+          u.checkupHint,
+          <>
+            <div>
+              <label htmlFor="checkup-date" className="mb-1 block text-sm font-bold text-muted">
+                {s.checkupDate}
+              </label>
+              <input
+                id="checkup-date"
+                type="date"
+                value={reminders.checkupDate ?? ''}
+                onChange={(e) => void update({ checkupDate: e.target.value || null })}
+                className={INPUT}
+              />
+            </div>
+            <label className="flex min-h-11 items-center gap-3">
+              <input
+                type="checkbox"
+                checked={reminders.checkupYearly}
+                onChange={(e) => void update({ checkupYearly: e.target.checked })}
+                className="size-5 accent-[var(--primary)]"
+              />
+              {s.checkupYearly}
+            </label>
+            {nextCheckup && (
+              <p className="text-sm font-bold">
+                {s.nextEvent(formatLong(nextCheckup.date))} · {t.notifications.events[nextCheckup.type].body}
+              </p>
+            )}
+          </>,
+        )}
+
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="contraception-method" className="block font-bold">
+              {u.contraception}
+            </label>
+            <p className="text-sm text-muted">{u.contraceptionHint}</p>
+          </div>
+          <select
+            id="contraception-method"
+            value={c.method}
+            disabled={blocked && c.method === 'none'}
+            onChange={(e) => {
+              const method = e.target.value as ContraceptionMethod
+              // Al activar un método por primera vez se pide permiso de notificaciones.
+              if (method !== 'none' && perm === 'default') void requestPermission().then(setPerm)
+              updateContraception({ method })
+            }}
+            className={INPUT}
+          >
+            {(Object.keys(s.contraceptionMethods) as ContraceptionMethod[]).map((m) => (
+              <option key={m} value={m}>
+                {s.contraceptionMethods[m]}
+              </option>
+            ))}
+          </select>
+          {c.method !== 'none' && (
+            <Options>
+              <p className="text-sm">{s.contraceptionSchedule[c.method]}</p>
+              <div>
+                <label htmlFor="contraception-start" className="mb-1 block text-sm font-bold text-muted">
+                  {s.contraceptionStart[c.method]}
+                </label>
+                <input
+                  id="contraception-start"
+                  type="date"
+                  value={c.start ?? ''}
+                  max={today()}
+                  onChange={(e) => updateContraception({ start: e.target.value || null })}
+                  className={INPUT}
+                />
+              </div>
+              <TimeField id="contraception-time" value={c.time} onChange={(v) => updateContraception({ time: v })} />
+              {nextContraception && (
+                <p className="text-sm font-bold">
+                  {s.nextEvent(formatLong(nextContraception.date))} ·{' '}
+                  {t.notifications.events[nextContraception.type].body}
+                </p>
+              )}
+            </Options>
           )}
         </div>
-      )}
+      </Section>
 
-      {perm === 'granted' && (
-        <Button
-          variant="secondary"
-          className="w-full"
-          onClick={() =>
-            void showTestNotification(reminders.discreet ? t.notifications.discreetTitle : t.appName, s.testBody)
-          }
-        >
-          {s.test}
-        </Button>
-      )}
-    </Section>
+      <Section title={u.groups.display}>
+        <DiscreetRow checked={reminders.discreet} onChange={(v) => void update({ discreet: v })} />
+
+        {anyOn && !blocked && (
+          <div role="status" aria-live="polite">
+            {pushError ? (
+              <div className="rounded-2xl bg-rose-soft p-3 text-sm">
+                <p className="font-bold">{s.pushErrorTitle}</p>
+                <p>{pushError}</p>
+                <Button variant="secondary" className="mt-2 min-h-11" disabled={busy} onClick={() => void retry()}>
+                  {busy ? s.pushSyncing : perm === 'default' ? s.allowNotifications : s.pushRetry}
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm font-bold">{pushSync ? s.pushSynced : s.pushSyncing}</p>
+            )}
+          </div>
+        )}
+
+        {perm === 'granted' && (
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() =>
+              void showTestNotification(reminders.discreet ? t.notifications.discreetTitle : t.appName, s.testBody)
+            }
+          >
+            {s.test}
+          </Button>
+        )}
+      </Section>
+    </>
+  )
+}
+
+/** Un recordatorio: interruptor y, al activarlo, sus opciones debajo. */
+function Item({
+  label,
+  hint,
+  checked,
+  disabled,
+  onChange,
+  children,
+}: {
+  label: string
+  hint?: string
+  checked: boolean
+  disabled?: boolean
+  onChange: (v: boolean) => void
+  children?: ReactNode
+}) {
+  const id = useId()
+  return (
+    <div>
+      <Row id={id} label={label} hint={hint}>
+        <Switch labelledBy={id} checked={checked} disabled={disabled} onChange={onChange} />
+      </Row>
+      {checked && children && <Options>{children}</Options>}
+    </div>
+  )
+}
+
+function Options({ children }: { children: ReactNode }) {
+  return <div className="mt-3 space-y-3 rounded-2xl bg-surface-soft p-3">{children}</div>
+}
+
+function DiscreetRow({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  const id = useId()
+  const s = t.settings
+  return (
+    <Row id={id} label={s.discreet} hint={s.discreetHint}>
+      <Switch labelledBy={id} checked={checked} onChange={onChange} />
+    </Row>
   )
 }
 
