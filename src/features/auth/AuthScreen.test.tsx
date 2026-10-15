@@ -12,6 +12,12 @@ beforeEach(() => {
   vi.mocked(sendReset).mockReset().mockResolvedValue()
 })
 
+/** La primera pantalla es el inicio de sesión: se pasa al registro por su enlace. */
+async function renderRegister(user: UserEvent) {
+  render(<AuthScreen />)
+  await user.click(screen.getByRole('button', { name: 'Regístrate' }))
+}
+
 async function fillRegister(user: UserEvent) {
   await user.type(screen.getByLabelText('Nombre'), 'Ana')
   await user.type(screen.getByLabelText('Apellidos'), 'García López')
@@ -26,7 +32,7 @@ async function fillRegister(user: UserEvent) {
 describe('Registro', () => {
   it('crea la cuenta con todos los datos', async () => {
     const user = userEvent.setup()
-    render(<AuthScreen />)
+    await renderRegister(user)
     expect(screen.getByRole('heading', { name: 'Crea tu cuenta' })).toBeInTheDocument()
     await fillRegister(user)
     await user.selectOptions(screen.getByLabelText('País (opcional)'), 'ES')
@@ -44,7 +50,7 @@ describe('Registro', () => {
 
   it('sin rellenar, marca los campos, avisa y no envía nada', async () => {
     const user = userEvent.setup()
-    render(<AuthScreen />)
+    await renderRegister(user)
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
     expect(screen.getByRole('alert')).toHaveTextContent('Revisa los 7 campos marcados.')
     expect(screen.getByLabelText('Nombre')).toHaveAccessibleDescription('Escribe tu nombre.')
@@ -55,7 +61,7 @@ describe('Registro', () => {
 
   it('menores de 14 años no pueden registrarse', async () => {
     const user = userEvent.setup()
-    render(<AuthScreen />)
+    await renderRegister(user)
     await fillRegister(user)
     fireEvent.change(screen.getByLabelText('Fecha de nacimiento'), { target: { value: '2015-01-01' } })
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
@@ -66,7 +72,7 @@ describe('Registro', () => {
   it('si el correo ya tiene cuenta, lo dice en ese campo', async () => {
     vi.mocked(register).mockRejectedValue(new AccountError('emailInUse'))
     const user = userEvent.setup()
-    render(<AuthScreen />)
+    await renderRegister(user)
     await fillRegister(user)
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
     expect(await screen.findByText(/Ya hay una cuenta con este correo/)).toBeInTheDocument()
@@ -75,7 +81,7 @@ describe('Registro', () => {
 
   it('la contraseña se puede mostrar y se indica su seguridad', async () => {
     const user = userEvent.setup()
-    render(<AuthScreen />)
+    await renderRegister(user)
     const input = screen.getByLabelText('Contraseña')
     await user.type(input, 'Ciclo-2026-segura')
     expect(screen.getByRole('img', { name: 'Seguridad de la contraseña: Fuerte' })).toBeInTheDocument()
@@ -85,7 +91,7 @@ describe('Registro', () => {
 
   it('se puede leer la política de privacidad y volver', async () => {
     const user = userEvent.setup()
-    render(<AuthScreen />)
+    await renderRegister(user)
     await user.click(screen.getAllByRole('button', { name: /política de privacidad/i })[0])
     expect(screen.getByRole('heading', { name: 'Política de privacidad' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Cerrar' }))
@@ -94,10 +100,15 @@ describe('Registro', () => {
 })
 
 describe('Inicio de sesión', () => {
+  it('es la primera pantalla, con enlace al registro', () => {
+    render(<AuthScreen />)
+    expect(screen.getByRole('heading', { name: 'Inicia sesión' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Regístrate' })).toBeInTheDocument()
+  })
+
   it('entra con correo y contraseña', async () => {
     const user = userEvent.setup()
     render(<AuthScreen />)
-    await user.click(screen.getByRole('button', { name: 'Inicia sesión' }))
     await user.type(screen.getByLabelText('Correo electrónico'), 'ana@correo.com')
     await user.type(screen.getByLabelText('Contraseña'), 'ciclo2026')
     await user.click(screen.getByRole('button', { name: 'Entrar' }))
@@ -108,7 +119,6 @@ describe('Inicio de sesión', () => {
     vi.mocked(login).mockRejectedValue(new AccountError('wrongCredentials'))
     const user = userEvent.setup()
     render(<AuthScreen />)
-    await user.click(screen.getByRole('button', { name: 'Inicia sesión' }))
     await user.type(screen.getByLabelText('Correo electrónico'), 'ana@correo.com')
     await user.type(screen.getByLabelText('Contraseña'), 'mal')
     await user.click(screen.getByRole('button', { name: 'Entrar' }))
@@ -118,7 +128,6 @@ describe('Inicio de sesión', () => {
   it('recuperar la contraseña envía el enlace sin decir si el correo existe', async () => {
     const user = userEvent.setup()
     render(<AuthScreen />)
-    await user.click(screen.getByRole('button', { name: 'Inicia sesión' }))
     await user.click(screen.getByRole('button', { name: '¿Has olvidado tu contraseña?' }))
     await user.type(screen.getByLabelText('Correo electrónico'), 'ana@correo.com')
     await user.click(screen.getByRole('button', { name: 'Enviar enlace' }))

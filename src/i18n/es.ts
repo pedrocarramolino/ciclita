@@ -801,6 +801,8 @@ export const es = {
     show: 'Ver',
     hide: 'Ocultar',
     existingData: 'Crea una cuenta para seguir usando Ciclita. Los registros que ya tienes en este dispositivo se guardarán en ella.',
+    existingDataLogin:
+      'Ahora Ciclita funciona con cuenta. Si aún no tienes, regístrate: los registros que ya tienes en este dispositivo se guardarán en ella.',
     passwordRules: 'Al menos 8 caracteres, con letras y números.',
     strength: ['Muy débil', 'Débil', 'Aceptable', 'Buena', 'Fuerte'],
     strengthLabel: (s: string) => `Seguridad de la contraseña: ${s}`,
@@ -871,6 +873,13 @@ export const es = {
     updated: (d: string) => `Última actualización: ${d}`,
     sections: [
       {
+        h: 'Responsable',
+        p: [
+          'El responsable del tratamiento de tus datos es Pedro Carramolino González.',
+          'Para cualquier consulta sobre tus datos o para ejercer tus derechos, escribe a pedrocarramolino34@gmail.com.',
+        ],
+      },
+      {
         h: 'Qué datos guardamos',
         p: [
           'Datos de tu cuenta: nombre, apellidos, correo, fecha de nacimiento, país (si lo indicas) y si quieres recibir novedades.',
@@ -910,7 +919,7 @@ export const es = {
         h: 'Tus derechos',
         p: [
           'Puedes acceder a tus datos y llevártelos (Ajustes → Tus datos → descargar copia), corregirlos desde la app y suprimirlos (Ajustes → Tu cuenta → Eliminar mi cuenta).',
-          'También puedes oponerte o pedir la limitación del tratamiento, y reclamar ante la Agencia Española de Protección de Datos (www.aepd.es).',
+          'También puedes oponerte o pedir la limitación del tratamiento escribiendo a pedrocarramolino34@gmail.com, y reclamar ante la Agencia Española de Protección de Datos (www.aepd.es).',
         ],
       },
     ],

@@ -25,8 +25,9 @@ const INPUT =
  * existente.
  */
 export function AuthScreen({ hasLocalData = false }: { hasLocalData?: boolean }) {
-  const [view, setView] = useState<View>('register')
-  const [back, setBack] = useState<View>('register')
+  // Se empieza por el inicio de sesión, con un enlace al registro.
+  const [view, setView] = useState<View>('login')
+  const [back, setBack] = useState<View>('login')
   const a = t.account
 
   if (view === 'privacy') return <PrivacyPolicy onClose={() => setView(back)} />
@@ -61,7 +62,9 @@ export function AuthScreen({ hasLocalData = false }: { hasLocalData?: boolean })
           }}
         />
       )}
-      {view === 'login' && <LoginView onRegister={() => setView('register')} onReset={() => setView('reset')} />}
+      {view === 'login' && (
+        <LoginView hasLocalData={hasLocalData} onRegister={() => setView('register')} onReset={() => setView('reset')} />
+      )}
       {view === 'reset' && <ResetView onBack={() => setView('login')} />}
 
       <p className="mt-6 text-center text-xs text-muted">
@@ -330,7 +333,15 @@ function RegisterView({
 
 // ---------- Inicio de sesión ----------
 
-function LoginView({ onRegister, onReset }: { onRegister: () => void; onReset: () => void }) {
+function LoginView({
+  hasLocalData,
+  onRegister,
+  onReset,
+}: {
+  hasLocalData: boolean
+  onRegister: () => void
+  onReset: () => void
+}) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -357,7 +368,14 @@ function LoginView({ onRegister, onReset }: { onRegister: () => void; onReset: (
         {a.loginTitle}
       </h1>
       <p className="mt-2 text-muted">{a.loginHint}</p>
-      <form noValidate onSubmit={submit} className="mt-6 space-y-4">
+      <p className="mt-3 text-sm">
+        {a.noAccount}{' '}
+        <button type="button" className="min-h-11 font-bold text-primary underline" onClick={onRegister}>
+          {a.goRegister}
+        </button>
+      </p>
+      {hasLocalData && <p className="mt-2 rounded-2xl bg-lavender-soft p-3 text-sm">{a.existingDataLogin}</p>}
+      <form noValidate onSubmit={submit} className="mt-4 space-y-4">
         <Field label={a.email}>
           {(p) => (
             <input
@@ -391,12 +409,6 @@ function LoginView({ onRegister, onReset }: { onRegister: () => void; onReset: (
           {busy ? a.loggingIn : a.login}
         </Button>
       </form>
-      <p className="mt-6 text-center text-sm">
-        {a.noAccount}{' '}
-        <button type="button" className="min-h-11 font-bold text-primary underline" onClick={onRegister}>
-          {a.goRegister}
-        </button>
-      </p>
     </section>
   )
 }

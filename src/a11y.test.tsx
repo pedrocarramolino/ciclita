@@ -59,12 +59,13 @@ describe('accesibilidad (axe)', () => {
 
   it('registro (con errores), inicio de sesión, recuperar contraseña y política de privacidad', async () => {
     const user = userEvent.setup()
-    render(<AuthScreen />)
+    render(<AuthScreen hasLocalData />)
+    await expectNoViolations()
+    await user.click(screen.getByRole('button', { name: 'Regístrate' }))
     await expectNoViolations()
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
     await expectNoViolations()
     await user.click(screen.getByRole('button', { name: 'Inicia sesión' }))
-    await expectNoViolations()
     await user.click(screen.getByRole('button', { name: '¿Has olvidado tu contraseña?' }))
     await expectNoViolations()
     await user.click(screen.getByRole('button', { name: 'Volver' }))

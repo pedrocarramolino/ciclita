@@ -806,6 +806,8 @@ export const en: Messages = {
     show: 'Show',
     hide: 'Hide',
     existingData: 'Create an account to keep using Ciclita. The logs you already have on this device will be saved to it.',
+    existingDataLogin:
+      "Ciclita now works with an account. If you don't have one yet, sign up: the logs you already have on this device will be saved to it.",
     passwordRules: 'At least 8 characters, with letters and numbers.',
     strength: ['Very weak', 'Weak', 'Fair', 'Good', 'Strong'],
     strengthLabel: (s) => `Password strength: ${s}`,
@@ -874,6 +876,13 @@ export const en: Messages = {
     updated: (d) => `Last updated: ${d}`,
     sections: [
       {
+        h: 'Data controller',
+        p: [
+          'The controller of your data is Pedro Carramolino González.',
+          'For any question about your data or to exercise your rights, write to pedrocarramolino34@gmail.com.',
+        ],
+      },
+      {
         h: 'What data we store',
         p: [
           'Account data: first name, last name, email, date of birth, country (if you give it) and whether you want to receive news.',
@@ -913,7 +922,7 @@ export const en: Messages = {
         h: 'Your rights',
         p: [
           'You can access and take your data (Settings → Your data → download backup), correct it in the app and erase it (Settings → Your account → Delete my account).',
-          'You can also object to or request restriction of processing, and complain to your data protection authority.',
+          'You can also object to or request restriction of processing by writing to pedrocarramolino34@gmail.com, and complain to your data protection authority.',
         ],
       },
     ],
