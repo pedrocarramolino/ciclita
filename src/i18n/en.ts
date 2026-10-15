@@ -228,6 +228,8 @@ export const en: Messages = {
       customNoPrediction: 'No period logged yet: it will start when you log one.',
       customOtherMode: "In this mode there's no predicted cycle: cycle-day reminders don't sound.",
       customRemove: 'Remove this reminder',
+      customDone: 'Done',
+      customDaysSummary: (a, b) => `cycle days ${a} to ${b}`,
       customLabel: (n) => `Reminder ${n}`,
     },
     remindersUnsupported: "This browser doesn't support notifications.",

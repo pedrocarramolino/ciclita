@@ -57,5 +57,26 @@ describe('Ajustes → Recordatorios', () => {
     await user.click(group.getByRole('button', { name: 'Quitar este recordatorio' }))
     await waitFor(async () => expect((await getSettings()).reminders.custom).toEqual([]))
   })
+
+  it('los recordatorios libres se ven plegados con su nombre y se despliegan al tocarlos', async () => {
+    const user = userEvent.setup()
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      reminders: {
+        ...DEFAULT_SETTINGS.reminders,
+        custom: [{ id: 'custom-a', name: 'Progesterona', time: '21:00', cycleDays: { from: 15, to: 26 } }],
+      },
+    }
+    render(<RemindersSection settings={settings} />)
+    const row = screen.getByRole('button', { name: /Progesterona.*21:00 · días 15 a 26 del ciclo/ })
+    expect(row).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByLabelText('Qué es')).toBeNull()
+
+    await user.click(row)
+    expect(row).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByLabelText('Qué es')).toHaveValue('Progesterona')
+    await user.click(screen.getByRole('button', { name: 'Listo' }))
+    expect(screen.queryByLabelText('Qué es')).toBeNull()
+  })
 })
 

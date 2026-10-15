@@ -201,6 +201,8 @@ export const es = {
       customNoPrediction: 'Aún no hay periodo registrado: sonará cuando registres uno.',
       customOtherMode: 'En este modo no hay ciclo previsto: los recordatorios por días del ciclo no suenan.',
       customRemove: 'Quitar este recordatorio',
+      customDone: 'Listo',
+      customDaysSummary: (a: number, b: number) => `días ${a} a ${b} del ciclo`,
       customLabel: (n: number) => `Recordatorio ${n}`,
     },
     remindersUnsupported: 'Este navegador no permite notificaciones.',
