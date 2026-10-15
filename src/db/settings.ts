@@ -92,6 +92,17 @@ export interface ReminderSettings {
   checkupEnabled: boolean
   checkupDate: ISODate | null
   checkupYearly: boolean
+  /** Recordatorios libres (p. ej. una pastilla los días 15 a 26 del ciclo). */
+  custom: CustomReminder[]
+}
+
+export interface CustomReminder {
+  id: string
+  name: string
+  /** 'HH:MM' */
+  time: string
+  /** Solo esos días del ciclo (1 = primer día del periodo); null = todos los días. */
+  cycleDays: { from: number; to: number } | null
 }
 
 export interface TrackingSettings {
@@ -132,6 +143,7 @@ export const DEFAULT_REMINDERS: ReminderSettings = {
   checkupEnabled: false,
   checkupDate: null,
   checkupYearly: true,
+  custom: [],
 }
 
 export const DEFAULT_SETTINGS: Settings = {

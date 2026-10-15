@@ -4,7 +4,7 @@
  */
 import type { ReminderSettings } from '../db/settings'
 import { addDays, today as todayISO, type ISODate } from '../domain/dates'
-import { buildEventReminders } from '../domain/reminderEvents'
+import { buildEventReminders, cycleDayWindows } from '../domain/reminderEvents'
 import type { AppMode } from '../domain/modes'
 import type { Prediction } from '../domain/prediction'
 import { t } from '../i18n'
@@ -42,9 +42,12 @@ export interface PillReminder extends TimedReminder {
 
 /** Hábito que se repite a una hora (temperatura, peso, medicación). */
 export interface RoutineReminder extends TimedReminder {
-  id: 'temperature' | 'weight' | 'medication'
+  /** 'temperature', 'weight', 'medication' o el id de un recordatorio libre. */
+  id: string
   /** Días de la semana (0 = domingo); sin definir = todos. */
   weekdays?: number[]
+  /** Solo dentro de estas fechas (días del ciclo ya pasados a fechas). */
+  windows?: { from: ISODate; until: ISODate }[]
 }
 
 export interface PillOptions {
@@ -113,7 +116,7 @@ export function buildReminders(
 
   // Hábitos: comparten una sola cadena de avisos en el servidor.
   const routines: RoutineReminder[] = []
-  const routine = (id: RoutineReminder['id'], time: string, msg: { title: string; body: string }) => {
+  const routine = (id: string, time: string, msg: { title: string; body: string }) => {
     const item: RoutineReminder = {
       id,
       time,
@@ -131,6 +134,17 @@ export function buildReminders(
   if (r.medicationEnabled) {
     const name = r.medicationName.trim().slice(0, MEDICATION_NAME_MAX)
     routine('medication', r.medicationTime, { title: n.routines.medicationTitle, body: n.routines.medicationBody(name) })
+  }
+  // Recordatorios libres: todos los días o solo unos días del ciclo (necesitan previsión).
+  for (const c of r.custom) {
+    const name = c.name.trim().slice(0, MEDICATION_NAME_MAX)
+    const msg = { title: name || n.routines.customTitle, body: n.routines.medicationBody(name) }
+    if (!c.cycleDays) {
+      routine(c.id, c.time, msg)
+      continue
+    }
+    const windows = mode === 'cycle' ? cycleDayWindows(prediction, c.cycleDays.from, c.cycleDays.to, today) : []
+    if (windows.length) routine(c.id, c.time, msg).windows = windows
   }
   if (routines.length) out.routines = routines
   return out

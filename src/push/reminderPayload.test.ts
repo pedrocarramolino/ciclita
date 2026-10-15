@@ -160,5 +160,37 @@ describe('botón "Ha empezado" del aviso de periodo', () => {
       { date: '2026-11-20', time: '09:00', title: 'Revisión', body: 'Hoy tienes tu revisión médica.' },
     ])
   })
+
+  it('recordatorio libre por días del ciclo: con sus fechas; todos los días: sin ellas', () => {
+    const r = buildReminders(
+      s({
+        discreet: false,
+        custom: [
+          { id: 'custom-a', name: 'Progesterona', time: '21:00', cycleDays: { from: 15, to: 26 } },
+          { id: 'custom-b', name: '', time: '08:00', cycleDays: null },
+        ],
+      }),
+      upcoming,
+      '2026-10-20',
+    )
+    expect(r.routines).toEqual([
+      {
+        id: 'custom-a',
+        time: '21:00',
+        title: 'Progesterona',
+        body: 'Es la hora de: Progesterona.',
+        windows: [
+          { from: '2026-10-15', until: '2026-10-26' },
+          { from: '2026-11-12', until: '2026-11-23' },
+          { from: '2026-12-10', until: '2026-12-21' },
+          { from: '2027-01-07', until: '2027-01-18' },
+        ],
+      },
+      { id: 'custom-b', time: '08:00', title: 'Recordatorio', body: 'Es la hora de tu medicación.' },
+    ])
+    // Fuera del modo ciclo, el de días del ciclo no se envía.
+    const preg = buildReminders(s({ custom: [{ id: 'custom-a', name: 'X', time: '21:00', cycleDays: { from: 15, to: 26 } }] }), upcoming, '2026-10-20', 'pregnancy')
+    expect(preg.routines).toBeUndefined()
+  })
 })
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { addDays } from './dates'
 import { predict } from './prediction'
-import { addYears, buildEventReminders, checkupEvents, contraceptionEvents, MAX_EVENTS, type EventSettings } from './reminderEvents'
+import { addYears, buildEventReminders, checkupEvents, contraceptionEvents, cycleDayWindows, MAX_EVENTS, type EventSettings } from './reminderEvents'
 
 const TODAY = '2026-10-13'
 const off: EventSettings = {
@@ -119,6 +119,23 @@ describe('revisión médica', () => {
     expect(checkupEvents({ date: '2026-10-24', yearly: false }, '2026-10-20', '2027-02-17')).toEqual([
       { date: '2026-10-24', type: 'checkup-due' },
     ])
+  })
+})
+
+describe('días del ciclo → fechas', () => {
+  it('días 15 a 26 del ciclo actual (si no han pasado) y de los siguientes', () => {
+    const p = { lastStart: '2026-10-01', nextPeriods: [{ start: '2026-10-29' }, { start: '2026-11-26' }] }
+    expect(cycleDayWindows(p as never, 15, 26, '2026-10-20')).toEqual([
+      { from: '2026-10-15', until: '2026-10-26' },
+      { from: '2026-11-12', until: '2026-11-23' },
+      { from: '2026-12-10', until: '2026-12-21' },
+    ])
+    // Pasado el día 26 del ciclo actual, empieza por el siguiente.
+    expect(cycleDayWindows(p as never, 15, 26, '2026-10-27')[0]).toEqual({ from: '2026-11-12', until: '2026-11-23' })
+  })
+
+  it('sin periodo registrado no hay fechas', () => {
+    expect(cycleDayWindows({ lastStart: null, nextPeriods: [] } as never, 15, 26, '2026-10-20')).toEqual([])
   })
 })
 

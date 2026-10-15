@@ -33,4 +33,29 @@ describe('Ajustes → Recordatorios', () => {
     expect(screen.getByLabelText('Hora')).toHaveValue('22:00')
     expect(await axeViolations()).toEqual([])
   })
+
+  it('un recordatorio libre solo unos días del ciclo (p. ej. del 15 al 26)', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(<RemindersSection settings={DEFAULT_SETTINGS} />)
+    await user.click(screen.getByRole('button', { name: 'Añadir recordatorio' }))
+    await waitFor(async () => expect((await getSettings()).reminders.custom).toHaveLength(1))
+    rerender(<RemindersSection settings={await getSettings()} />)
+
+    const group = within(screen.getByRole('region', { name: 'Tus recordatorios' }))
+    await user.type(group.getByLabelText('Qué es'), 'P')
+    // En la app los ajustes llegan en vivo; aquí se vuelven a pasar tras cada cambio.
+    await waitFor(async () => expect((await getSettings()).reminders.custom[0].name).toBe('P'))
+    rerender(<RemindersSection settings={await getSettings()} />)
+    await user.selectOptions(group.getByLabelText('Cuándo'), 'cycle')
+    await waitFor(async () =>
+      expect((await getSettings()).reminders.custom[0]).toMatchObject({ name: 'P', cycleDays: { from: 15, to: 26 } }),
+    )
+    rerender(<RemindersSection settings={await getSettings()} />)
+    expect(group.getByLabelText('Desde el día')).toHaveValue(15)
+    expect(group.getByLabelText('Hasta el día')).toHaveValue(26)
+
+    await user.click(group.getByRole('button', { name: 'Quitar este recordatorio' }))
+    await waitFor(async () => expect((await getSettings()).reminders.custom).toEqual([]))
+  })
 })
+

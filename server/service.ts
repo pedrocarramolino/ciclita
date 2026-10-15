@@ -91,15 +91,29 @@ const daysBetween = (a: string, b: string) =>
 /** Día de la semana (0 = domingo) de una fecha YYYY-MM-DD. */
 const weekdayOf = (ymd: string) => new Date(`${ymd}T00:00:00Z`).getUTCDay()
 
-const routineOn = (r: RoutineReminder, ymd: string) => !r.weekdays || r.weekdays.includes(weekdayOf(ymd))
+const inWindows = (r: RoutineReminder, ymd: string) => !r.windows || r.windows.some((w) => w.from <= ymd && ymd <= w.until)
+const routineOn = (r: RoutineReminder, ymd: string) =>
+  (!r.weekdays || r.weekdays.includes(weekdayOf(ymd))) && inWindows(r, ymd)
 
-/** Próxima vez que suena un hábito (a su hora, en uno de sus días de la semana). */
-function nextRoutineAt(r: RoutineReminder, timezone: string, now: Date): Date {
+/**
+ * Próxima vez que suena un hábito: a su hora, en uno de sus días de la semana y dentro
+ * de sus intervalos de fechas. Null si ya no queda ninguno (pasado el último intervalo).
+ */
+function nextRoutineAt(r: RoutineReminder, timezone: string, now: Date): Date | null {
   let at = nextOccurrence(r.time, timezone, now)
-  for (let i = 0; i < 7 && !routineOn(r, localDate(at, timezone)); i++) {
-    at = zonedToUtc(addDaysISO(localDate(at, timezone), 1), r.time, timezone)
+  let day = localDate(at, timezone)
+  if (r.windows && !inWindows(r, day)) {
+    // Fuera de intervalo: se salta al primer día del siguiente.
+    const next = r.windows.map((w) => w.from).filter((f) => f > day).sort()[0]
+    if (!next) return null
+    at = zonedToUtc(next, r.time, timezone)
+    day = next
   }
-  return at
+  for (let i = 0; i < 7 && !routineOn(r, day); i++) {
+    day = addDaysISO(day, 1)
+    at = zonedToUtc(day, r.time, timezone)
+  }
+  return routineOn(r, day) ? at : null
 }
 
 /** Instante de cada recordatorio con fecha, en UTC. */
@@ -119,7 +133,9 @@ export function nextFireAt(kind: ReminderKind, reminders: Reminders, timezone: s
     return upcoming[0] ?? null
   }
   if (kind === 'routines') {
-    const next = (reminders.routines ?? []).map((r) => nextRoutineAt(r, timezone, now))
+    const next = (reminders.routines ?? [])
+      .map((r) => nextRoutineAt(r, timezone, now))
+      .filter((d): d is Date => d !== null)
     return next.sort((a, b) => a.getTime() - b.getTime())[0] ?? null
   }
   const r = reminders[kind]

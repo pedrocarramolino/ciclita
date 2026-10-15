@@ -90,6 +90,11 @@ export interface RoutineReminder extends TimedReminder {
   id: string
   /** Días de la semana en que suena (0 = domingo … 6 = sábado). Sin definir = todos. */
   weekdays?: number[]
+  /**
+   * Solo suena dentro de estos intervalos de fechas (YYYY-MM-DD, ambos incluidos), p. ej.
+   * "días 15 a 26 del ciclo" ya pasados a fechas por el dispositivo. Sin definir = siempre.
+   */
+  windows?: { from: string; until: string }[]
 }
 
 export interface Reminders {

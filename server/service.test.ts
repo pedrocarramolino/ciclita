@@ -371,6 +371,54 @@ describe('hábitos (temperatura, peso, medicación)', () => {
   })
 })
 
+describe('recordatorios libres por días del ciclo', () => {
+  // "Progesterona", días 15 a 26 de dos ciclos.
+  const PILL = {
+    id: 'custom-1',
+    time: '21:00',
+    title: 'Progesterona',
+    body: 'Es la hora de: Progesterona.',
+    windows: [
+      { from: '2026-10-29', until: '2026-11-09' },
+      { from: '2026-11-26', until: '2026-12-07' },
+    ],
+  }
+
+  it('fuera de un intervalo programa el primer día del siguiente (con despertadores si queda lejos)', async () => {
+    const f = fakeDeps('2026-10-15T08:00:00Z')
+    await register(f.deps, input({ routines: [PILL] }))
+    await f.followWakes()
+    expect(f.published.at(-1)?.at).toBe('2026-10-29T20:00:00.000Z') // 21:00 en Madrid
+  })
+
+  it('dentro del intervalo suena cada día y al acabar salta al siguiente ciclo', async () => {
+    const f = fakeDeps('2026-11-09T12:00:00Z')
+    await register(f.deps, input({ routines: [PILL] }))
+    expect(f.published[0].at).toBe('2026-11-09T20:00:00.000Z')
+    f.setNow('2026-11-09T20:00:00Z')
+    expect(await deliver(f.deps, f.published[0].message)).toBe('sent')
+    expect(f.sent[0]).toMatchObject({ title: 'Progesterona', tag: 'ciclita-routine-custom-1' })
+    await f.followWakes()
+    expect(f.published.at(-1)?.at).toBe('2026-11-26T20:00:00.000Z')
+  })
+
+  it('pasado el último intervalo no queda nada programado', async () => {
+    const f = fakeDeps('2026-12-08T12:00:00Z')
+    await register(f.deps, input({ routines: [PILL] }))
+    expect(f.published).toHaveLength(0)
+  })
+
+  it('valida los intervalos', () => {
+    const base = input({})
+    const bad = (windows: unknown) => () =>
+      validateRegister({ ...base, reminders: { routines: [{ ...PILL, windows }] } })
+    expect(bad([{ from: '2026-11-09', until: '2026-10-29' }])).toThrow(ValidationError)
+    expect(bad([])).toThrow(ValidationError)
+    expect(bad(Array(9).fill(PILL.windows[0]))).toThrow(ValidationError)
+    expect(validateRegister({ ...base, reminders: { routines: [PILL] } }).reminders.routines?.[0].windows).toEqual(PILL.windows)
+  })
+})
+
 describe('píldora con días de descanso', () => {
   // Envase 21 + 7 que empezó el 1 de octubre: descanso del 22 al 28 de octubre.
   const PILL = { pill: { time: '22:00', title: 'Píldora', body: 'Tómala', pack: { active: 21, start: '2026-10-01' } } }

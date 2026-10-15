@@ -58,6 +58,27 @@ export const MAX_EVENTS = 30
 const CYCLE = 28
 const INJECTION_EVERY = 84
 
+/** Intervalos de fechas como máximo para un recordatorio por días del ciclo. */
+export const MAX_CYCLE_WINDOWS = 4
+
+/**
+ * Fechas de los días `from` a `to` del ciclo actual y de los siguientes previstos
+ * (día 1 = primer día del periodo). Solo los que no han terminado aún.
+ */
+export function cycleDayWindows(
+  prediction: Pick<Prediction, 'lastStart' | 'nextPeriods'> | null,
+  from: number,
+  to: number,
+  today: ISODate,
+): { from: ISODate; until: ISODate }[] {
+  if (!prediction?.lastStart) return []
+  const starts = [...new Set([prediction.lastStart, ...prediction.nextPeriods.map((p) => p.start)])].sort()
+  return starts
+    .map((s) => ({ from: addDays(s, from - 1), until: addDays(s, to - 1) }))
+    .filter((w) => w.until >= today)
+    .slice(0, MAX_CYCLE_WINDOWS)
+}
+
 /** La misma fecha `n` años después (el 29 de febrero pasa al 28 si no es bisiesto). */
 export function addYears(date: ISODate, n: number): ISODate {
   const [y, m, d] = date.split('-').map(Number)

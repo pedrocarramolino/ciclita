@@ -151,6 +151,8 @@ function events(v: unknown): EventReminder[] | undefined {
   })
 }
 
+/** Intervalos de fechas como máximo por hábito (unos cuantos ciclos por delante). */
+export const MAX_WINDOWS = 8
 /** Máximo de hábitos por dispositivo. */
 export const MAX_ROUTINES = 6
 const ROUTINE_ID_RE = /^[a-z0-9-]{1,24}$/
@@ -176,6 +178,15 @@ function routines(v: unknown): RoutineReminder[] | undefined {
         fail(`routines[${i}].weekdays no válido`)
       }
       out.weekdays = weekdays as number[]
+    }
+    const { windows } = r as Record<string, unknown>
+    if (windows !== undefined && windows !== null) {
+      if (!Array.isArray(windows) || windows.length < 1 || windows.length > MAX_WINDOWS) fail(`routines[${i}].windows no válido`)
+      out.windows = windows.map((w, j) => {
+        if (!isObj(w) || typeof w.from !== 'string' || typeof w.until !== 'string') fail(`routines[${i}].windows[${j}] no válido`)
+        if (!DATE_RE.test(w.from) || !DATE_RE.test(w.until) || w.until < w.from) fail(`routines[${i}].windows[${j}] no válido`)
+        return { from: w.from, until: w.until }
+      })
     }
     return out
   })

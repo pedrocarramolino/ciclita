@@ -16,6 +16,7 @@ import {
 import { t } from '../../i18n'
 import { isIOS, isStandalone } from '../../platform'
 import { usePrediction } from '../../usePrediction'
+import { CustomReminders } from './CustomReminders'
 import { Row, Section } from './Section'
 
 const INPUT = 'min-h-12 w-full rounded-2xl border border-line bg-surface px-4'
@@ -68,6 +69,7 @@ export function RemindersSection({ settings }: { settings: Settings }) {
     reminders.temperatureEnabled ||
     reminders.weightEnabled ||
     reminders.medicationEnabled ||
+    reminders.custom.length > 0 ||
     (reminders.checkupEnabled && !!reminders.checkupDate) ||
     (c.method !== 'none' && !!c.start)
   // Próximos avisos del anticonceptivo y de la revisión, para comprobar las fechas.
@@ -213,6 +215,18 @@ export function RemindersSection({ settings }: { settings: Settings }) {
           </>,
         )}
       </Section>
+
+      <CustomReminders
+        settings={settings}
+        prediction={prediction}
+        disabled={blocked}
+        onChange={async (custom) => {
+          // Al añadir el primero se pide permiso de notificaciones.
+          if (custom.length > reminders.custom.length && perm === 'default') setPerm(await requestPermission())
+          await setSettings({ reminders: { ...reminders, custom } })
+        }}
+        timeField={(id, value, onChange) => <TimeField id={id} value={value} onChange={onChange} />}
+      />
 
       <Section title={u.groups.other}>
         {item(

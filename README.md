@@ -37,6 +37,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - anticonceptivos con pauta: anillo vaginal, parche o inyección trimestral.
   - hábitos: tomar la temperatura basal por la mañana, pesarse (cada día o un día de la semana) y vitaminas o medicación diaria con el nombre que quieras;
   - revisión médica (DIU, implante, citología…): una semana antes y el mismo día, y cada año si se repite.
+  - **Tus recordatorios** (hasta 3): nombre y hora libres, todos los días o solo unos días del ciclo (p. ej. una pastilla del día 15 al 26; el día 1 es el primero del periodo). Las fechas se calculan con el ciclo actual y los previstos y se recalculan al registrar un periodo; el servidor solo avisa dentro de esos intervalos.
 - **Privacidad**: PIN de 4 dígitos, desbloqueo con **Face ID, Touch ID o huella** (opcional), cifrado opcional de los datos con el PIN, exportar/importar (JSON, JSON cifrado con contraseña y CSV) y borrado total con doble confirmación.
 - **Móvil nuevo**: en la bienvenida, "¿Ya usabas Ciclita? Importar una copia" (también cifrada) lleva directo al inicio.
 - **Idiomas**: español (por defecto) e inglés. Se elige en la bienvenida o en *Ajustes → Idioma*. El nombre de la app instalada y sus atajos también se traducen (`pwa-manifests.ts`: un manifiesto por idioma).
