@@ -3,8 +3,8 @@ import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
 import { endPeriod, restorePeriods, setPillTaken, startPeriod } from '../../db/repo'
 import { useHashAction } from '../../useHashAction'
-import { diffDays, formatDayMonth, formatLong, formatRange, today as todayISO } from '../../domain/dates'
-import type { Prediction, Source } from '../../domain/prediction'
+import { addDays, diffDays, formatDayMonth, formatLong, formatRange, today as todayISO } from '../../domain/dates'
+import { MIN_HISTORY_ALONE, type Prediction, type Source } from '../../domain/prediction'
 import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
@@ -19,6 +19,7 @@ import { periodEndQuestion } from '../../domain/periods'
 import { PillCard } from './PillCard'
 import { MissedPeriodPrompt, PeriodEndPrompt } from './PeriodPrompts'
 import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
+import { openCalendarAt } from '../calendar/calendarFocus'
 
 /** Dirección del atajo "Registrar hoy" (manifest). */
 export const LOG_TODAY_HASH = '#/log'
@@ -296,7 +297,17 @@ function CycleSummary({ p }: { p: Prediction }) {
       ? isPeriod
         ? h.source.historyPeriod
         : h.source.history(p.recentCycles.length)
-      : h.source[s]
+      : s === 'mixed'
+        ? isPeriod
+          ? h.source.mixedPeriod(p.periodPrior)
+          : h.source.mixed(p.recentCycles.length, p.cyclePrior)
+        : h.source[s]
+  // Con pocos ciclos la previsión depende mucho de cada uno: se invita a añadir los
+  // anteriores (el calendario se abre en "Editar periodos", un mes antes del primero).
+  const fewCycles = !!p.lastStart && p.cycleSource !== 'user' && p.recentCycles.length < MIN_HISTORY_ALONE
+  const firstKnown = p.lastStart
+    ? addDays(p.lastStart, -p.recentCycles.reduce((a, b) => a + b, 0) - 20)
+    : null
   return (
     <section aria-labelledby="cycle-title" className="rounded-3xl bg-surface p-5 shadow-sm">
       <h2 id="cycle-title" className="text-lg font-extrabold">
@@ -318,6 +329,14 @@ function CycleSummary({ p }: { p: Prediction }) {
           <dd className="mt-1 text-xs text-muted">{src(p.periodSource, true)}</dd>
         </div>
       </dl>
+      {fewCycles && firstKnown && (
+        <div className="mt-3 rounded-2xl bg-lavender-soft p-4 text-sm">
+          <p>{h.fewCycles}</p>
+          <Button variant="secondary" className="mt-3 w-full" onClick={() => openCalendarAt(firstKnown, { edit: true })}>
+            {h.addEarlier}
+          </Button>
+        </div>
+      )}
     </section>
   )
 }

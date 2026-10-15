@@ -87,3 +87,31 @@ describe('Aviso de copia de seguridad (en el inicio)', () => {
     expect(await screen.findByRole('heading', { name: 'Haz una copia de seguridad' })).toBeInTheDocument()
   })
 })
+
+describe('Tu ciclo: en qué se basa la previsión', () => {
+  it('con un solo ciclo lo combina con el habitual e invita a añadir periodos anteriores', async () => {
+    await db.periods.bulkAdd([
+      { startDate: addDays(today(), -50), endDate: addDays(today(), -46) },
+      { startDate: addDays(today(), -14), endDate: addDays(today(), -10) },
+    ])
+    await setSettings({ backupSnoozedOn: today(), lastBackup: today() })
+    const user = userEvent.setup()
+    render(<Home />)
+
+    // Ciclo de 36 días + 28 habituales → 32.
+    expect(await screen.findByText('Según tu único ciclo registrado, combinado con 28 días')).toBeInTheDocument()
+    expect(screen.getByText('32')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Añadir periodos anteriores' }))
+    expect(location.hash).toBe('#/calendar')
+  })
+
+  it('con tres ciclos o más usa solo los registros y no muestra la invitación', async () => {
+    await db.periods.bulkAdd(
+      [-90, -60, -30, -1].map((d) => ({ startDate: addDays(today(), d), endDate: addDays(today(), d + 4) })),
+    )
+    render(<Home />)
+    expect(await screen.findByText('Según tus últimos 3 ciclos')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Añadir periodos anteriores' })).toBeNull()
+  })
+})
+

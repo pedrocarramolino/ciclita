@@ -65,19 +65,46 @@ describe('predict · con un solo ciclo', () => {
     })
     expect(p.cycleLength).toBe(30)
     expect(p.nextPeriods[0].start).toBe('2026-11-02')
-    // El periodo cerrado sí cuenta: 4 días de historial.
-    expect(p.periodLength).toBe(4)
-    expect(p.periodSource).toBe('history')
+    // El periodo cerrado cuenta, combinado con el habitual (5): mediana de 4 y 5.
+    expect(p.periodLength).toBe(5)
+    expect(p.periodSource).toBe('mixed')
   })
 
-  it('con un ciclo completo (dos periodos), usa su duración', () => {
+  it('con un ciclo completo (dos periodos), lo combina con la duración habitual', () => {
     const p = predict({ periods: periodsFrom(['2026-09-03', '2026-10-03']), today: TODAY })
     expect(p.recentCycles).toEqual([30])
-    expect(p.cycleLength).toBe(30)
-    expect(p.cycleSource).toBe('history')
+    // Mediana de 30 (registrado) y 28 (habitual, sin valor indicado).
+    expect(p.cycleLength).toBe(29)
+    expect(p.cycleSource).toBe('mixed')
+    expect(p.cyclePrior).toBe(28)
     expect(p.variation).toBeNull()
     expect(p.isIrregular).toBe(false)
-    expect(p.nextPeriods[0]).toMatchObject({ start: '2026-11-02', end: '2026-11-06', margin: 0 })
+    expect(p.nextPeriods[0]).toMatchObject({ start: '2026-11-01', end: '2026-11-05', margin: 0 })
+  })
+
+  it('caso real: un ciclo de 36 días con 28 indicados no lleva la previsión hasta el día 36', () => {
+    const periods = [
+      { startDate: '2026-08-19', endDate: '2026-08-24' },
+      { startDate: '2026-09-24', endDate: '2026-09-28' },
+    ]
+    const one = predict({ periods, today: '2026-10-15', userCycleLength: 28 })
+    expect(one.cycleLength).toBe(32)
+    expect(one.nextPeriods[0].start).toBe('2026-10-26')
+
+    // Con dos ciclos (30 y 36) más el indicado: mediana de 28, 30 y 36.
+    const two = predict({ periods: [{ startDate: '2026-07-20', endDate: '2026-07-25' }, ...periods], today: '2026-10-15', userCycleLength: 28 })
+    expect(two.cycleLength).toBe(30)
+    expect(two.cycleSource).toBe('mixed')
+
+    // Con tres ciclos o más, solo cuentan los registros.
+    const three = predict({
+      periods: [{ startDate: '2026-06-20', endDate: '2026-06-25' }, { startDate: '2026-07-20', endDate: '2026-07-25' }, ...periods],
+      today: '2026-10-15',
+      userCycleLength: 28,
+    })
+    expect(three.recentCycles).toEqual([30, 30, 36])
+    expect(three.cycleLength).toBe(30)
+    expect(three.cycleSource).toBe('history')
   })
 })
 

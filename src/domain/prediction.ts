@@ -9,7 +9,8 @@
  *  - Duración del ciclo/periodo: mediana de los últimos 6 registrados (un ciclo
  *    aislado muy largo o muy corto no la desplaza, como sí haría una media). Sin
  *    datos se usa lo que indicó la usuaria en el onboarding y, si eligió "No lo sé",
- *    28 y 5 días.
+ *    28 y 5 días. Con solo 1 o 2 registrados, esos valores cuentan como uno más en la
+ *    mediana: un único ciclo raro no decide por sí solo la próxima fecha.
  *  - Previsión manual: si la usuaria lo elige, se usan siempre las duraciones que indicó
  *    (sin margen), aunque haya historial. Útil si los registros antiguos no son fiables.
  *  - Periodo olvidado: un ciclo que dura 1,7 veces lo habitual o más suele ser un
@@ -39,6 +40,8 @@ export const MIN_CYCLES_FOR_MARGIN = 3
 export const MAX_MARGIN = 6
 /** Un ciclo de esta proporción respecto al habitual o más se toma por periodo olvidado. */
 export const MISSED_PERIOD_RATIO = 1.7
+/** Por debajo de estos registros, la mediana incluye también el valor indicado (o el habitual). */
+export const MIN_HISTORY_ALONE = 3
 
 /**
  * Ciclos fuera de este rango se ignoran en las medias: casi siempre son
@@ -48,7 +51,8 @@ const MIN_CYCLE = 15
 const MAX_CYCLE = 60
 const MAX_PERIOD = 14
 
-export type Source = 'history' | 'user' | 'default'
+/** 'mixed': pocos registros, combinados con el valor indicado o el habitual (`*Prior`). */
+export type Source = 'history' | 'mixed' | 'user' | 'default'
 
 export interface DateRange {
   start: ISODate
@@ -83,6 +87,9 @@ export interface Prediction {
   /** Duración media del periodo en días. */
   periodLength: number
   periodSource: Source
+  /** Valor indicado por la usuaria (o el habitual) con el que se combinan pocos registros. */
+  cyclePrior: number
+  periodPrior: number
   /** Duraciones de los últimos ciclos completos (máx. 6), de más antiguo a más reciente. */
   recentCycles: number[]
   /** Ciclos recientes tan largos que probablemente falta registrar un periodo. */
@@ -220,21 +227,24 @@ export function predict(input: PredictionInput): Prediction {
   const recentPeriods = periodLengths(periods).slice(-HISTORY_SIZE)
 
   const manual = !!input.manual && !!input.userCycleLength
+  const cyclePrior = input.userCycleLength ?? DEFAULT_CYCLE_LENGTH
+  const periodPrior = input.userPeriodLength ?? DEFAULT_PERIOD_LENGTH
+  /** Mediana del historial; con pocos registros, el valor de reserva cuenta como uno más. */
+  const typical = (history: number[], prior: number, fallback: Source): [number, Source] =>
+    history.length >= MIN_HISTORY_ALONE
+      ? [median(history), 'history']
+      : history.length
+        ? [median([...history, prior]), 'mixed']
+        : [prior, fallback]
+
   const [cycleLength, cycleSource]: [number, Source] = manual
     ? [input.userCycleLength!, 'user']
-    : recentCycles.length
-    ? [median(recentCycles), 'history']
-    : input.userCycleLength
-      ? [input.userCycleLength, 'user']
-      : [DEFAULT_CYCLE_LENGTH, 'default']
+    : typical(recentCycles, cyclePrior, input.userCycleLength ? 'user' : 'default')
 
-  const [periodLength, periodSource]: [number, Source] = manual && input.userPeriodLength
-    ? [input.userPeriodLength, 'user']
-    : recentPeriods.length
-    ? [median(recentPeriods), 'history']
-    : input.userPeriodLength
+  const [periodLength, periodSource]: [number, Source] =
+    manual && input.userPeriodLength
       ? [input.userPeriodLength, 'user']
-      : [DEFAULT_PERIOD_LENGTH, 'default']
+      : typical(recentPeriods, periodPrior, input.userPeriodLength ? 'user' : 'default')
 
   // 2. Regularidad.
   const variation =
@@ -246,6 +256,8 @@ export function predict(input: PredictionInput): Prediction {
     cycleSource,
     periodLength,
     periodSource,
+    cyclePrior,
+    periodPrior,
     recentCycles,
     suspectedMissed,
     variation,

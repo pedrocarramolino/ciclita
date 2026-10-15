@@ -755,7 +755,13 @@ export const es = {
       historyPeriod: 'Según tus periodos registrados',
       user: 'El valor que indicaste',
       default: 'Valor habitual mientras no haya datos',
+      mixed: (n: number, prior: number) =>
+        `Según ${n === 1 ? 'tu único ciclo registrado' : `tus ${n} ciclos registrados`}, combinado con ${prior} días`,
+      mixedPeriod: (prior: number) => `Según tus periodos registrados, combinado con ${prior} días`,
     },
+    fewCycles:
+      'Con menos de 3 ciclos registrados, la previsión combina tus datos con la duración habitual y puede no coincidir con otras apps. Si recuerdas tus periodos anteriores, añádelos y será más precisa.',
+    addEarlier: 'Añadir periodos anteriores',
     estimates:
       'Las predicciones son estimaciones basadas en tus registros y pueden no coincidir con tu ciclo real.',
     stale: 'Hace tiempo que no registras un periodo, así que estas fechas son menos fiables.',

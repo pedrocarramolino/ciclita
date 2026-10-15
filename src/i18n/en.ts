@@ -760,7 +760,13 @@ export const en: Messages = {
       historyPeriod: 'Based on your logged periods',
       user: 'The value you entered',
       default: 'Typical value until there is data',
+      mixed: (n, prior) =>
+        `Based on ${n === 1 ? 'your only logged cycle' : `your ${n} logged cycles`}, combined with ${prior} days`,
+      mixedPeriod: (prior) => `Based on your logged periods, combined with ${prior} days`,
     },
+    fewCycles:
+      'With fewer than 3 logged cycles, the prediction combines your data with a typical length and may not match other apps. If you remember your earlier periods, add them for a more accurate prediction.',
+    addEarlier: 'Add earlier periods',
     estimates: 'Predictions are estimates based on your logs and may not match your actual cycle.',
     stale: "You haven't logged a period in a while, so these dates are less reliable.",
   },
