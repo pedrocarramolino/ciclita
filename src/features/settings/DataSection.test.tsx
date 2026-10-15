@@ -4,7 +4,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Dexie from 'dexie'
-import { exportJSON } from '../../db/data'
+import { exportCSV } from '../../db/data'
 import { db } from '../../db/db'
 import { getSettings } from '../../db/settings'
 import { today } from '../../domain/dates'
@@ -31,56 +31,66 @@ beforeEach(() => {
 
 const fileInput = (container: HTMLElement) => container.querySelector<HTMLInputElement>('input[type="file"]')!
 
-describe('Tus datos', () => {
-  it('importa una copia JSON tras confirmar y reemplaza los registros', async () => {
-    // Copia hecha desde otra base de datos con un periodo y un día.
-    await db.periods.add({ startDate: '2026-09-01', endDate: '2026-09-04' })
-    await db.days.put({ date: '2026-09-02', mood: 'calm', updatedAt: 1 })
-    const json = await exportJSON()
+describe('Exportar e importar (CSV)', () => {
+  it('solo ofrece exportar e importar registros en CSV', () => {
+    render(<DataSection lastBackup={null} />)
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'Exportar registros (CSV)',
+      'Importar registros (CSV)',
+    ])
+  })
+
+  it('exportar descarga el CSV y apunta la fecha de la copia', async () => {
+    await db.periods.add({ startDate: '2026-09-01', endDate: '2026-09-02' })
+    const user = userEvent.setup()
+    render(<DataSection lastBackup={null} />)
+    expect(screen.getByText('Aún no has hecho ninguna copia.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Exportar registros (CSV)' }))
+    await waitFor(() => expect(downloads).toEqual([`ciclita-${today()}.csv`]))
+    expect(await blobs[0].text()).toContain('2026-09-01')
+    await waitFor(async () => expect((await getSettings()).lastBackup).toBe(today()))
+  })
+
+  it('importa un CSV tras confirmar y reemplaza los registros', async () => {
+    // CSV hecho con un periodo y un día con nota.
+    await db.periods.add({ startDate: '2026-09-01', endDate: '2026-09-02' })
+    await db.days.put({ date: '2026-09-02', notes: 'Hola', updatedAt: 1 })
+    const csv = await exportCSV()
     await db.periods.clear()
     await db.days.clear()
     await db.periods.add({ startDate: '2020-01-01', endDate: '2020-01-03' }) // se reemplaza
 
     const user = userEvent.setup()
     const { container } = render(<DataSection lastBackup={null} />)
-    await user.upload(fileInput(container), new File([json], 'copia.json', { type: 'application/json' }))
+    expect(fileInput(container)).toHaveAttribute('accept', '.csv,text/csv')
+    await user.upload(fileInput(container), new File([csv], 'registros.csv', { type: 'text/csv' }))
 
     const dialog = within(await screen.findByRole('dialog'))
-    expect(dialog.getByText('copia.json')).toBeInTheDocument()
+    expect(dialog.getByText('registros.csv')).toBeInTheDocument()
     await user.click(dialog.getByRole('button', { name: 'Continuar' }))
 
-    expect(await screen.findByText('Importado: 1 periodo y 1 día con registro.')).toBeInTheDocument()
+    expect(await screen.findByText(/^Importado: 1 periodo/)).toBeInTheDocument()
     expect((await db.periods.toArray()).map((p) => p.startDate)).toEqual(['2026-09-01'])
-    expect(await db.days.get('2026-09-02')).toMatchObject({ mood: 'calm' })
+    expect(await db.days.get('2026-09-02')).toMatchObject({ notes: 'Hola' })
   })
 
   it('cancelar la importación no cambia nada', async () => {
     await db.periods.add({ startDate: '2020-01-01', endDate: '2020-01-03' })
     const user = userEvent.setup()
     const { container } = render(<DataSection lastBackup={null} />)
-    await user.upload(fileInput(container), new File(['{}'], 'copia.json', { type: 'application/json' }))
+    await user.upload(fileInput(container), new File(['fecha'], 'registros.csv', { type: 'text/csv' }))
 
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
     expect(await db.periods.count()).toBe(1)
   })
 
-  it('un archivo que no es una copia muestra el error', async () => {
-    const user = userEvent.setup()
+  it('un archivo que no es CSV no se importa', async () => {
+    const user = userEvent.setup({ applyAccept: false })
     const { container } = render(<DataSection lastBackup={null} />)
-    await user.upload(fileInput(container), new File(['hola'], 'notas.json', { type: 'application/json' }))
-    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Continuar' }))
-
-    expect(await screen.findByText(/No se pudo importar\. El archivo no es un JSON válido\./)).toBeInTheDocument()
-  })
-
-  it('exportar descarga el archivo y apunta la fecha de la copia', async () => {
-    const user = userEvent.setup()
-    render(<DataSection lastBackup={null} />)
-    expect(screen.getByText('Aún no has hecho ninguna copia.')).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Exportar copia completa (JSON)' }))
-    await waitFor(() => expect(downloads).toEqual([`ciclita-${today()}.json`]))
-    await waitFor(async () => expect((await getSettings()).lastBackup).toBe(today()))
+    await user.upload(fileInput(container), new File(['{}'], 'copia.json', { type: 'application/json' }))
+    expect(await screen.findByText('No se pudo importar. Elige un archivo CSV exportado de Ciclita.')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('Tu cuenta → borrar todos los datos pide dos confirmaciones y escribir BORRAR', async () => {
@@ -103,46 +113,4 @@ describe('Tus datos', () => {
     expect(deleteCloudData).toHaveBeenCalledWith('test-uid', { withProfile: false })
   })
 
-  it('exporta una copia cifrada con contraseña y la vuelve a importar', async () => {
-    await db.periods.add({ startDate: '2026-09-01', endDate: '2026-09-04' })
-    await db.days.put({ date: '2026-09-02', notes: 'Muy privado', updatedAt: 1 })
-    const user = userEvent.setup()
-    const { container } = render(<DataSection lastBackup={null} />)
-
-    await user.click(screen.getByRole('button', { name: 'Exportar copia cifrada con contraseña' }))
-    let dialog = within(await screen.findByRole('dialog', { name: 'Copia cifrada con contraseña' }))
-    await user.type(dialog.getByLabelText('Contraseña'), 'corta')
-    await user.click(dialog.getByRole('button', { name: 'Cifrar y exportar' }))
-    expect(dialog.getByRole('alert')).toHaveTextContent('Usa al menos 8 caracteres.')
-
-    await user.clear(dialog.getByLabelText('Contraseña'))
-    await user.type(dialog.getByLabelText('Contraseña'), 'luna llena 2026')
-    await user.type(dialog.getByLabelText('Repite la contraseña'), 'luna llena 2026')
-    await user.click(dialog.getByRole('button', { name: 'Cifrar y exportar' }))
-
-    dialog = within(await screen.findByRole('dialog', { name: 'Copia cifrada lista' }, { timeout: 5000 }))
-    await user.click(dialog.getByRole('button', { name: 'Guardar copia' }))
-    await waitFor(() => expect(downloads).toEqual([`ciclita-${today()}-cifrada.json`]))
-    const text = await blobs[0].text()
-    expect(text).toContain('ciclita-encrypted-backup')
-    expect(text).not.toContain('Muy privado')
-    await waitFor(async () => expect((await getSettings()).lastBackup).toBe(today()))
-
-    // Se borran los datos y se importa la copia cifrada.
-    await db.periods.clear()
-    await db.days.clear()
-    await user.upload(fileInput(container), new File([text], 'copia-cifrada.json', { type: 'application/json' }))
-    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Continuar' }))
-
-    dialog = within(await screen.findByRole('dialog', { name: 'Esta copia está cifrada' }))
-    await user.type(dialog.getByLabelText('Contraseña'), 'otra contraseña')
-    await user.click(dialog.getByRole('button', { name: 'Descifrar e importar' }))
-    await waitFor(() => expect(dialog.getByRole('alert')).toHaveTextContent('Contraseña incorrecta.'), { timeout: 5000 })
-
-    await user.clear(dialog.getByLabelText('Contraseña'))
-    await user.type(dialog.getByLabelText('Contraseña'), 'luna llena 2026')
-    await user.click(dialog.getByRole('button', { name: 'Descifrar e importar' }))
-    expect(await screen.findByText('Importado: 1 periodo y 1 día con registro.', {}, { timeout: 5000 })).toBeInTheDocument()
-    expect(await db.days.get('2026-09-02')).toMatchObject({ notes: 'Muy privado' })
-  }, 20_000)
 })

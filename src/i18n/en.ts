@@ -177,7 +177,7 @@ export const en: Messages = {
       pinOn: 'PIN on',
       pinOff: 'No PIN',
       biometricOn: 'Face ID or fingerprint',
-      backupSummary: 'Backup as JSON or CSV',
+      backupSummary: 'Your logs as CSV',
       report: 'Report for your doctor',
       reportSummary: 'PDF to share, download or print',
     },
@@ -275,11 +275,12 @@ export const en: Messages = {
     pinNote: "The PIN keeps prying eyes away, but your data isn't encrypted: it doesn't replace your phone lock.",
     data: 'Your data',
     dataHint:
-      'Your logs are already saved to your account. Here you can download a copy to keep yourself or take to another app, or import one you have.',
+      'Your logs are already saved to your account. Here you can download them as CSV (opens in Excel or Numbers) or import a CSV exported from Ciclita.',
     exportJSON: 'Export full backup (JSON)',
     exportEncrypted: 'Export password-protected backup',
     exportCSV: 'Export logs (CSV)',
-    import: 'Import backup (JSON or CSV)',
+    import: 'Import logs (CSV)',
+    importNotCsv: 'Choose a CSV file exported from Ciclita.',
     importConfirmTitle: 'Import this file?',
     importConfirmBody: 'Your current periods and logs will be replaced by those in the file. We recommend exporting a backup first.',
     importDone: (p, d) =>
@@ -557,7 +558,7 @@ export const en: Messages = {
     encrypting: 'Encrypting your data…',
     decrypting: 'Decrypting your data…',
     failed: "Couldn't complete. Your data is unchanged.",
-    exportsNotEncrypted: "The full backup and the CSV aren't encrypted. If you'll keep the backup off your phone, use the password-protected backup.",
+    exportsNotEncrypted: "The CSV isn't encrypted: keep it somewhere safe.",
   },
   notifications: {
     discreetTitle: 'Ciclita',

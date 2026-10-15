@@ -150,7 +150,7 @@ export const es = {
       pinOn: 'PIN activado',
       pinOff: 'Sin PIN',
       biometricOn: 'Face ID o huella',
-      backupSummary: 'Copia de seguridad en JSON o CSV',
+      backupSummary: 'Tus registros en CSV',
       report: 'Informe para el médico',
       reportSummary: 'PDF para compartir, descargar o imprimir',
     },
@@ -250,11 +250,12 @@ export const es = {
       'El PIN evita miradas indiscretas, pero tus datos no van cifrados: no sustituye el bloqueo de tu teléfono.',
     data: 'Tus datos',
     dataHint:
-      'Tus registros ya se guardan en tu cuenta. Aquí puedes descargar una copia para guardarla tú o llevarla a otra app, o importar una que tengas.',
+      'Tus registros ya se guardan en tu cuenta. Aquí puedes descargarlos en CSV (se abre con Excel o Numbers) o importar un CSV exportado de Ciclita.',
     exportJSON: 'Exportar copia completa (JSON)',
     exportEncrypted: 'Exportar copia cifrada con contraseña',
     exportCSV: 'Exportar registros (CSV)',
-    import: 'Importar copia (JSON o CSV)',
+    import: 'Importar registros (CSV)',
+    importNotCsv: 'Elige un archivo CSV exportado de Ciclita.',
     importConfirmTitle: '¿Importar este archivo?',
     importConfirmBody:
       'Se reemplazarán tus periodos y registros actuales por los del archivo. Te recomendamos exportar antes una copia.',
@@ -539,7 +540,7 @@ export const es = {
     encrypting: 'Cifrando tus datos…',
     decrypting: 'Descifrando tus datos…',
     failed: 'No se pudo completar. Tus datos siguen como estaban.',
-    exportsNotEncrypted: 'La copia completa y el CSV no van cifrados. Si vas a guardar la copia fuera del móvil, usa la copia cifrada con contraseña.',
+    exportsNotEncrypted: 'El CSV no va cifrado: guárdalo en un lugar seguro.',
   },
   notifications: {
     discreetTitle: 'Ciclita',

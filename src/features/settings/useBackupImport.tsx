@@ -15,7 +15,7 @@ const MAX_IMPORT_BYTES = 10 * 1024 * 1024
  * Devuelve `open()` para abrir el selector, el mensaje de estado y la interfaz
  * (input oculto y diálogos) que hay que pintar.
  */
-export function useBackupImport({ confirmReplace }: { confirmReplace: boolean }): {
+export function useBackupImport({ confirmReplace, csvOnly = false }: { confirmReplace: boolean; csvOnly?: boolean }): {
   open: () => void
   status: string
   ui: ReactNode
@@ -70,7 +70,7 @@ export function useBackupImport({ confirmReplace }: { confirmReplace: boolean })
       <input
         ref={fileRef}
         type="file"
-        accept=".json,.csv,application/json,text/csv"
+        accept={csvOnly ? '.csv,text/csv' : '.json,.csv,application/json,text/csv'}
         className="sr-only"
         tabIndex={-1}
         aria-hidden="true"
@@ -78,6 +78,8 @@ export function useBackupImport({ confirmReplace }: { confirmReplace: boolean })
           const f = ev.target.files?.[0]
           ev.target.value = ''
           if (!f) return
+          // Ajustes solo importa CSV (algunos móviles no respetan "accept").
+          if (csvOnly && !/\.csv$/i.test(f.name)) return setStatus(s.importError(s.importNotCsv))
           if (confirmReplace) setPending(f)
           else void doImport(f)
         }}
