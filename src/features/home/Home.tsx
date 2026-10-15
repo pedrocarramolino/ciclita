@@ -13,8 +13,6 @@ import { UndoToast } from '../../components/UndoToast'
 import { getSettings, setSettings } from '../../db/settings'
 import { perimenopauseInfo, pregnancyInfo } from '../../domain/modes'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { BackupNudgeCard } from './BackupNudgeCard'
-import { backupNudge } from '../../domain/backupNudge'
 import { periodEndQuestion } from '../../domain/periods'
 import { PillCard } from './PillCard'
 import { MissedPeriodPrompt, PeriodEndPrompt } from './PeriodPrompts'
@@ -43,23 +41,12 @@ export function Home() {
   const today = todayISO()
   const periodLength = p?.periodLength
   const modeData = useLiveQuery(async () => {
-    const [settings, periods, firstDay] = await Promise.all([
-      getSettings(),
-      db.periods.toArray(),
-      db.days.orderBy('date').first(),
-    ])
-    const oldest = [periods.map((x) => x.startDate).sort()[0], firstDay?.date].filter((d): d is string => !!d).sort()[0]
+    const [settings, periods] = await Promise.all([getSettings(), db.periods.toArray()])
     return {
       mode: settings.mode,
       pregnancyStart: settings.pregnancyStart,
       periods,
       periodEnd: periodLength ? periodEndQuestion(periods, periodLength, today, settings.periodEndSnooze) : null,
-      backup: backupNudge({
-        oldestData: oldest ?? null,
-        lastBackup: settings.lastBackup,
-        snoozedOn: settings.backupSnoozedOn,
-        today,
-      }),
     }
   }, [periodLength, today])
   const [undo, setUndo] = useState<Undoable | null>(null)
@@ -137,8 +124,6 @@ export function Home() {
         <PeriodEndPrompt question={modeData.periodEnd} today={today} onEnded={undoPeriods(h.endedToast)} />
       ) : mode === 'cycle' && p.suspectedMissed.length ? (
         <MissedPeriodPrompt prediction={p} />
-      ) : modeData.backup ? (
-        <BackupNudgeCard nudge={modeData.backup} onSaved={() => setUndo({ message: t.backupNudge.done })} />
       ) : null}
 
       <div className="grid gap-3">

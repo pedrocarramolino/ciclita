@@ -102,6 +102,13 @@ describe('accesibilidad (axe)', () => {
     ['estadísticas', '#/stats', 'Temperatura basal'],
     ['informe', '#/report', 'Informe para tu médico'],
     ['ajustes', '#/settings', 'Tus datos'],
+    ['ajustes · tu ciclo', '#/settings/cycle', 'Modo de la app'],
+    ['ajustes · qué registras', '#/settings/tracking', 'Píldora anticonceptiva'],
+    ['ajustes · recordatorios', '#/settings/reminders', 'Recordatorios'],
+    ['ajustes · seguridad', '#/settings/security', 'Bloqueo con PIN'],
+    ['ajustes · exportar e importar', '#/settings/backup', 'Exportar copia completa (JSON)'],
+    ['ajustes · apariencia', '#/settings/appearance', 'Tema'],
+    ['ajustes · tu cuenta', '#/settings/account', 'Cerrar sesión'],
     ['buscar', '#/search', 'Buscar'],
   ])('%s', async (_name, hash, text) => {
     await seed()
@@ -133,14 +140,15 @@ describe('accesibilidad (axe)', () => {
 
   it('diálogos de ajustes: copia cifrada y borrar datos', async () => {
     await seed()
-    location.hash = '#/settings'
+    location.hash = '#/settings/backup'
     const user = userEvent.setup()
     render(<App encrypted={false} />)
     await user.click(await screen.findByRole('button', { name: 'Exportar copia cifrada con contraseña' }))
     await screen.findByRole('dialog')
     await expectNoViolations()
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
-    await user.click(screen.getByRole('button', { name: 'Borrar todos mis datos' }))
+    location.hash = '#/settings/account'
+    await user.click(await screen.findByRole('button', { name: 'Borrar todos mis datos' }))
     await screen.findByRole('dialog')
     await expectNoViolations()
   })

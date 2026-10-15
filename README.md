@@ -6,6 +6,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 
 ## Funcionalidades
 
+- **Ajustes** como menú por apartados, cada uno en su página (`#/settings/<apartado>`): Tu cuenta; Tu ciclo (previsión y modo), Qué registras y Recordatorios; Privacidad y seguridad; Tus datos (Exportar e importar, Informe para el médico); Apariencia e idioma. Cada fila resume su estado ("3 activados", "PIN activado · Face ID o huella"…).
 - **Cuenta obligatoria** (Firebase): registro con nombre, apellidos, correo, contraseña (con confirmación e indicador de seguridad), fecha de nacimiento (mínimo 14 años), país opcional, aceptación de la política de privacidad, consentimiento explícito para los datos de salud y novedades por correo opcional. Inicio de sesión, "¿Has olvidado tu contraseña?" (correo de Firebase) y correo de confirmación. En *Ajustes → Tu cuenta*: reenviar la confirmación, cerrar sesión (borra los datos del dispositivo; siguen en la cuenta) y eliminar la cuenta (pide la contraseña y borra todo de la nube y del dispositivo).
   - **Sincronización**: la app sigue trabajando con su base de datos local (funciona sin conexión) y sube cada cambio a la cuenta; al abrirla, al volver a ella y cada 5 minutos descarga los cambios de otros dispositivos. Gana el cambio más reciente de cada día. Al iniciar sesión en un dispositivo que ya tenía datos se juntan con los de la cuenta.
   - Con el PIN olvidado, "Cerrar sesión en este dispositivo" borra los datos locales y el PIN; al volver a entrar se recuperan de la cuenta.
@@ -175,9 +176,8 @@ En *Ajustes → Tus datos*:
 - **CSV**: un día por fila, separado por `;` (se abre directamente en Excel en español), con la temperatura, el moco, las relaciones y el peso. La cabecera y los textos van en el idioma de la app.
 - **Importar** acepta ambos formatos (y CSV en español o en inglés) y **reemplaza** los datos actuales.
 
-Como los datos solo viven en el dispositivo, si se borran los datos del navegador o se desinstala la app se pierden: haz copias de vez en cuando.
+Los registros se guardan en la cuenta, así que borrar los datos del navegador o desinstalar la app no los pierde: al volver a iniciar sesión se recuperan. Las copias sirven para guardarlas tú o llevarlas a otra app.
 
-Para reducir ese riesgo:
-- La app pide al navegador **almacenamiento persistente**, para que no borre los datos al quedarse sin espacio. El estado se ve en *Ajustes → Tus datos → Protección frente al borrado*.
-- *Ajustes → Tus datos* muestra la fecha de la última copia, y el inicio sugiere hacer una si nunca se ha hecho tras un mes de uso o si la última tiene más de 60 días.
+- La app pide igualmente al navegador **almacenamiento persistente**, para que no borre los datos locales al quedarse sin espacio.
+- *Ajustes → Exportar e importar* muestra la fecha de la última copia.
 - Si la app falla al abrirse, muestra una pantalla con **Exportar mis datos** en lugar de quedarse en blanco.

@@ -13,6 +13,7 @@ import { Button } from '../../components/Button'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { t } from '../../i18n'
 import { PrivacyPolicy } from '../auth/PrivacyPolicy'
+import { DeleteAllFlow } from './DeleteAllFlow'
 import { Section } from './Section'
 
 /** Ajustes → Tu cuenta: datos de la cuenta, confirmar correo, cerrar sesión y eliminarla. */
@@ -20,6 +21,7 @@ export function AccountSection({ user }: { user: AccountUser }) {
   const [status, setStatus] = useState('')
   const [confirmLogout, setConfirmLogout] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [wiping, setWiping] = useState(false)
   const [privacy, setPrivacy] = useState(false)
   const sync = useSyncStatus()
   const a = t.account
@@ -79,9 +81,14 @@ export function AccountSection({ user }: { user: AccountUser }) {
           {t.privacy.title}
         </Button>
       </div>
-      <Button variant="ghost" className="w-full text-danger" onClick={() => setDeleting(true)}>
-        {a.deleteAccount}
-      </Button>
+      <div className="grid gap-2 border-t border-line pt-4">
+        <Button variant="ghost" className="w-full text-danger" onClick={() => setWiping(true)}>
+          {t.settings.deleteAll}
+        </Button>
+        <Button variant="ghost" className="w-full text-danger" onClick={() => setDeleting(true)}>
+          {a.deleteAccount}
+        </Button>
+      </div>
 
       {confirmLogout && (
         <ConfirmDialog
@@ -101,6 +108,7 @@ export function AccountSection({ user }: { user: AccountUser }) {
         </ConfirmDialog>
       )}
       {deleting && <DeleteAccountDialog onCancel={() => setDeleting(false)} />}
+      {wiping && <DeleteAllFlow onCancel={() => setWiping(false)} />}
     </Section>
   )
 }

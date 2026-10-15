@@ -8,6 +8,8 @@ import { exportJSON } from '../../db/data'
 import { db } from '../../db/db'
 import { getSettings } from '../../db/settings'
 import { today } from '../../domain/dates'
+import { deleteCloudData } from '../../account/sync'
+import { AccountSection } from './AccountSection'
 import { DataSection } from './DataSection'
 
 /** Lo que el navegador "descarga" (jsdom no descarga archivos). */
@@ -81,11 +83,11 @@ describe('Tus datos', () => {
     await waitFor(async () => expect((await getSettings()).lastBackup).toBe(today()))
   })
 
-  it('borrar todos los datos pide dos confirmaciones y escribir BORRAR', async () => {
+  it('Tu cuenta → borrar todos los datos pide dos confirmaciones y escribir BORRAR', async () => {
     await db.periods.add({ startDate: '2026-09-01', endDate: '2026-09-04' })
     vi.spyOn(console, 'error').mockImplementation(() => {}) // jsdom no recarga la página
     const user = userEvent.setup()
-    render(<DataSection lastBackup={null} />)
+    render(<AccountSection user={{ uid: 'test-uid', email: 'ana@correo.com', emailVerified: true, displayName: 'Ana' }} />)
 
     await user.click(screen.getByRole('button', { name: 'Borrar todos mis datos' }))
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Continuar' }))
@@ -96,8 +98,9 @@ describe('Tus datos', () => {
     await user.type(second.getByLabelText('Escribe BORRAR'), 'borrar')
     await user.click(confirm)
 
-    // La base de datos se elimina entera (la app recarga después).
+    // Primero los registros de la cuenta (sin el perfil) y luego el dispositivo entero.
     await waitFor(async () => expect(await Dexie.exists(db.name)).toBe(false))
+    expect(deleteCloudData).toHaveBeenCalledWith('test-uid', { withProfile: false })
   })
 
   it('exporta una copia cifrada con contraseña y la vuelve a importar', async () => {

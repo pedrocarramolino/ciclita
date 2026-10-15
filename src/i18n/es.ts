@@ -131,6 +131,29 @@ export const es = {
   },
   settings: {
     title: 'Ajustes',
+    pages: {
+      account: 'Tu cuenta',
+      cycle: 'Tu ciclo',
+      tracking: 'Qué registras',
+      reminders: 'Recordatorios',
+      security: 'Privacidad y seguridad',
+      backup: 'Exportar e importar',
+      appearance: 'Apariencia e idioma',
+    },
+    menu: {
+      groups: { cycle: 'Tu ciclo', privacy: 'Privacidad', data: 'Tus datos', app: 'App' },
+      predictionAuto: 'previsión automática',
+      predictionManual: 'previsión manual',
+      trackingBasic: 'Lo básico: periodo, síntomas, ánimo y notas',
+      remindersOn: (n: number) => `${n} ${n === 1 ? 'activado' : 'activados'}`,
+      remindersOff: 'Desactivados',
+      pinOn: 'PIN activado',
+      pinOff: 'Sin PIN',
+      biometricOn: 'Face ID o huella',
+      backupSummary: 'Copia de seguridad en JSON o CSV',
+      report: 'Informe para el médico',
+      reportSummary: 'PDF para compartir, descargar o imprimir',
+    },
     cycleSection: 'Tu ciclo',
     cycleHint: 'Se usan mientras no haya suficientes registros. Con tus registros, las duraciones se calculan solas.',
     cycleHintManual: 'Las previsiones usan siempre estas duraciones.',
@@ -226,7 +249,8 @@ export const es = {
     pinNote:
       'El PIN evita miradas indiscretas, pero tus datos no van cifrados: no sustituye el bloqueo de tu teléfono.',
     data: 'Tus datos',
-    dataHint: 'Todo se guarda solo en este dispositivo. Haz copias de seguridad de vez en cuando.',
+    dataHint:
+      'Tus registros ya se guardan en tu cuenta. Aquí puedes descargar una copia para guardarla tú o llevarla a otra app, o importar una que tengas.',
     exportJSON: 'Exportar copia completa (JSON)',
     exportEncrypted: 'Exportar copia cifrada con contraseña',
     exportCSV: 'Exportar registros (CSV)',
@@ -258,7 +282,7 @@ export const es = {
     deleteConfirm: 'Borrar definitivamente',
     about: 'Acerca de',
     aboutBody:
-      'Sin cuentas, sin analítica ni rastreadores. Tus registros nunca salen de tu dispositivo salvo que tú los exportes. Los recordatorios, si los activas, se programan en un servidor (Upstash) con su hora y su texto.',
+      'Sin publicidad, analítica ni rastreadores. Tus registros se guardan en tu cuenta (servidores de la Unión Europea) y en este dispositivo para usar la app sin conexión. Los recordatorios se programan en un servidor (Upstash) solo con su hora y su texto.',
     saved: 'Guardado',
   },
   encryptedBackup: {
@@ -862,7 +886,7 @@ export const es = {
     deleteAccount: 'Eliminar mi cuenta',
     deleteTitle: 'Eliminar tu cuenta',
     deleteBody:
-      'Se borrarán para siempre tu cuenta y todos tus datos, de la nube y de este dispositivo. Si quieres conservarlos, descarga antes una copia en Tus datos.',
+      'Se borrarán para siempre tu cuenta y todos tus datos, de la nube y de este dispositivo. Si quieres conservarlos, descarga antes una copia en Ajustes → Exportar e importar.',
     deletePassword: 'Escribe tu contraseña para confirmar',
     deleteConfirm: 'Eliminar para siempre',
     deleting: 'Eliminando…',
@@ -918,7 +942,7 @@ export const es = {
       {
         h: 'Tus derechos',
         p: [
-          'Puedes acceder a tus datos y llevártelos (Ajustes → Tus datos → descargar copia), corregirlos desde la app y suprimirlos (Ajustes → Tu cuenta → Eliminar mi cuenta).',
+          'Puedes acceder a tus datos y llevártelos (Ajustes → Exportar e importar), corregirlos desde la app y suprimirlos (Ajustes → Tu cuenta → Eliminar mi cuenta).',
           'También puedes oponerte o pedir la limitación del tratamiento escribiendo a pedrocarramolino34@gmail.com, y reclamar ante la Agencia Española de Protección de Datos (www.aepd.es).',
         ],
       },

@@ -1,14 +1,22 @@
-import { useId, type ReactNode } from 'react'
+import { useContext, useId, type ReactNode } from 'react'
+import { PageTitle } from './pageTitle'
 
 export function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   const id = useId()
+  const showTitle = useContext(PageTitle) !== title
   return (
-    <section aria-labelledby={id} className="rounded-3xl bg-surface p-5 shadow-sm">
-      <h2 id={id} className="text-lg font-extrabold">
-        {title}
-      </h2>
-      {hint && <p className="mt-1 text-sm text-muted">{hint}</p>}
-      <div className="mt-4 space-y-5">{children}</div>
+    <section
+      aria-labelledby={showTitle ? id : undefined}
+      aria-label={showTitle ? undefined : title}
+      className="rounded-3xl bg-surface p-5 shadow-sm"
+    >
+      {showTitle && (
+        <h2 id={id} className="mb-1 text-lg font-extrabold">
+          {title}
+        </h2>
+      )}
+      {hint && <p className="text-sm text-muted">{hint}</p>}
+      <div className={`${showTitle || hint ? 'mt-4' : ''} space-y-5`}>{children}</div>
     </section>
   )
 }

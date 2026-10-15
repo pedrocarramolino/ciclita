@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import '../../test/ui'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { db } from '../../db/db'
-import { getSettings, setSettings } from '../../db/settings'
+import { setSettings } from '../../db/settings'
 import { addDays, today } from '../../domain/dates'
 import { Home } from './Home'
 import { PillCard } from './PillCard'
@@ -51,40 +51,22 @@ describe('Píldora de hoy', () => {
   })
 })
 
-describe('Aviso de copia de seguridad (en el inicio)', () => {
-  it('aparece tras un mes de datos sin copia y "Más tarde" lo oculta', async () => {
-    await db.periods.add({ startDate: addDays(today(), -40), endDate: addDays(today(), -36) })
-    const user = userEvent.setup()
-    render(<Home />)
-
-    expect(await screen.findByRole('heading', { name: 'Haz una copia de seguridad' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Más tarde' }))
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Haz una copia de seguridad' })).toBeNull())
-    expect((await getSettings()).backupSnoozedOn).toBe(today())
-  })
-
-  it('no aparece con una copia reciente', async () => {
-    await db.periods.add({ startDate: addDays(today(), -40), endDate: addDays(today(), -36) })
-    await setSettings({ lastBackup: addDays(today(), -5) })
-    render(<Home />)
-    await screen.findByRole('button', { name: 'Registrar hoy' })
-    expect(screen.queryByRole('heading', { name: 'Haz una copia de seguridad' })).toBeNull()
-  })
-
+describe('Preguntas del inicio', () => {
   it('solo se ve una pregunta a la vez: primero "¿Ha terminado tu periodo?"', async () => {
-    // Sin copia desde hace más de un mes y un periodo en curso desde hace 9 días.
+    // Un ciclo larguísimo (¿periodo olvidado?) y un periodo en curso desde hace 9 días.
+    await setSettings({ cycleLength: 28 })
     await db.periods.bulkAdd([
-      { startDate: addDays(today(), -45), endDate: addDays(today(), -41) },
+      { startDate: addDays(today(), -60), endDate: addDays(today(), -56) },
       { startDate: addDays(today(), -8), endDate: null },
     ])
     const user = userEvent.setup()
     render(<Home />)
     expect(await screen.findByRole('heading', { name: '¿Ha terminado tu periodo?' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Haz una copia de seguridad' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: '¿Se te olvidó registrar un periodo?' })).toBeNull()
 
     // Al responder, sale la siguiente.
     await user.click(screen.getByRole('button', { name: 'Todavía no' }))
-    expect(await screen.findByRole('heading', { name: 'Haz una copia de seguridad' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '¿Se te olvidó registrar un periodo?' })).toBeInTheDocument()
   })
 })
 
@@ -94,7 +76,6 @@ describe('Tu ciclo: en qué se basa la previsión', () => {
       { startDate: addDays(today(), -50), endDate: addDays(today(), -46) },
       { startDate: addDays(today(), -14), endDate: addDays(today(), -10) },
     ])
-    await setSettings({ backupSnoozedOn: today(), lastBackup: today() })
     const user = userEvent.setup()
     render(<Home />)
 

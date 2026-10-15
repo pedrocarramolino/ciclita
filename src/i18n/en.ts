@@ -158,6 +158,29 @@ export const en: Messages = {
   },
   settings: {
     title: 'Settings',
+    pages: {
+      account: 'Your account',
+      cycle: 'Your cycle',
+      tracking: 'What you track',
+      reminders: 'Reminders',
+      security: 'Privacy and security',
+      backup: 'Export & import',
+      appearance: 'Appearance & language',
+    },
+    menu: {
+      groups: { cycle: 'Your cycle', privacy: 'Privacy', data: 'Your data', app: 'App' },
+      predictionAuto: 'automatic prediction',
+      predictionManual: 'manual prediction',
+      trackingBasic: 'The basics: period, symptoms, mood and notes',
+      remindersOn: (n) => `${n} on`,
+      remindersOff: 'Off',
+      pinOn: 'PIN on',
+      pinOff: 'No PIN',
+      biometricOn: 'Face ID or fingerprint',
+      backupSummary: 'Backup as JSON or CSV',
+      report: 'Report for your doctor',
+      reportSummary: 'PDF to share, download or print',
+    },
     cycleSection: 'Your cycle',
     cycleHint: "Used until there are enough logs. Once you've logged periods, lengths are calculated automatically.",
     cycleHintManual: 'Predictions always use these lengths.',
@@ -251,7 +274,8 @@ export const en: Messages = {
     pinRemoved: 'PIN removed.',
     pinNote: "The PIN keeps prying eyes away, but your data isn't encrypted: it doesn't replace your phone lock.",
     data: 'Your data',
-    dataHint: 'Everything is stored only on this device. Make a backup every now and then.',
+    dataHint:
+      'Your logs are already saved to your account. Here you can download a copy to keep yourself or take to another app, or import one you have.',
     exportJSON: 'Export full backup (JSON)',
     exportEncrypted: 'Export password-protected backup',
     exportCSV: 'Export logs (CSV)',
@@ -282,7 +306,7 @@ export const en: Messages = {
     deleteConfirm: 'Delete permanently',
     about: 'About',
     aboutBody:
-      'No accounts, no analytics, no trackers. Your logs never leave your device unless you export them. Reminders, if you turn them on, are scheduled on a server (Upstash) with their time and text.',
+      'No ads, analytics or trackers. Your logs are saved to your account (servers in the European Union) and on this device so the app works offline. Reminders are scheduled on a server (Upstash) with only their time and text.',
     saved: 'Saved',
   },
   encryptedBackup: {
@@ -865,7 +889,7 @@ export const en: Messages = {
     deleteAccount: 'Delete my account',
     deleteTitle: 'Delete your account',
     deleteBody:
-      'Your account and all your data will be deleted forever, from the cloud and from this device. If you want to keep it, download a backup first in Your data.',
+      'Your account and all your data will be deleted forever, from the cloud and from this device. If you want to keep it, download a backup first in Settings → Export & import.',
     deletePassword: 'Enter your password to confirm',
     deleteConfirm: 'Delete forever',
     deleting: 'Deleting…',
@@ -921,7 +945,7 @@ export const en: Messages = {
       {
         h: 'Your rights',
         p: [
-          'You can access and take your data (Settings → Your data → download backup), correct it in the app and erase it (Settings → Your account → Delete my account).',
+          'You can access and take your data (Settings → Export & import), correct it in the app and erase it (Settings → Your account → Delete my account).',
           'You can also object to or request restriction of processing by writing to pedrocarramolino34@gmail.com, and complain to your data protection authority.',
         ],
       },
