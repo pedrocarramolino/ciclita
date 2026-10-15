@@ -35,13 +35,27 @@ export function parseDecimal(text: string, range: { min: number; max: number }):
   return Math.round(n * 100) / 100
 }
 
-/** Estados de ánimo con nombres en sustantivo (lenguaje neutro). */
-export const MOOD_OPTIONS: { value: string; emoji: string; label: string }[] = [
-  { value: 'happy', emoji: '😄', label: o.mood.happy },
-  { value: 'calm', emoji: '😌', label: o.mood.calm },
-  { value: 'neutral', emoji: '😐', label: o.mood.neutral },
-  { value: 'sad', emoji: '😢', label: o.mood.sad },
-  { value: 'irritable', emoji: '😠', label: o.mood.irritable },
-  { value: 'anxious', emoji: '😰', label: o.mood.anxious },
-  { value: 'tired', emoji: '🥱', label: o.mood.tired },
-]
+/**
+ * Estados de ánimo con nombres en sustantivo (lenguaje neutro), de los más agradables
+ * a los más difíciles. Los valores guardados no cambian nunca (solo se añaden).
+ */
+export const MOOD_OPTIONS: { value: keyof typeof o.mood; emoji: string; label: string }[] = (
+  [
+    ['happy', '😄'],
+    ['loving', '🥰'],
+    ['energetic', '🤩'],
+    ['calm', '😌'],
+    ['desire', '🔥'],
+    ['neutral', '😐'],
+    ['sensitive', '🥹'],
+    ['moodSwings', '🎢'],
+    ['sad', '😢'],
+    ['lonely', '😔'],
+    ['irritable', '😠'],
+    ['stressed', '😫'],
+    ['anxious', '😰'],
+    ['overwhelmed', '🤯'],
+    ['tired', '🥱'],
+    ['unwell', '🤒'],
+  ] as const
+).map(([value, emoji]) => ({ value, emoji, label: o.mood[value] }))

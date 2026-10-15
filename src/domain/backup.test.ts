@@ -81,6 +81,11 @@ describe('CSV', () => {
     expect(back.symptoms.sort()).toEqual(['Cansancio', 'Dolor abdominal', 'Migraña'])
   })
 
+  it('los estados de ánimo nuevos también van y vuelven en el CSV', () => {
+    const back = parseCSV(toCSV(new Set(), [{ date: '2026-09-02', mood: 'moodSwings', updatedAt: 0 }]))
+    expect(back.days[0].mood).toBe('moodSwings')
+  })
+
   it('neutraliza celdas que Excel ejecutaría como fórmulas', () => {
     const csv = toCSV(new Set(), [{ date: '2026-09-02', notes: '=HYPERLINK("http://x")', medication: '+1', updatedAt: 0 }])
     const row = parseCSVRows(csv)[1]

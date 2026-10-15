@@ -276,7 +276,7 @@ function DayFormView({
         {/* Estado de ánimo */}
         <fieldset>
           <legend className="mb-2 font-bold">{l.mood}</legend>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
             {MOOD_OPTIONS.map((m) => (
               <button
                 key={m.value}

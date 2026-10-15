@@ -41,6 +41,14 @@ describe('Registro del día', () => {
     expect(await db.periods.toArray()).toMatchObject([{ startDate: DAY, endDate: DAY }])
   })
 
+  it('ofrece 16 estados de ánimo para elegir', async () => {
+    render(<DaySheet date={DAY} onClose={() => {}} />)
+    const group = await screen.findByRole('group', { name: 'Estado de ánimo' })
+    const moods = within(group).getAllByRole('button')
+    expect(moods).toHaveLength(16)
+    expect(moods.map((b) => b.textContent)).toEqual(expect.arrayContaining(['🎢Altibajos', '🥰Cariño', '🤯Agobio']))
+  })
+
   it('carga lo ya guardado y al quitarlo todo borra el registro', async () => {
     await db.days.put({ date: DAY, mood: 'sad', notes: 'Algo', updatedAt: 1 })
     const user = userEvent.setup()
