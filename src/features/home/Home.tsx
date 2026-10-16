@@ -16,6 +16,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { periodEndQuestion } from '../../domain/periods'
 import { NextAppointment } from './NextAppointment'
 import { PillCard } from './PillCard'
+import { PregnancyChanceBadge } from './PregnancyChanceBadge'
+import { pregnancyChance, showsPregnancyChance } from '../../domain/fertility'
 import { MissedPeriodPrompt, PeriodEndPrompt } from './PeriodPrompts'
 import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
 import { openCalendarAt } from '../calendar/calendarFocus'
@@ -44,6 +46,7 @@ export function Home() {
   const modeData = useLiveQuery(async () => {
     const [settings, periods] = await Promise.all([getSettings(), db.periods.toArray()])
     return {
+      showChance: showsPregnancyChance(settings),
       mode: settings.mode,
       pregnancyStart: settings.pregnancyStart,
       periods,
@@ -72,6 +75,7 @@ export function Home() {
   const inPeriod = s.kind === 'period'
   const ongoing = s.kind === 'period' && s.ongoing
   const mode = modeData.mode
+  const chance = modeData.showChance ? pregnancyChance(today, p, today) : null
   const pregnancy = mode === 'pregnancy' && modeData.pregnancyStart ? pregnancyInfo(modeData.pregnancyStart, today) : null
 
   return (
@@ -94,11 +98,19 @@ export function Home() {
         {(s.kind === 'upcoming' || s.kind === 'late') && (
           <p className="mt-2 font-semibold text-muted">{h.cycleDay(s.cycleDay)}</p>
         )}
-        {s.kind === 'upcoming' && s.inFertileWindow && (
-          <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-lavender-soft px-3 py-1 text-sm font-bold">
-            <span aria-hidden="true" className="size-2 rounded-full bg-accent" />
-            {h.fertile}
-          </p>
+        {chance ? (
+          <div className="mt-3">
+            <PregnancyChanceBadge chance={chance} today />
+            <p className="mt-1 text-xs text-muted">{t.chance.note}</p>
+          </div>
+        ) : (
+          s.kind === 'upcoming' &&
+          s.inFertileWindow && (
+            <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-lavender-soft px-3 py-1 text-sm font-bold">
+              <span aria-hidden="true" className="size-2 rounded-full bg-accent" />
+              {h.fertile}
+            </p>
+          )
         )}
         {s.kind === 'late' && <p className="mt-3 text-sm text-muted">{h.lateHint}</p>}
         {s.kind === 'late' && s.daysLate >= LATE_TEST_DAYS && (

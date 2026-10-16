@@ -1087,6 +1087,12 @@ export const es = {
     ],
     close: 'Cerrar',
   },
+  chance: {
+    today: (l: string) => `Posibilidad de embarazo hoy: ${l}`,
+    day: (l: string) => `Posibilidad de embarazo: ${l}`,
+    levels: { low: 'baja', medium: 'media', high: 'alta' },
+    note: 'Estimación según tu ciclo: no sirve como método anticonceptivo.',
+  },
   appointments: {
     add: 'Añadir cita médica',
     section: 'Citas médicas',

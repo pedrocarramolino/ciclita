@@ -28,6 +28,9 @@ import {
   PERIMENOPAUSE_FREQUENT,
   SYMPTOM_CATALOG,
 } from '../../domain/symptoms'
+import { pregnancyChance, showsPregnancyChance } from '../../domain/fertility'
+import { usePrediction } from '../../usePrediction'
+import { PregnancyChanceBadge } from '../home/PregnancyChanceBadge'
 
 /** Hoja modal con el registro de un día. Usa <dialog> nativo (foco atrapado, Escape cierra). */
 export function DaySheet({ date, onClose }: { date: ISODate; onClose: () => void }) {
@@ -35,9 +38,11 @@ export function DaySheet({ date, onClose }: { date: ISODate; onClose: () => void
   const titleId = useId()
 
   const data = useLiveQuery(async () => {
-    const [day, periods] = await Promise.all([db.days.get(date), db.periods.toArray()])
-    return { day, isPeriod: periodDateSet(periods, today()).has(date) }
+    const [day, periods, settings] = await Promise.all([db.days.get(date), db.periods.toArray(), getSettings()])
+    return { day, isPeriod: periodDateSet(periods, today()).has(date), showChance: showsPregnancyChance(settings) }
   }, [date])
+  const prediction = usePrediction()
+  const chance = data?.showChance ? pregnancyChance(date, prediction, today()) : null
 
   // Cerramos explícitamente desde cada salida (X, guardar, fondo, Escape) en lugar de
   // depender del evento asíncrono 'close', que no siempre llega a tiempo.
@@ -71,9 +76,16 @@ export function DaySheet({ date, onClose }: { date: ISODate; onClose: () => void
       className="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-hidden rounded-t-3xl bg-bg p-0 text-ink shadow-2xl backdrop:bg-black/40 sm:m-auto sm:max-w-lg sm:rounded-3xl"
     >
       <header className="flex items-center justify-between border-b border-line px-4 py-3">
-        <h2 id={titleId} className="text-lg font-extrabold">
-          {formatLong(date)}
-        </h2>
+        <div>
+          <h2 id={titleId} className="text-lg font-extrabold">
+            {formatLong(date)}
+          </h2>
+          {chance && (
+            <div className="mt-1">
+              <PregnancyChanceBadge chance={chance} today={false} />
+            </div>
+          )}
+        </div>
         <button
           type="button"
           onClick={close}

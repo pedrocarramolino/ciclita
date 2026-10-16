@@ -1088,6 +1088,12 @@ export const en: Messages = {
     ],
     close: 'Close',
   },
+  chance: {
+    today: (l) => `Chance of pregnancy today: ${l}`,
+    day: (l) => `Chance of pregnancy: ${l}`,
+    levels: { low: 'low', medium: 'medium', high: 'high' },
+    note: 'An estimate based on your cycle: it is not a method of contraception.',
+  },
   appointments: {
     add: 'Add medical appointment',
     section: 'Medical appointments',
