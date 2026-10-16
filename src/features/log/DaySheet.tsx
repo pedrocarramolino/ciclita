@@ -26,6 +26,7 @@ import {
   findCatalogSymptom,
   frequentSymptoms,
   PERIMENOPAUSE_FREQUENT,
+  PREGNANCY_FREQUENT,
   SYMPTOM_CATALOG,
 } from '../../domain/symptoms'
 import { pregnancyChance, showsPregnancyChance } from '../../domain/fertility'
@@ -173,7 +174,13 @@ function DayFormView({
   const frequent =
     useLiveQuery(async () => {
       const [days, settings] = await Promise.all([db.days.toArray(), getSettings()])
-      return frequentSymptoms(days, 8, settings.mode === 'perimenopause' ? PERIMENOPAUSE_FREQUENT : DEFAULT_FREQUENT)
+      const defaults =
+        settings.mode === 'perimenopause'
+          ? PERIMENOPAUSE_FREQUENT
+          : settings.mode === 'pregnancy'
+            ? PREGNANCY_FREQUENT
+            : DEFAULT_FREQUENT
+      return frequentSymptoms(days, 8, defaults)
     }) ?? DEFAULT_FREQUENT
   const selectedCount = form.symptoms?.length ?? 0
   // Si hay algo marcado que no está entre los más usados, el catálogo se abre solo.

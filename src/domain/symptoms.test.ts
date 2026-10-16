@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import type { DayLog } from '../db/db'
 import { BUILTIN_SYMPTOMS } from '../db/db'
-import { CATALOG_SYMPTOMS, DEFAULT_FREQUENT, findCatalogSymptom, frequentSymptoms } from './symptoms'
+import {
+  CATALOG_SYMPTOMS,
+  DEFAULT_FREQUENT,
+  findCatalogSymptom,
+  frequentSymptoms,
+  PERIMENOPAUSE_FREQUENT,
+  PREGNANCY_FREQUENT,
+  SYMPTOM_CATALOG,
+} from './symptoms'
 
 const day = (date: string, symptoms: string[]): DayLog => ({ date, symptoms, updatedAt: 0 })
 
@@ -33,3 +41,19 @@ describe('frequentSymptoms', () => {
     expect(f).toHaveLength(4)
   })
 })
+
+describe('catálogo ampliado', () => {
+  it('unos 60 síntomas en categorías, incluidas zona íntima y orina', () => {
+    expect(CATALOG_SYMPTOMS.length).toBeGreaterThanOrEqual(55)
+    expect(SYMPTOM_CATALOG.map((c) => c.id)).toEqual(
+      expect.arrayContaining(['pain', 'digestion', 'intimate', 'urinary', 'skin', 'energy', 'appetite', 'other']),
+    )
+    expect(findCatalogSymptom('acidez')).toBe('Acidez')
+    expect(findCatalogSymptom('heartburn')).toBe('Acidez')
+  })
+
+  it('los habituales de cada modo están en el catálogo', () => {
+    for (const s of [...DEFAULT_FREQUENT, ...PERIMENOPAUSE_FREQUENT, ...PREGNANCY_FREQUENT]) expect(CATALOG_SYMPTOMS).toContain(s)
+  })
+})
+

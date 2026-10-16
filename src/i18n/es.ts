@@ -108,6 +108,8 @@ export const es = {
   symptomCategories: {
     pain: 'Dolor',
     digestion: 'Digestión',
+    intimate: 'Zona íntima y sangrado',
+    urinary: 'Orina',
     skin: 'Piel y pelo',
     energy: 'Energía y sueño',
     appetite: 'Apetito',
