@@ -150,7 +150,7 @@ Otros comandos:
    ```bash
    npx web-push generate-vapid-keys
    ```
-4. En Vercel → *Project → Settings → Environment Variables*, añade las variables de [`.env.example`](.env.example): las cinco de Upstash, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` (`mailto:tu-correo`). `APP_URL` solo hace falta si usas un dominio propio.
+4. En Vercel → *Project → Settings → Environment Variables*, añade las variables de [`.env.example`](.env.example): las cinco de Upstash, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` (la URL de la app, p. ej. `https://ciclita.vercel.app`, o `mailto:tu-correo`). `APP_URL` solo hace falta si usas un dominio propio.
 5. **Despliega** (o vuelve a desplegar tras añadir las variables).
 6. Comprueba: `https://tu-app.vercel.app/api/vapid` debe devolver `{"key": "..."}`. Después activa un recordatorio en *Ajustes* y pulsa *Probar notificación*; en la consola de QStash (*Messages*) verás el mensaje pendiente para la hora del recordatorio.
 
