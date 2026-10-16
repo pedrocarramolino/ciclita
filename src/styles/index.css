@@ -89,6 +89,13 @@ body {
   outline-offset: 2px;
 }
 
+/* Títulos que reciben el foco por código al abrir una pantalla (para que el lector
+   de pantalla los anuncie). No se llega a ellos con el tabulador, así que el
+   contorno solo estorba: Safari lo pinta aunque no se use el teclado. */
+h1[tabindex='-1']:focus {
+  outline: none;
+}
+
 /* ---------- Gráfica de ciclos: las barras crecen desde el eje al aparecer ---------- */
 .chart-bar {
   transform-box: fill-box;
