@@ -105,6 +105,26 @@ export function RemindersSection({ settings }: { settings: Settings }) {
           {s.remindersDenied}
         </p>
       )}
+      {/* Estado de los avisos en el servidor, siempre a la vista. */}
+      {!blocked && (
+        <div role="status" aria-live="polite">
+          {!anyOn ? (
+            <p className="rounded-2xl bg-surface p-4 text-sm text-muted">{u.noneOn}</p>
+          ) : pushError ? (
+            <div className="rounded-2xl bg-rose-soft p-4 text-sm">
+              <p className="font-bold">{s.pushErrorTitle}</p>
+              <p>{pushError}</p>
+              <Button variant="secondary" className="mt-2 min-h-11" disabled={busy} onClick={() => void retry()}>
+                {busy ? s.pushSyncing : perm === 'default' ? s.allowNotifications : s.pushRetry}
+              </Button>
+            </div>
+          ) : (
+            <p className="rounded-2xl bg-surface p-4 text-sm font-bold">
+              {pushSync ? `✓ ${s.pushSynced}` : s.pushSyncing}
+            </p>
+          )}
+        </div>
+      )}
 
       {settings.mode === 'cycle' ? (
         <Section title={u.groups.cycle}>
@@ -318,22 +338,6 @@ export function RemindersSection({ settings }: { settings: Settings }) {
 
       <Section title={u.groups.display}>
         <DiscreetRow checked={reminders.discreet} onChange={(v) => void update({ discreet: v })} />
-
-        {anyOn && !blocked && (
-          <div role="status" aria-live="polite">
-            {pushError ? (
-              <div className="rounded-2xl bg-rose-soft p-3 text-sm">
-                <p className="font-bold">{s.pushErrorTitle}</p>
-                <p>{pushError}</p>
-                <Button variant="secondary" className="mt-2 min-h-11" disabled={busy} onClick={() => void retry()}>
-                  {busy ? s.pushSyncing : perm === 'default' ? s.allowNotifications : s.pushRetry}
-                </Button>
-              </div>
-            ) : (
-              <p className="text-sm font-bold">{pushSync ? s.pushSynced : s.pushSyncing}</p>
-            )}
-          </div>
-        )}
 
         {perm === 'granted' && (
           <Button

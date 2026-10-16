@@ -211,6 +211,7 @@ export const en: Messages = {
     reminders: 'Reminders',
     reminderUi: {
       groups: { cycle: 'Your cycle', daily: 'Every day', other: 'Other reminders', display: 'How they arrive' },
+      noneOn: "You don't have any reminders turned on yet.",
       ios: "On iPhone, reminders only arrive with the app installed: in Safari tap Share, then 'Add to Home Screen' (iOS 16.4 or later). Then open it from the icon and turn them on here.",
       period: 'Before your period',
       fertile: 'Fertile window',

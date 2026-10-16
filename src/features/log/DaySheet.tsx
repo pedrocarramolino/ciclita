@@ -82,9 +82,9 @@ export function DaySheet({
       ref={ref}
       aria-labelledby={titleId}
       onClick={(e) => e.target === ref.current && close()}
-      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-hidden rounded-t-3xl bg-bg p-0 text-ink shadow-2xl backdrop:bg-black/40 sm:m-auto sm:max-w-lg sm:rounded-3xl"
+      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none flex-col overflow-hidden rounded-t-3xl bg-bg p-0 text-ink shadow-2xl backdrop:bg-black/40 open:flex sm:m-auto sm:max-w-lg sm:rounded-3xl"
     >
-      <header className="flex items-center justify-between border-b border-line px-4 py-3">
+      <header className="flex shrink-0 items-center justify-between border-b border-line px-4 py-3">
         <div>
           <h2 id={titleId} className="text-lg font-extrabold">
             {formatLong(date)}
@@ -218,7 +218,8 @@ function DayFormView({
 
   return (
     <>
-      <div className="max-h-[calc(92dvh-8.5rem)] space-y-6 overflow-y-auto px-4 py-5">
+      {/* Solo esta parte se desplaza (y sin arrastrar la pantalla de debajo). */}
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5">
         {showPill && (
           <div className="flex items-center justify-between gap-4 rounded-2xl bg-surface p-4">
             <h3 id="sec-pill" className="font-bold">
@@ -499,12 +500,12 @@ function DayFormView({
           />
         </div>
       </div>
-      <footer className="border-t border-line px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <footer className="shrink-0 border-t border-line bg-bg px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <Button className="w-full" disabled={saving || tempInvalid || weightInvalid} onClick={save}>
           {l.save}
         </Button>
         {onClear && (
-          <Button variant="ghost" className="mt-1 w-full text-danger" disabled={saving} onClick={() => void onClear()}>
+          <Button variant="ghost" className="mt-1 min-h-11 w-full py-2 text-sm text-danger" disabled={saving} onClick={() => void onClear()}>
             {l.clearDay}
           </Button>
         )}

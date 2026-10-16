@@ -186,6 +186,7 @@ export const es = {
     reminders: 'Recordatorios',
     reminderUi: {
       groups: { cycle: 'Tu ciclo', daily: 'Cada día', other: 'Otros avisos', display: 'Cómo llegan' },
+      noneOn: 'Aún no tienes ningún recordatorio activado.',
       ios: 'En iPhone, los avisos solo llegan con la app instalada: en Safari toca Compartir y luego «Añadir a pantalla de inicio» (iOS 16.4 o posterior). Después ábrela desde el icono y actívalos aquí.',
       period: 'Antes del periodo',
       fertile: 'Ventana fértil',

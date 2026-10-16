@@ -203,6 +203,14 @@ input[type='time']::-webkit-date-and-time-value {
   text-align: left;
 }
 
+/* Con un diálogo abierto, la página de debajo no se desplaza (en iOS se arrastraba). */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+dialog {
+  overscroll-behavior: contain;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
