@@ -23,6 +23,7 @@ vi.mock('./account/account', async (importOriginal) => {
     getProfile: vi.fn(async () => null),
     currentUid: vi.fn(() => 'test-uid'),
     signOutHere: vi.fn(async () => {}),
+    idToken: vi.fn(async () => null),
     logout: vi.fn(async () => {}),
     deleteAccount: vi.fn(async () => {}),
   }

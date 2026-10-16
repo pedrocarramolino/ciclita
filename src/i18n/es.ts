@@ -1007,6 +1007,7 @@ export const es = {
       wrongCredentials: 'El correo o la contraseña no son correctos.',
       tooManyRequests: 'Demasiados intentos. Espera unos minutos y vuelve a probar.',
       network: 'No hay conexión. Comprueba internet y vuelve a probar.',
+      unsynced: 'Tus últimos cambios aún no se han guardado en tu cuenta. Conéctate a internet y vuelve a probar.',
       unknown: 'Algo ha fallado. Vuelve a probar en un momento.',
     },
     // Ajustes → Tu cuenta

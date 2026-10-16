@@ -71,6 +71,8 @@ export interface Deps {
   newVersion?: () => string
   /** Cupo global de dispositivos nuevos (protege la cuota de QStash). Sin definir = sin límite. */
   allowNewDevice?: () => Promise<boolean>
+  /** Cupo de dispositivos nuevos por cuenta (que una cuenta no agote el global). */
+  allowNewDeviceFor?: (uid: string) => Promise<boolean>
 }
 
 export class AuthError extends Error {}
@@ -195,8 +197,16 @@ async function loadAuthorized(deps: Deps, deviceId: string, secret: string) {
   return record
 }
 
-export async function register(deps: Deps, input: RegisterInput): Promise<void> {
+/**
+ * Registra o actualiza un dispositivo de la cuenta `uid` (ya comprobada por quien
+ * llama). Un dispositivo de otra cuenta no se puede tocar.
+ */
+export async function register(deps: Deps, input: RegisterInput, uid?: string): Promise<void> {
   const existing = await loadAuthorized(deps, input.deviceId, input.secret)
+  if (existing?.uid && uid && existing.uid !== uid) throw new AuthError('El dispositivo es de otra cuenta')
+  if (!existing && uid && deps.allowNewDeviceFor && !(await deps.allowNewDeviceFor(uid))) {
+    throw new QuotaError('Demasiados dispositivos nuevos en esta cuenta hoy. Inténtalo mañana.')
+  }
   if (!existing && deps.allowNewDevice && !(await deps.allowNewDevice())) {
     throw new QuotaError('Se ha alcanzado el límite diario de dispositivos nuevos. Inténtalo mañana.')
   }
@@ -220,6 +230,7 @@ export async function register(deps: Deps, input: RegisterInput): Promise<void> 
       timezone: input.timezone,
       reminders: input.reminders,
       jobs,
+      uid: uid ?? existing?.uid,
       // Si cambia el periodo previsto, se podrá volver a avisar.
       periodSentFor:
         period && periodWindows(period).some((w) => w.until === existing?.periodSentFor) ? existing?.periodSentFor : undefined,

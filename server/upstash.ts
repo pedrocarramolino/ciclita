@@ -83,6 +83,13 @@ export function upstash() {
     prefix: 'ciclo:new-devices',
   })
   deps.allowNewDevice = async () => (await newDevices.limit('global')).success
+  // Y por cuenta: una sola cuenta no puede llevarse el cupo de todas.
+  const newDevicesPerAccount = new Ratelimit({
+    redis,
+    limiter: Ratelimit.fixedWindow(5, '1 d'),
+    prefix: 'ciclo:new-devices-account',
+  })
+  deps.allowNewDeviceFor = async (uid) => (await newDevicesPerAccount.limit(uid)).success
 
   cached = { env, redis, deps, receiver, ratelimit }
   return cached

@@ -122,6 +122,21 @@ describe('register / unregister', () => {
     ).rejects.toThrow(QuotaError)
   })
 
+  it('guarda la cuenta del dispositivo y no deja que otra cuenta lo toque', async () => {
+    const f = fakeDeps()
+    await register(f.deps, input(DAILY), 'uid-a')
+    expect(f.records.get(ID)?.uid).toBe('uid-a')
+    await expect(register(f.deps, input(DAILY), 'uid-b')).rejects.toBeInstanceOf(AuthError)
+    await register(f.deps, input(DAILY), 'uid-a')
+  })
+
+  it('cupo de dispositivos nuevos por cuenta', async () => {
+    const f = fakeDeps()
+    f.deps.allowNewDeviceFor = async (uid) => uid !== 'uid-llena'
+    await expect(register(f.deps, input(DAILY), 'uid-llena')).rejects.toBeInstanceOf(QuotaError)
+    await register(f.deps, input(DAILY), 'uid-libre')
+  })
+
   it('rechaza actualizar o borrar un dispositivo con otro secreto', async () => {
     const f = fakeDeps()
     await register(f.deps, input({}))

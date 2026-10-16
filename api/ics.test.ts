@@ -12,11 +12,25 @@ vi.mock('../server/upstash.js', () => ({
   }),
 }))
 
+// Sesión: vale cualquier cabecera "Authorization" (la verificación real se prueba aparte).
+vi.mock('../server/firebaseAuth.js', () => ({
+  requireAccount: async (r: Request) => {
+    if (!r.headers.get('authorization')) throw new Error('sin sesión')
+    return 'uid-1'
+  },
+}))
+
 const { GET, POST } = await import('./ics.js')
 
 const ICS = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nSUMMARY:Ecografía\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n'
-const post = (body: unknown) =>
-  POST(new Request('https://ciclita.test/api/ics', { method: 'POST', body: JSON.stringify(body) }))
+const post = (body: unknown, auth = true) =>
+  POST(
+    new Request('https://ciclita.test/api/ics', {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: auth ? { Authorization: 'Bearer token-de-prueba' } : {},
+    }),
+  )
 
 beforeEach(() => store.clear())
 
@@ -30,6 +44,11 @@ describe('/api/ics (añadir una cita al Calendario del iPhone)', () => {
     const file = await GET(new Request(`https://ciclita.test${url}`))
     expect(file.headers.get('Content-Type')).toBe('text/calendar; charset=utf-8')
     expect(await file.text()).toBe(ICS)
+  })
+
+  it('sin sesión de Ciclita no se puede subir nada', async () => {
+    expect((await post({ ics: ICS }, false)).status).toBe(401)
+    expect(store.size).toBe(0)
   })
 
   it('rechaza lo que no es un archivo de calendario y los enlaces caducados o inventados', async () => {

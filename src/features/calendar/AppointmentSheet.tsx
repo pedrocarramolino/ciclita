@@ -6,6 +6,7 @@ import { deleteAppointment, saveAppointment } from '../../db/appointments'
 import type { Appointment, AppointmentType } from '../../db/db'
 import { addDays, today } from '../../domain/dates'
 import { t } from '../../i18n'
+import { idToken } from '../../account/account'
 import { buildIcs } from '../../domain/ics'
 import { saveFile } from '../../files'
 import { isIOS } from '../../platform'
@@ -114,7 +115,14 @@ export function AppointmentSheet({
     // En iPhone, "Añadir al calendario" solo aparece al abrir el .ics desde una dirección
     // web: se sube un momento al servidor y se ofrece el enlace para abrirlo.
     setCalendarLink('busy')
-    fetch('/api/ics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ics }) })
+    idToken()
+      .then((token) =>
+        fetch('/api/ics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token ?? ''}` },
+          body: JSON.stringify({ ics }),
+        }),
+      )
       .then((r) => (r.ok ? (r.json() as Promise<{ url: string }>) : Promise.reject(new Error(String(r.status)))))
       .then(({ url }) => setCalendarLink({ url }))
       .catch((e) => {

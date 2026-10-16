@@ -19,7 +19,7 @@ import {
 import { getDoc, serverTimestamp, setDoc } from 'firebase/firestore/lite'
 import type { ISODate } from '../domain/dates'
 import { auth } from './firebase'
-import { deleteCloudData, flushSync, userDoc } from './sync'
+import { deleteCloudData, flushSync, push, userDoc } from './sync'
 
 export interface AccountUser {
   uid: string
@@ -62,6 +62,7 @@ export type AccountErrorCode =
   | 'wrongCredentials'
   | 'tooManyRequests'
   | 'network'
+  | 'unsynced'
   | 'unknown'
 
 function toAccountError(e: unknown): AccountError {
@@ -181,12 +182,30 @@ export function signOutHere(): Promise<void> {
   return guard(() => signOut(auth()))
 }
 
-/** Cierra la sesión tras subir los últimos cambios. */
+/**
+ * Cierra la sesión tras subir los últimos cambios. Si no se pueden subir (sin
+ * conexión), no la cierra: al cerrarla se borran los datos del dispositivo y esos
+ * cambios se perderían.
+ */
 export function logout(): Promise<void> {
   return guard(async () => {
+    const uid = auth().currentUser?.uid
     await flushSync()
+    if (uid) {
+      try {
+        await push(uid)
+      } catch (e) {
+        console.error('No se pudieron subir los últimos cambios', e)
+        throw new AccountError('unsynced')
+      }
+    }
     await signOut(auth())
   })
+}
+
+/** Identificador de sesión de Firebase (lo comprueba el servidor de avisos). */
+export async function idToken(): Promise<string | null> {
+  return (await auth().currentUser?.getIdToken()) ?? null
 }
 
 /** Elimina la cuenta y todos sus datos de la nube. Pide la contraseña otra vez. */

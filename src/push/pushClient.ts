@@ -6,6 +6,7 @@
  * por cada recordatorio activo, su hora y su texto (y las fechas del aviso de periodo).
  * Si no hay ningún recordatorio activo, no se envía nada y se borra lo que hubiera.
  */
+import { idToken } from '../account/account'
 import { db } from '../db/db'
 import { getSettings, setSettings, type PushDevice, type Settings } from '../db/settings'
 import { reminderPillPack } from '../domain/pill'
@@ -52,9 +53,11 @@ const isJson = (res: Response) => res.headers.get('content-type')?.includes('app
 async function api(method: 'PUT' | 'DELETE', body: unknown) {
   let res: Response
   try {
+    // El servidor exige la sesión de la cuenta para registrar avisos.
+    const token = method === 'PUT' ? await idToken().catch(() => null) : null
     res = await fetch('/api/subscription', {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(body),
     })
   } catch {

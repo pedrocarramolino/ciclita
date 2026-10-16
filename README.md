@@ -58,7 +58,9 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
 | Suscripción push del navegador, zona horaria, hora y texto de cada recordatorio activo y, para los avisos de periodo, ventana fértil, autoexploración y anticonceptivos, las fechas en que deben sonar; para la píldora, el tipo de envase y su primer día (para no avisar en los días de descanso) | Servidor (Upstash Redis + QStash), **solo si se activa algún recordatorio** |
 
 - Sin analítica ni rastreadores (el proyecto de Firebase tiene Analytics, pero la app no lo carga). La fuente tipográfica está incluida en la app (no se carga de Google Fonts).
-- **Reglas de Firestore** (`firestore.rules`): cada cuenta solo puede leer y escribir `users/{uid}` y lo que cuelga de ahí. Se publican en la consola de Firebase (*Firestore Database → Reglas*).
+- **Reglas de Firestore** (`firestore.rules`): cada cuenta solo puede leer y escribir `users/{uid}` y lo que cuelga de ahí, y solo con la forma y los tamaños que usa la app (perfil, `days`, `appointments` y `state`).
+- **Servidor**: registrar avisos (`PUT /api/subscription`) y subir una cita al calendario (`POST /api/ics`) exigen la sesión de Firebase (`Authorization: Bearer <ID token>`, verificado con las claves públicas de Google en `server/firebaseAuth.ts`); cada dispositivo queda ligado a su cuenta y hay un cupo de 5 dispositivos nuevos al día por cuenta, además del global.
+- **Cerrar sesión** sube antes los últimos cambios; si no hay conexión, no la cierra (se perderían). Se publican en la consola de Firebase (*Firestore Database → Reglas*).
 - Datos de salud en un servidor: el registro pide consentimiento explícito (art. 9 RGPD) además de aceptar la política de privacidad (pantalla *Política de privacidad*, `t.privacy`). Firebase Authentication puede tratar los datos de acceso fuera de la UE (cláusulas contractuales tipo de Google).
 - Cada dispositivo se identifica en el servidor con un id aleatorio y un secreto (en Redis solo se guarda su hash). Los registros caducan a los 90 días sin actividad.
 - Al desactivar todos los recordatorios o al borrar los datos, se elimina también lo guardado en el servidor.

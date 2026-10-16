@@ -7,6 +7,7 @@
  * identificador aleatorio), para que no quede en los registros de peticiones.
  */
 import { randomUUID } from 'node:crypto'
+import { requireAccount } from '../server/firebaseAuth.js'
 import { clientIp, error, json, readJson } from '../server/http.js'
 import { upstash } from '../server/upstash.js'
 
@@ -35,6 +36,11 @@ export async function POST(request: Request) {
   }
   const { success } = await ctx.ratelimit.limit(clientIp(request))
   if (!success) return error('Demasiadas peticiones', 429)
+  try {
+    await requireAccount(request)
+  } catch {
+    return error('Falta la sesión', 401)
+  }
   let body: unknown
   try {
     body = await readJson(request)

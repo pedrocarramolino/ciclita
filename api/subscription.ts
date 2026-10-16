@@ -1,3 +1,4 @@
+import { requireAccount, UnauthenticatedError } from '../server/firebaseAuth.js'
 import { clientIp, error, json, readJson } from '../server/http.js'
 import { AuthError, QuotaError, register, unregister } from '../server/service.js'
 import { upstash } from '../server/upstash.js'
@@ -19,6 +20,7 @@ async function handle(request: Request, action: (body: unknown) => Promise<void>
     return json({ ok: true })
   } catch (e) {
     if (e instanceof ValidationError || e instanceof SyntaxError) return error(e.message, 400)
+    if (e instanceof UnauthenticatedError) return error(e.message, 401)
     if (e instanceof AuthError) return error(e.message, 403)
     if (e instanceof QuotaError) return error(e.message, 429)
     console.error(e)
@@ -26,9 +28,13 @@ async function handle(request: Request, action: (body: unknown) => Promise<void>
   }
 }
 
-/** Registra o actualiza el dispositivo y sus recordatorios. */
+/** Registra o actualiza el dispositivo y sus recordatorios. Exige una sesión de Ciclita. */
 export function PUT(request: Request) {
-  return handle(request, (body) => register(upstash().deps, validateRegister(body)))
+  return handle(request, async (body) => {
+    const input = validateRegister(body)
+    const uid = await requireAccount(request)
+    await register(upstash().deps, input, uid)
+  })
 }
 
 /** Borra el dispositivo y todas sus programaciones. */

@@ -1010,6 +1010,7 @@ export const en: Messages = {
       wrongCredentials: 'The email or password is not correct.',
       tooManyRequests: 'Too many attempts. Wait a few minutes and try again.',
       network: 'No connection. Check your internet and try again.',
+      unsynced: "Your latest changes haven't been saved to your account yet. Connect to the internet and try again.",
       unknown: 'Something went wrong. Try again in a moment.',
     },
     section: 'Your account',

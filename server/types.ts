@@ -132,6 +132,8 @@ export interface DeviceRecord {
   jobs: Partial<Record<ReminderKind, Job>>
   /** Inicio previsto del periodo sobre el que ya se avisó (para no repetir). */
   periodSentFor?: string
+  /** Cuenta de Firebase que registró el dispositivo (los antiguos no lo tienen). */
+  uid?: string
   updatedAt: number
 }
 
