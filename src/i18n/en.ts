@@ -1072,6 +1072,7 @@ export const en: Messages = {
           'On this device, so the app works offline (you can encrypt it with your PIN).',
           'In your account, on Google Firebase: logs on servers in the European Union; sign-in data (email and encrypted password) is handled by Firebase Authentication, which may process it outside the EU with GDPR safeguards (standard contractual clauses).',
           'Reminders use a server in the EU (Vercel and Upstash, Frankfurt) that only receives the time and text of the reminder.',
+          "To add an appointment to the iPhone Calendar, its calendar file goes through that same server and is deleted within 10 minutes.",
         ],
       },
       {
@@ -1134,6 +1135,10 @@ export const en: Messages = {
     homeNext: 'Next appointment',
     hasNotes: 'With notes',
     addToCalendar: "Add to your phone's calendar",
+    openInCalendar: 'Open in Calendar',
+    openInCalendarHint: "The appointment will open: tap 'Add to Calendar'. The link expires in 10 minutes.",
+    preparingCalendar: 'Preparing…',
+    calendarError: "Couldn't prepare it. Check your connection and try again.",
     addToCalendarHint: "A calendar file opens: choose 'Add' or your calendar app. Remember to save the appointment here too.",
   },
 }

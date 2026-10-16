@@ -1071,6 +1071,7 @@ export const es = {
           'En este dispositivo, para que la app funcione sin conexión (puedes cifrarlos con tu PIN).',
           'En tu cuenta, en Google Firebase: los registros en servidores de la Unión Europea; los datos de acceso (correo y contraseña cifrada) los gestiona Firebase Authentication, que puede tratarlos fuera de la UE con las garantías del RGPD (cláusulas contractuales tipo).',
           'Los recordatorios usan un servidor en la UE (Vercel y Upstash, Fráncfort) que solo recibe la hora y el texto del aviso.',
+          'Para añadir una cita al Calendario del iPhone, su archivo de calendario pasa por ese mismo servidor y se borra como mucho a los 10 minutos.',
         ],
       },
       {
@@ -1133,6 +1134,10 @@ export const es = {
     homeNext: 'Próxima cita',
     hasNotes: 'Con notas',
     addToCalendar: 'Añadir al calendario del móvil',
+    openInCalendar: 'Abrir en Calendario',
+    openInCalendarHint: 'Se abrirá la cita: pulsa «Añadir al calendario». El enlace caduca en 10 minutos.',
+    preparingCalendar: 'Preparando…',
+    calendarError: 'No se ha podido preparar. Comprueba la conexión y vuelve a probar.',
     addToCalendarHint: 'Se abre un archivo de calendario: elige «Añadir» o tu app de calendario. Recuerda guardar también la cita aquí.',
   },
 }

@@ -8,6 +8,7 @@ import { addDays, today } from '../../domain/dates'
 import { t } from '../../i18n'
 import { buildIcs } from '../../domain/ics'
 import { saveFile } from '../../files'
+import { isIOS } from '../../platform'
 import { permission, requestPermission } from '../../push/pushClient'
 import { APPOINTMENT_EMOJI, APPOINTMENT_TYPES } from './appointmentTypes'
 
@@ -51,6 +52,8 @@ export function AppointmentSheet({
   const [confirmRemove, setConfirmRemove] = useState(false)
   // El id se fija ya para que el archivo de calendario y la cita guardada coincidan.
   const [id] = useState(() => appointment?.id ?? crypto.randomUUID())
+  /** iPhone: enlace al archivo de calendario ya subido, o si se está preparando o falló. */
+  const [calendarLink, setCalendarLink] = useState<'busy' | 'error' | { url: string } | null>(null)
   const [perm, setPerm] = useState(permission)
   const onCloseRef = useRef(onClose)
   useEffect(() => {
@@ -104,7 +107,20 @@ export function AppointmentSheet({
       },
       summary,
     )
-    void saveFile(new File([ics], `cita-${form.date}.ics`, { type: 'text/calendar' }))
+    if (!isIOS()) {
+      void saveFile(new File([ics], `cita-${form.date}.ics`, { type: 'text/calendar' }))
+      return
+    }
+    // En iPhone, "Añadir al calendario" solo aparece al abrir el .ics desde una dirección
+    // web: se sube un momento al servidor y se ofrece el enlace para abrirlo.
+    setCalendarLink('busy')
+    fetch('/api/ics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ics }) })
+      .then((r) => (r.ok ? (r.json() as Promise<{ url: string }>) : Promise.reject(new Error(String(r.status)))))
+      .then(({ url }) => setCalendarLink({ url }))
+      .catch((e) => {
+        console.error(e)
+        setCalendarLink('error')
+      })
   }
 
   return (
@@ -275,11 +291,29 @@ export function AppointmentSheet({
         </div>
 
         <div className="grid gap-2">
-          <Button variant="secondary" onClick={addToPhoneCalendar}>
-            <span aria-hidden="true">📅</span>
-            {a.addToCalendar}
-          </Button>
-          <p className="-mt-1 text-center text-xs text-muted">{a.addToCalendarHint}</p>
+          {calendarLink && typeof calendarLink === 'object' ? (
+            <a
+              href={calendarLink.url}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 font-bold text-on-primary"
+            >
+              <span aria-hidden="true">📅</span>
+              {a.openInCalendar}
+            </a>
+          ) : (
+            <Button variant="secondary" disabled={calendarLink === 'busy'} onClick={addToPhoneCalendar}>
+              <span aria-hidden="true">📅</span>
+              {calendarLink === 'busy' ? a.preparingCalendar : a.addToCalendar}
+            </Button>
+          )}
+          <p role="status" className="-mt-1 text-center text-xs text-muted">
+            {calendarLink === 'error'
+              ? a.calendarError
+              : calendarLink && typeof calendarLink === 'object'
+                ? a.openInCalendarHint
+                : a.addToCalendarHint}
+          </p>
           <Button type="submit">{a.save}</Button>
           {appointment && (
             <Button variant="ghost" className="text-danger" onClick={() => setConfirmRemove(true)}>
