@@ -6,6 +6,7 @@ import { setSettings, type Settings, type ReminderSettings } from '../../db/sett
 import { reminderPillPack } from '../../domain/pill'
 import { permission, requestPermission, showTestNotification, syncPush } from '../../push/pushClient'
 import { MEDICATION_NAME_MAX } from '../../push/reminderPayload'
+import { anyReminderOn } from '../../push/reminderStatus'
 import { formatLong, today } from '../../domain/dates'
 import {
   addYears,
@@ -60,18 +61,7 @@ export function RemindersSection({ settings }: { settings: Settings }) {
 
   const blocked = perm === 'denied'
   const c = reminders.contraception
-  const anyOn =
-    reminders.periodEnabled ||
-    reminders.dailyEnabled ||
-    reminders.pillEnabled ||
-    reminders.fertileEnabled ||
-    reminders.breastExamEnabled ||
-    reminders.temperatureEnabled ||
-    reminders.weightEnabled ||
-    reminders.medicationEnabled ||
-    reminders.custom.length > 0 ||
-    (reminders.checkupEnabled && !!reminders.checkupDate) ||
-    (c.method !== 'none' && !!c.start)
+  const anyOn = anyReminderOn(reminders)
   // Próximos avisos del anticonceptivo y de la revisión, para comprobar las fechas.
   const nextContraception =
     c.method !== 'none' && c.start

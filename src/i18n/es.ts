@@ -1108,6 +1108,20 @@ export const es = {
     ],
     close: 'Cerrar',
   },
+  remindersWarning: {
+    title: 'Tus recordatorios no llegan a este dispositivo',
+    denied:
+      'Las notificaciones de Ciclita están bloqueadas. Actívalas en los ajustes del móvil (Notificaciones → Ciclita) para volver a recibirlos.',
+    askPermission: 'Hace falta tu permiso para enviarte las notificaciones de tus recordatorios.',
+    unsupported: 'Este navegador no permite notificaciones, así que aquí no te llegarán los recordatorios.',
+    unsupportedIOS:
+      'En iPhone, los recordatorios solo llegan con la app instalada: en Safari toca Compartir y luego «Añadir a pantalla de inicio».',
+    error: (msg: string) => `No se han podido activar en el servidor: ${msg}`,
+    allow: 'Permitir notificaciones',
+    retry: 'Reintentar',
+    open: 'Ver recordatorios',
+    dismiss: 'Ocultar en este dispositivo',
+  },
   chance: {
     today: (l: string) => `Posibilidad de embarazo hoy: ${l}`,
     day: (l: string) => `Posibilidad de embarazo: ${l}`,

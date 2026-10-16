@@ -15,6 +15,7 @@ import { perimenopauseInfo, pregnancyInfo } from '../../domain/modes'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { periodEndQuestion } from '../../domain/periods'
 import { NextAppointment } from './NextAppointment'
+import { RemindersWarning } from './RemindersWarning'
 import { PillCard } from './PillCard'
 import { PregnancyChanceBadge } from './PregnancyChanceBadge'
 import { pregnancyChance, showsPregnancyChance } from '../../domain/fertility'
@@ -131,6 +132,8 @@ export function Home() {
         )}
       </section>
       )}
+
+      <RemindersWarning prediction={p} />
 
       {/* Una sola pregunta a la vez, la más importante; las demás salen después. */}
       {mode !== 'pregnancy' && modeData.periodEnd ? (

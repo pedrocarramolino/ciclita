@@ -1140,6 +1140,19 @@ export const en: Messages = {
     ],
     close: 'Close',
   },
+  remindersWarning: {
+    title: "Your reminders aren't reaching this device",
+    denied:
+      "Ciclita's notifications are blocked. Turn them on in your phone settings (Notifications → Ciclita) to get them again.",
+    askPermission: 'We need your permission to send your reminder notifications.',
+    unsupported: "This browser doesn't support notifications, so your reminders won't arrive here.",
+    unsupportedIOS: "On iPhone, reminders only arrive with the app installed: in Safari tap Share, then 'Add to Home Screen'.",
+    error: (msg) => `They couldn't be set up on the server: ${msg}`,
+    allow: 'Allow notifications',
+    retry: 'Try again',
+    open: 'See reminders',
+    dismiss: 'Hide on this device',
+  },
   chance: {
     today: (l) => `Chance of pregnancy today: ${l}`,
     day: (l) => `Chance of pregnancy: ${l}`,

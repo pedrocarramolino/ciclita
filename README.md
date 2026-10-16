@@ -36,6 +36,7 @@ Aplicación web progresiva (PWA) para registrar el ciclo menstrual de forma ráp
   - **Embarazo**: semanas y días, trimestre y fecha probable de parto (a partir de la última regla o de la fecha de parto), y cada semana (de la 4 a la 40) a qué se parece el bebé con un emoji (una cereza, un hámster, una piña…) y cuánto mide y pesa más o menos (`domain/babySize.ts`), y una recomendación de la semana y otra del mes (controles habituales en España: ecografías, prueba de la glucosa, vacuna de la tos ferina, estreptococo del grupo B…; `domain/pregnancyTips.ts`), con el aviso de seguir siempre a la matrona o el médico. Se pausan las previsiones y los avisos del ciclo.
   - **Perimenopausia**: días desde el último periodo, periodos en los últimos 12 meses, aviso al llegar a 12 meses sin periodo y síntomas propios de esta etapa. Sin previsiones.
 - **Recordatorios** por notificación push, aunque la app esté cerrada:
+  - Si hay alguno activado pero no van a llegar a ese dispositivo (notificaciones bloqueadas o sin permiso, navegador sin notificaciones o error del servidor), el inicio muestra «Tus recordatorios no llegan a este dispositivo» con el arreglo (permitir, reintentar o ir a Ajustes); se puede ocultar y vuelve a salir si cambia el problema (`push/reminderStatus.ts`).
   - antes del próximo periodo, registro diario y píldora anticonceptiva;
   - ventana fértil (el día antes) y autoexploración de mama (una vez al mes);
   - anticonceptivos con pauta: anillo vaginal, parche o inyección trimestral.
