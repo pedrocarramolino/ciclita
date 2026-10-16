@@ -367,9 +367,6 @@ export const en: Messages = {
     deleteWord: 'DELETE',
     deleteInputLabel: 'Type DELETE',
     deleteConfirm: 'Delete permanently',
-    about: 'About',
-    aboutBody:
-      'No ads, analytics or trackers. Your logs are saved to your account (servers in the European Union) and on this device so the app works offline. Reminders are scheduled on a server (Upstash) with only their time and text.',
     saved: 'Saved',
   },
   encryptedBackup: {

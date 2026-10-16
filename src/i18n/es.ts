@@ -314,9 +314,6 @@ export const es = {
     deleteWord: 'BORRAR',
     deleteInputLabel: 'Escribe BORRAR',
     deleteConfirm: 'Borrar definitivamente',
-    about: 'Acerca de',
-    aboutBody:
-      'Sin publicidad, analítica ni rastreadores. Tus registros se guardan en tu cuenta (servidores de la Unión Europea) y en este dispositivo para usar la app sin conexión. Los recordatorios se programan en un servidor (Upstash) solo con su hora y su texto.',
     saved: 'Guardado',
   },
   encryptedBackup: {

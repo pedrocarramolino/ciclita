@@ -1,7 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '../../components/Icon'
-import { LegalNotice } from '../../components/LegalNotice'
 import { NumberStepper } from '../../components/NumberStepper'
 import { getSettings, setSettings, type Settings, type Theme } from '../../db/settings'
 import { formatFullDate } from '../../domain/dates'
@@ -166,14 +165,6 @@ function SettingsMenu({
           summary={`${s.themes[settings.theme]} · ${s.languages[lang]}`}
         />
       </MenuGroup>
-
-      <section aria-labelledby="about-title" className="px-1">
-        <h2 id="about-title" className="text-sm font-bold text-muted">
-          {s.about}
-        </h2>
-        <p className="mt-1 text-sm text-muted">{s.aboutBody}</p>
-        <LegalNotice className="mt-3" />
-      </section>
     </main>
   )
 }
