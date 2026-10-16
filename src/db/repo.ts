@@ -138,6 +138,27 @@ export async function unmarkPeriodDay(
   })
 }
 
+/**
+ * Borra todo lo de un día: su registro y, si era día de periodo, lo quita del periodo.
+ * Devuelve lo de antes para poder deshacerlo con undoPeriodEdit.
+ */
+export async function clearDay(
+  date: ISODate,
+  database: AppDB = db,
+  today: ISODate = todayISO(),
+): Promise<PeriodEditUndo> {
+  return database.transaction('rw', database.periods, database.days, async () => {
+    const periods = await database.periods.toArray()
+    if (periodDateSet(periods, today).has(date)) {
+      await database.periods.clear()
+      await database.periods.bulkAdd(togglePeriodDay(periods, date, false, today))
+    }
+    const day = await database.days.get(date)
+    if (day) await database.days.delete(date)
+    return { periods, days: day ? [day] : [] }
+  })
+}
+
 export async function undoPeriodEdit(u: PeriodEditUndo, database: AppDB = db): Promise<void> {
   await database.transaction('rw', database.periods, database.days, async () => {
     await restorePeriods(u.periods, database)

@@ -6,6 +6,8 @@ import { formatFullDate, type ISODate } from '../../domain/dates'
 import { MIN_QUERY_LENGTH, searchDays, type SearchMatch } from '../../domain/search'
 import { symptomLabel, t } from '../../i18n'
 import { DaySheet } from '../log/DaySheet'
+import { UndoToast } from '../../components/UndoToast'
+import { undoPeriodEdit, type PeriodEditUndo } from '../../db/repo'
 
 /** Búsqueda en notas, síntomas y medicación de todos los días registrados. */
 export function SearchScreen() {
@@ -13,6 +15,8 @@ export function SearchScreen() {
   // La lista se recalcula sin bloquear la escritura.
   const deferred = useDeferredValue(query)
   const [selected, setSelected] = useState<ISODate | null>(null)
+  // Registro de un día recién borrado (para "Deshacer").
+  const [clearedUndo, setClearedUndo] = useState<PeriodEditUndo | null>(null)
   const days = useLiveQuery(() => db.days.toArray())
   const out = useMemo(() => (days ? searchDays(days, deferred, symptomLabel) : null), [days, deferred])
   const s = t.search
@@ -88,7 +92,19 @@ export function SearchScreen() {
         </>
       )}
 
-      {selected && <DaySheet date={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <DaySheet date={selected} onClose={() => setSelected(null)} onCleared={(u) => setClearedUndo(u)} />
+      )}
+      {clearedUndo && (
+        <UndoToast
+          message={t.log.cleared}
+          onClose={() => setClearedUndo(null)}
+          onUndo={() => {
+            void undoPeriodEdit(clearedUndo)
+            setClearedUndo(null)
+          }}
+        />
+      )}
     </main>
   )
 }

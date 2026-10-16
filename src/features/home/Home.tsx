@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
-import { endPeriod, restorePeriods, setPillTaken, startPeriod } from '../../db/repo'
+import { endPeriod, restorePeriods, setPillTaken, startPeriod, undoPeriodEdit } from '../../db/repo'
 import { useHashAction } from '../../useHashAction'
 import { addDays, diffDays, formatDayMonth, formatLong, formatRange, today as todayISO } from '../../domain/dates'
 import { MIN_HISTORY_ALONE, type Prediction, type Source } from '../../domain/prediction'
@@ -173,7 +173,13 @@ export function Home() {
         {mode === 'cycle' && p.stale && <> {h.stale}</>}
       </p>
 
-      {logOpen && <DaySheet date={today} onClose={() => setLogOpen(false)} />}
+      {logOpen && (
+        <DaySheet
+          date={today}
+          onClose={() => setLogOpen(false)}
+          onCleared={(u) => setUndo({ message: t.log.cleared, undo: () => undoPeriodEdit(u) })}
+        />
+      )}
       {undo && (
         <UndoToast
           message={undo.message}

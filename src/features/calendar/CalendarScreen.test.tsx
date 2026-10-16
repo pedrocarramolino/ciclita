@@ -73,3 +73,21 @@ describe('Calendario: ventana fértil y ovulación', () => {
     expect(screen.queryByText('Fértil posible')).toBeNull()
   })
 })
+
+describe('Calendario: borrar el registro de un día', () => {
+  it('se borra desde el día y "Deshacer" lo recupera', async () => {
+    await db.days.put({ date: lastMonth(5), notes: 'Nota', updatedAt: 1 })
+    openCalendarAt(lastMonth(15))
+    const user = userEvent.setup()
+    render(<CalendarScreen />)
+    await waitFor(() => expect(dayButton(lastMonth(5))).toHaveAccessibleName(/Con registro/))
+    await user.click(dayButton(lastMonth(5)))
+    await user.click(await screen.findByRole('button', { name: 'Borrar el registro de este día' }))
+    await waitFor(async () => expect(await db.days.get(lastMonth(5))).toBeUndefined())
+
+    expect(await screen.findByText('Registro del día borrado.')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Deshacer' }))
+    await waitFor(async () => expect(await db.days.get(lastMonth(5))).toMatchObject({ notes: 'Nota' }))
+  })
+})
+

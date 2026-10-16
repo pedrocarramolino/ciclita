@@ -858,6 +858,8 @@ export const en: Messages = {
   },
   log: {
     close: 'Close',
+    clearDay: "Delete this day's log",
+    cleared: "Day's log deleted.",
     periodQuestion: 'Do you have your period on this day?',
     flow: 'Flow intensity',
     symptoms: 'Symptoms',

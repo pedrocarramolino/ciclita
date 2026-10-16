@@ -112,3 +112,21 @@ describe('Registro del día', () => {
     expect(await db.days.get(DAY)).toMatchObject({ temperature: 36.55 })
   })
 })
+
+describe('Borrar el registro del día', () => {
+  it('solo aparece si hay algo guardado y avisa a la pantalla para poder deshacerlo', async () => {
+    const onCleared = vi.fn()
+    const { unmount } = render(<DaySheet date={DAY} onClose={() => {}} onCleared={onCleared} />)
+    await screen.findByRole('button', { name: 'Guardar' })
+    expect(screen.queryByRole('button', { name: 'Borrar el registro de este día' })).toBeNull()
+    unmount()
+
+    await db.days.put({ date: DAY, notes: 'Algo', moods: ['sad'], updatedAt: 1 })
+    const user = userEvent.setup()
+    render(<DaySheet date={DAY} onClose={() => {}} onCleared={onCleared} />)
+    await user.click(await screen.findByRole('button', { name: 'Borrar el registro de este día' }))
+    await waitFor(async () => expect(await db.days.get(DAY)).toBeUndefined())
+    expect(onCleared).toHaveBeenCalledWith(expect.objectContaining({ days: [expect.objectContaining({ notes: 'Algo' })] }))
+  })
+})
+

@@ -5,7 +5,7 @@ import { Chip } from '../../components/Chip'
 import { Icon } from '../../components/Icon'
 import { Switch } from '../../components/Switch'
 import { db, type DayLog } from '../../db/db'
-import { addCustomSymptom, saveDay, type DayForm } from '../../db/repo'
+import { addCustomSymptom, clearDay, type DayForm, type PeriodEditUndo, saveDay } from '../../db/repo'
 import { formatLong, today, type ISODate } from '../../domain/dates'
 import { periodDateSet } from '../../domain/periods'
 import { pillDay } from '../../domain/pill'
@@ -33,7 +33,16 @@ import { usePrediction } from '../../usePrediction'
 import { PregnancyChanceBadge } from '../home/PregnancyChanceBadge'
 
 /** Hoja modal con el registro de un día. Usa <dialog> nativo (foco atrapado, Escape cierra). */
-export function DaySheet({ date, onClose }: { date: ISODate; onClose: () => void }) {
+export function DaySheet({
+  date,
+  onClose,
+  onCleared,
+}: {
+  date: ISODate
+  onClose: () => void
+  /** Tras "Borrar el registro de este día", con lo de antes para poder deshacerlo. */
+  onCleared?: (undo: PeriodEditUndo) => void
+}) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -101,6 +110,15 @@ export function DaySheet({ date, onClose }: { date: ISODate; onClose: () => void
           initial={data.day}
           initialPeriod={data.isPeriod}
           onSaved={close}
+          onClear={
+            data.day || data.isPeriod
+              ? async () => {
+                  const undo = await clearDay(date)
+                  close()
+                  onCleared?.(undo)
+                }
+              : undefined
+          }
         />
       )}
     </dialog>
@@ -112,11 +130,14 @@ function DayFormView({
   initial,
   initialPeriod,
   onSaved,
+  onClear,
 }: {
   date: ISODate
   initial: DayLog | undefined
   initialPeriod: boolean
   onSaved: () => void
+  /** Solo si el día tiene algo guardado. */
+  onClear?: () => Promise<void>
 }) {
   const [isPeriod, setIsPeriod] = useState(initialPeriod)
   const [form, setForm] = useState<DayForm>(() => ({
@@ -482,6 +503,11 @@ function DayFormView({
         <Button className="w-full" disabled={saving || tempInvalid || weightInvalid} onClick={save}>
           {l.save}
         </Button>
+        {onClear && (
+          <Button variant="ghost" className="mt-1 w-full text-danger" disabled={saving} onClick={() => void onClear()}>
+            {l.clearDay}
+          </Button>
+        )}
       </footer>
     </>
   )

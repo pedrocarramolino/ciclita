@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { AppDB } from './db'
 import {
   addCustomSymptom,
+  clearDay,
   endPeriod,
   markPeriodRange,
   restorePeriods,
@@ -169,6 +170,25 @@ describe('editar periodos en el calendario', () => {
     expect(await periodsOf(d)).toEqual([{ startDate: '2026-09-01', endDate: '2026-09-05' }])
     expect(await d.days.get('2026-09-03')).toMatchObject({ flow: 'heavy' })
     expect(await d.days.get('2026-09-04')).toMatchObject({ flow: 'light', notes: 'nota' })
+  })
+})
+
+describe('borrar el registro de un día', () => {
+  it('borra lo apuntado y lo quita del periodo; se puede deshacer', async () => {
+    const d = await freshDB()
+    await d.periods.add({ startDate: '2026-09-01', endDate: '2026-09-05' })
+    await d.days.put({ date: '2026-09-03', flow: 'heavy', notes: 'Muy cansada', updatedAt: 1 })
+
+    const undo = await clearDay('2026-09-03', d, TODAY)
+    expect(await d.days.get('2026-09-03')).toBeUndefined()
+    expect((await d.periods.orderBy('startDate').toArray()).map(({ startDate, endDate }) => [startDate, endDate])).toEqual([
+      ['2026-09-01', '2026-09-02'],
+      ['2026-09-04', '2026-09-05'],
+    ])
+
+    await undoPeriodEdit(undo, d)
+    expect(await d.days.get('2026-09-03')).toMatchObject({ notes: 'Muy cansada' })
+    expect(await d.periods.count()).toBe(1)
   })
 })
 

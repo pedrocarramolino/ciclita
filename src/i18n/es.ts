@@ -850,6 +850,8 @@ export const es = {
   log: {
     close: 'Cerrar',
     periodQuestion: '¿Tienes el periodo este día?',
+    clearDay: 'Borrar el registro de este día',
+    cleared: 'Registro del día borrado.',
     flow: 'Intensidad del flujo',
     symptoms: 'Síntomas',
     addSymptom: 'Añadir síntoma',

@@ -13,6 +13,7 @@ import { clearCalendarFocus, peekCalendarFocus } from './calendarFocus'
 import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
+import { UndoToast } from '../../components/UndoToast'
 import { AppointmentList } from './AppointmentList'
 import { AppointmentSheet } from './AppointmentSheet'
 
@@ -44,6 +45,8 @@ export function CalendarScreen() {
   const [editing, setEditing] = useState(() => !!peekCalendarFocus()?.edit)
   useEffect(clearCalendarFocus, [])
   const [selected, setSelected] = useState<ISODate | null>(null)
+  // Registro de un día recién borrado (para "Deshacer").
+  const [clearedUndo, setClearedUndo] = useState<PeriodEditUndo | null>(null)
   // "Editar periodos": primer día elegido, resultado del último cambio y cómo deshacerlo.
   const [anchor, setAnchor] = useState<ISODate | null>(null)
   const [editMsg, setEditMsg] = useState('')
@@ -274,7 +277,19 @@ export function CalendarScreen() {
         />
       )}
 
-      {selected && <DaySheet date={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <DaySheet date={selected} onClose={() => setSelected(null)} onCleared={(u) => setClearedUndo(u)} />
+      )}
+      {clearedUndo && (
+        <UndoToast
+          message={t.log.cleared}
+          onClose={() => setClearedUndo(null)}
+          onUndo={() => {
+            void undoPeriodEdit(clearedUndo)
+            setClearedUndo(null)
+          }}
+        />
+      )}
     </main>
   )
 }
