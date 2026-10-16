@@ -246,7 +246,7 @@ export function CalendarScreen() {
       {!editing && (
         <>
           <p className="mt-3 text-center text-sm text-muted">{c.hint}</p>
-          <div className="mt-3 grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
+          <div className="mt-3 grid gap-2">
             <Button variant="secondary" onClick={() => setEditing(true)}>
               <Icon name="drop" />
               {e.open}
