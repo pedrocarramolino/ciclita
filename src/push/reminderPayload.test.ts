@@ -192,5 +192,26 @@ describe('botón "Ha empezado" del aviso de periodo', () => {
     const preg = buildReminders(s({ custom: [{ id: 'custom-a', name: 'X', time: '21:00', cycleDays: { from: 15, to: 26 } }] }), upcoming, '2026-10-20', 'pregnancy')
     expect(preg.routines).toBeUndefined()
   })
-})
 
+  it('cita médica: aviso el día y la hora elegidos, con su texto; discreto sin detalles', () => {
+    const appt = {
+      id: 'a1',
+      type: 'ultrasound' as const,
+      date: '2026-10-22',
+      time: '10:30',
+      title: 'Dra. López',
+      reminder: { date: '2026-10-21', time: '20:00' },
+      updatedAt: 1,
+    }
+    const r = buildReminders(s({ discreet: false }), upcoming, '2026-10-20', 'cycle', {}, [
+      appt,
+      { ...appt, id: 'pasada', reminder: { date: '2026-10-01', time: '09:00' } },
+      { ...appt, id: 'sin-aviso', reminder: null },
+    ])
+    expect(r.events).toEqual([
+      { date: '2026-10-21', time: '20:00', title: 'Cita médica', body: 'Ecografía (Dra. López): mañana a las 10:30.' },
+    ])
+    const discreet = buildReminders(s({}), upcoming, '2026-10-20', 'cycle', {}, [appt])
+    expect(JSON.stringify(discreet)).not.toMatch(/Ecograf|López/)
+  })
+})

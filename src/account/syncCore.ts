@@ -29,6 +29,9 @@ export interface SyncState {
   settingsAt: number
   symptoms: string | null
   symptomsAt: number
+  /** Citas: `updatedAt` de cada una en la nube y último cambio descargado (estados antiguos no lo tienen). */
+  appointments?: Record<string, number>
+  lastPullAppointments?: number
 }
 
 export const emptySyncState = (uid: string): SyncState => ({
@@ -41,6 +44,8 @@ export const emptySyncState = (uid: string): SyncState => ({
   settingsAt: 0,
   symptoms: null,
   symptomsAt: 0,
+  appointments: {},
+  lastPullAppointments: 0,
 })
 
 /**
@@ -94,6 +99,19 @@ export interface RemoteDay extends Partial<DayLog> {
   date: ISODate
   updatedAt: number
   deleted?: boolean
+}
+
+/** Qué citas subir (nuevas o cambiadas) y cuáles marcar como borradas. */
+export function planPush<T extends { updatedAt: number }>(
+  local: T[],
+  keyOf: (item: T) => string,
+  cloud: Record<string, number>,
+): { upserts: T[]; deletes: string[] } {
+  const here = new Set(local.map(keyOf))
+  return {
+    upserts: local.filter((x) => cloud[keyOf(x)] !== x.updatedAt),
+    deletes: Object.keys(cloud).filter((k) => !here.has(k)),
+  }
 }
 
 /** Qué hacer en el dispositivo con un día que llega de la nube: gana el cambio más reciente. */

@@ -2,8 +2,10 @@
  * Construye los recordatorios que se envían al servidor (con su texto ya redactado).
  * Función pura para poder probarla.
  */
+import type { Appointment } from '../db/db'
 import type { ReminderSettings } from '../db/settings'
-import { addDays, today as todayISO, type ISODate } from '../domain/dates'
+import { addDays, diffDays, formatDayMonth, today as todayISO, type ISODate } from '../domain/dates'
+import { MAX_EVENTS } from '../domain/reminderEvents'
 import { buildEventReminders, cycleDayWindows } from '../domain/reminderEvents'
 import type { AppMode } from '../domain/modes'
 import type { Prediction } from '../domain/prediction'
@@ -70,6 +72,8 @@ export function buildReminders(
   today: ISODate = todayISO(),
   mode: AppMode = 'cycle',
   pill: PillOptions = {},
+  /** Citas médicas con aviso (los que aún no han pasado). */
+  appointments: Appointment[] = [],
 ): RemindersPayload {
   // En embarazo y perimenopausia no hay previsiones fiables de periodo ni de fertilidad.
   if (mode !== 'cycle') r = { ...r, periodEnabled: false, fertileEnabled: false }
@@ -112,6 +116,18 @@ export function buildReminders(
     title: r.discreet ? n.discreetTitle : n.events[e.type].title,
     body: r.discreet ? n.discreet.event : n.events[e.type].body,
   }))
+  // Avisos de citas médicas, el día y la hora elegidos.
+  for (const a of appointments) {
+    if (!a.reminder || a.reminder.date < today) continue
+    events.push({
+      date: a.reminder.date,
+      time: a.reminder.time,
+      title: r.discreet ? n.discreetTitle : n.appointment.title,
+      body: r.discreet ? n.discreet.event : appointmentBody(a),
+    })
+  }
+  events.sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time))
+  events.splice(MAX_EVENTS)
   if (events.length) out.events = events
 
   // Hábitos: comparten una sola cadena de avisos en el servidor.
@@ -148,6 +164,16 @@ export function buildReminders(
   }
   if (routines.length) out.routines = routines
   return out
+}
+
+/** "Ginecología (Dra. López): mañana a las 10:30." — referido al día del aviso. */
+function appointmentBody(a: Appointment): string {
+  const n = t.notifications.appointment
+  const type = t.appointments.types[a.type]
+  const who = a.title ? `${type} (${a.title.slice(0, 60)})` : type
+  const days = diffDays(a.reminder!.date, a.date)
+  const when = days === 0 ? n.today : days === 1 ? n.tomorrow : n.on(formatDayMonth(a.date))
+  return n.body(who, when, a.time).slice(0, 200)
 }
 
 /** Largo máximo del nombre de la medicación (cabe de sobra en el límite del servidor). */

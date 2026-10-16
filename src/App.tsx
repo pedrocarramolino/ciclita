@@ -10,6 +10,7 @@ import { LockScreen } from './features/lock/LockScreen'
 import type { PinCheck } from './features/lock/pinCheck'
 import { flushVault, getVaultRow, isVaultUnlocked, unlockVault, vaultLockStore } from './db/vault'
 import { requestPersistence } from './db/persist'
+import { db } from './db/db'
 import { useAccount, useAutoSync } from './account/useAccount'
 import { AuthScreen } from './features/auth/AuthScreen'
 import { authenticateBiometric, unwrapPin } from './security/biometric'
@@ -151,6 +152,12 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
   // se vuelven a montar, para que "hoy" nunca se quede en ayer.
   const day = useToday()
   const prediction = usePrediction(day)
+  // Lo que cuenta para los avisos de citas: cuándo avisar y el texto.
+  const appointmentReminders = useLiveQuery(async () =>
+    (await db.appointments.toArray())
+      .filter((a) => a.reminder)
+      .map((a) => [a.id, a.reminder, a.date, a.time, a.type, a.title]),
+  )
   // Cuenta obligatoria: sin sesión se muestra el registro / inicio de sesión.
   const account = useAccount()
   const uid = account.status === 'signedIn' ? account.user.uid : null
@@ -160,6 +167,7 @@ function MainApp({ startUnlocked }: { startUnlocked: boolean }) {
     prediction,
     settings?.mode,
     settings && [settings.tracking.pill, reminderPillPack(settings.tracking.pill, settings.pill)],
+    appointmentReminders,
   )
   usePreloadScreens(!!settings?.onboardingDone)
   // Una vez que hay datos, se pide al navegador que no los borre para liberar espacio.

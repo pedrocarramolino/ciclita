@@ -14,6 +14,7 @@ import { getSettings, setSettings } from '../../db/settings'
 import { perimenopauseInfo, pregnancyInfo } from '../../domain/modes'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { periodEndQuestion } from '../../domain/periods'
+import { NextAppointment } from './NextAppointment'
 import { PillCard } from './PillCard'
 import { MissedPeriodPrompt, PeriodEndPrompt } from './PeriodPrompts'
 import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
@@ -148,6 +149,7 @@ export function Home() {
         </Button>
       </div>
 
+      <NextAppointment />
       {mode !== 'pregnancy' && <PillCard />}
 
       {mode === 'cycle' && p.nextPeriods.length > 0 && <Upcoming p={p} />}

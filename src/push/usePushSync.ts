@@ -13,10 +13,20 @@ export function usePushSync(
   mode?: string,
   /** Envase de la píldora (para no avisar en los días de descanso). */
   pillPack?: unknown,
+  /** Avisos de las citas médicas (cambian el contenido enviado). */
+  appointmentReminders?: unknown,
 ) {
   const key =
     reminders && prediction
-      ? JSON.stringify([reminders, mode, pillPack, prediction.nextPeriods, prediction.fertileWindows, prediction.status.kind])
+      ? JSON.stringify([
+          reminders,
+          mode,
+          pillPack,
+          appointmentReminders,
+          prediction.nextPeriods,
+          prediction.fertileWindows,
+          prediction.status.kind,
+        ])
       : null
 
   useEffect(() => {

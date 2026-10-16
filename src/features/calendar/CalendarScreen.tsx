@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useMemo, useState } from 'react'
 import { Button } from '../../components/Button'
 import { Icon } from '../../components/Icon'
-import { db } from '../../db/db'
+import { db, type Appointment } from '../../db/db'
 import { markPeriodRange, undoPeriodEdit, unmarkPeriodDay, type PeriodEditUndo } from '../../db/repo'
 import { getSettings } from '../../db/settings'
 import { cycleDayOf, monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
@@ -13,6 +13,8 @@ import { clearCalendarFocus, peekCalendarFocus } from './calendarFocus'
 import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
 import { DaySheet } from '../log/DaySheet'
+import { AppointmentList } from './AppointmentList'
+import { AppointmentSheet } from './AppointmentSheet'
 
 interface DayState {
   isToday: boolean
@@ -29,6 +31,8 @@ interface DayState {
   isAnchor: boolean
   /** Día del ciclo (si se numeran). */
   cycleDay: number | null
+  /** Hay alguna cita médica ese día. */
+  hasAppointment: boolean
 }
 
 /** Tramo más largo que se puede marcar de una vez (evita marcar meses por un toque equivocado). */
@@ -47,6 +51,10 @@ export function CalendarScreen() {
   const [anchor, setAnchor] = useState<ISODate | null>(null)
   const [editMsg, setEditMsg] = useState('')
   const [undo, setUndo] = useState<PeriodEditUndo | null>(null)
+  // Cita médica abierta (nueva si `appointment` no está).
+  const [sheet, setSheet] = useState<{ appointment?: Appointment } | null>(null)
+  const appointments = useLiveQuery(() => db.appointments.toArray())
+  const appointmentDays = useMemo(() => new Set((appointments ?? []).map((x) => x.date)), [appointments])
   const today = todayISO()
   const c = t.calendar
 
@@ -102,6 +110,7 @@ export function CalendarScreen() {
       pillMissed: !!data?.pillMissed?.has(date),
       isAnchor: editing && date === anchor,
       cycleDay: cycleStarts ? cycleDayOf(date, cycleStarts) : null,
+      hasAppointment: appointmentDays.has(date),
     }
   }
 
@@ -252,13 +261,33 @@ export function CalendarScreen() {
       {!editing && (
         <>
           <p className="mt-3 text-center text-sm text-muted">{c.hint}</p>
-          <Button variant="secondary" className="mt-3 w-full" onClick={() => setEditing(true)}>
-            <Icon name="drop" />
-            {e.open}
-          </Button>
+          <div className="mt-3 grid grid-cols-1 gap-2 min-[400px]:grid-cols-2">
+            <Button variant="secondary" onClick={() => setEditing(true)}>
+              <Icon name="drop" />
+              {e.open}
+            </Button>
+            <Button variant="secondary" onClick={() => setSheet({})}>
+              <Icon name="plus" />
+              {t.appointments.add}
+            </Button>
+          </div>
+          <AppointmentList appointments={appointments ?? []} onOpen={(appointment) => setSheet({ appointment })} />
         </>
       )}
-      <Legend withMargin={!!predicted?.hasMargin} withPredictions={mode === 'cycle'} withPill={!!data?.pillMissed} />
+      <Legend
+        withMargin={!!predicted?.hasMargin}
+        withPredictions={mode === 'cycle'}
+        withPill={!!data?.pillMissed}
+        withAppointments={appointmentDays.size > 0}
+      />
+      {sheet && (
+        <AppointmentSheet
+          appointment={sheet.appointment}
+          defaultDate={today}
+          defaultType={mode === 'pregnancy' ? 'ultrasound' : 'gynecology'}
+          onClose={() => setSheet(null)}
+        />
+      )}
 
       {selected && <DaySheet date={selected} onClose={() => setSelected(null)} />}
     </main>
@@ -279,6 +308,7 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
   if (s.pillMissed) parts.push(t.pill.calendarMissed)
   if (s.isAnchor) parts.push(c.edit.anchor)
   if (s.cycleDay) parts.push(c.cycleDay(s.cycleDay))
+  if (s.hasAppointment) parts.push(t.appointments.mark)
 
   const look = s.isPeriod
     ? 'bg-primary text-on-primary'
@@ -318,6 +348,11 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
           </sup>
         )}
       </span>
+      {s.hasAppointment && (
+        <span aria-hidden="true" className="absolute -top-1 -left-1 text-xs leading-none">
+          🩺
+        </span>
+      )}
       {s.pillMissed && (
         <span aria-hidden="true" className="absolute top-0.5 right-0.5 size-2.5 rounded-full border-2 border-danger bg-surface" />
       )}
@@ -335,10 +370,12 @@ function Legend({
   withMargin,
   withPredictions,
   withPill,
+  withAppointments,
 }: {
   withMargin: boolean
   withPredictions: boolean
   withPill: boolean
+  withAppointments: boolean
 }) {
   const c = t.calendar
   const item = (swatch: string, label: string) => (
@@ -363,6 +400,14 @@ function Legend({
           </span>
           {c.logged}
         </li>
+        {withAppointments && (
+          <li className="flex items-center gap-2">
+            <span aria-hidden="true" className="grid size-5 place-items-center text-sm">
+              🩺
+            </span>
+            {t.appointments.legend}
+          </li>
+        )}
         {withPill && (
           <li className="flex items-center gap-2">
             <span aria-hidden="true" className="grid size-5 place-items-center">

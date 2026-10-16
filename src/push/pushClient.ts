@@ -6,6 +6,7 @@
  * por cada recordatorio activo, su hora y su texto (y las fechas del aviso de periodo).
  * Si no hay ningún recordatorio activo, no se envía nada y se borra lo que hubiera.
  */
+import { db } from '../db/db'
 import { getSettings, setSettings, type PushDevice, type Settings } from '../db/settings'
 import { reminderPillPack } from '../domain/pill'
 import type { Prediction } from '../domain/prediction'
@@ -103,12 +104,14 @@ export async function unregisterPush(device: PushDevice | null): Promise<void> {
  */
 export async function syncPush(prediction: Prediction | null, opts: { force?: boolean } = {}): Promise<void> {
   const settings: Settings = await getSettings()
+  const appointments = await db.appointments.toArray()
   const reminders = buildReminders(
     settings.reminders,
     prediction,
     undefined,
     settings.mode,
     { pack: reminderPillPack(settings.tracking.pill, settings.pill), trackTaken: settings.tracking.pill },
+    appointments,
   )
 
   try {

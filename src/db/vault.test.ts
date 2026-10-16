@@ -141,4 +141,22 @@ describe('bóveda cifrada', () => {
     expect((await getVaultRow(disk))?.bio).toBeUndefined()
     expect(await unlockVault('2580', { disk })).toBe(true)
   })
+
+  it('las citas médicas también se cifran y se recuperan', async () => {
+    const disk = await seededDisk()
+    await disk.appointments.put({
+      id: 'a1',
+      type: 'gynecology',
+      date: '2026-11-03',
+      time: '09:30',
+      notes: 'Revisión privada',
+      reminder: null,
+      updatedAt: 1,
+    })
+    await enableEncryption('2580', { disk, iterations: ITER })
+    expect(await disk.appointments.count()).toBe(0)
+    expect(asText((await getVaultRow(disk))!.data)).not.toContain('Revisión privada')
+    await unlockVault('2580', { disk })
+    expect(await db.appointments.get('a1')).toMatchObject({ notes: 'Revisión privada' })
+  })
 })

@@ -5,6 +5,7 @@ import {
   mergeSymptoms,
   pickSyncedSettings,
   planDayPush,
+  planPush,
   resolveRemoteDay,
   stableHash,
   toLocalDay,
@@ -71,5 +72,18 @@ describe('sincronización: reglas', () => {
 
   it('la huella no depende del orden de las claves', () => {
     expect(stableHash({ b: 1, a: { d: 2, c: 3 } })).toBe(stableHash({ a: { c: 3, d: 2 }, b: 1 }))
+  })
+
+  it('citas: sube las nuevas o cambiadas y marca las borradas', () => {
+    const plan = planPush(
+      [
+        { id: 'a', updatedAt: 1 },
+        { id: 'b', updatedAt: 5 },
+      ],
+      (x) => x.id,
+      { a: 1, b: 3, c: 2 },
+    )
+    expect(plan.upserts.map((x) => x.id)).toEqual(['b'])
+    expect(plan.deletes).toEqual(['c'])
   })
 })

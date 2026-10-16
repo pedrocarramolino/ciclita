@@ -5,6 +5,8 @@
 /** Números con decimales al estilo español: "29,8". */
 const num = (n: number) => n.toLocaleString('es')
 
+type AppointmentTypeKey = 'gynecology' | 'ultrasound' | 'tests' | 'midwife' | 'other'
+
 export const es = {
   appName: 'Ciclita',
   locale: 'es',
@@ -635,6 +637,13 @@ export const es = {
       customTitle: 'Recordatorio',
       medicationBody: (name: string) => (name ? `Es la hora de: ${name}.` : 'Es la hora de tu medicación.'),
     },
+    appointment: {
+      title: 'Cita médica',
+      today: 'hoy',
+      tomorrow: 'mañana',
+      on: (d: string) => `el ${d}`,
+      body: (who: string, when: string, time: string | null) => `${who}: ${when}${time ? ` a las ${time}` : ''}.`,
+    },
     pillTaken: 'Ya la he tomado',
     periodStarted: 'Ha empezado',
     events: {
@@ -1027,6 +1036,46 @@ export const es = {
       },
     ],
     close: 'Cerrar',
+  },
+  appointments: {
+    add: 'Añadir cita médica',
+    section: 'Citas médicas',
+    upcoming: 'Próximas',
+    past: 'Anteriores',
+    none: 'No tienes citas próximas. Añade la de la ginecóloga, una ecografía o un análisis y te avisamos.',
+    newTitle: 'Nueva cita médica',
+    editTitle: 'Cita médica',
+    type: 'Tipo',
+    types: {
+      gynecology: 'Ginecología',
+      ultrasound: 'Ecografía',
+      tests: 'Análisis',
+      midwife: 'Matrona',
+      other: 'Otra cita',
+    } as Record<AppointmentTypeKey, string>,
+    date: 'Día',
+    time: 'Hora',
+    noTime: 'Aún no sé la hora',
+    who: 'Con quién o qué (opcional)',
+    whoPlaceholder: 'Por ejemplo, Dra. López',
+    place: 'Dónde (opcional)',
+    placePlaceholder: 'Por ejemplo, centro de salud, consulta 3',
+    notes: 'Notas',
+    notesHint: 'Dudas que quieres preguntar o, después, lo que te han dicho.',
+    remind: 'Avisarme',
+    remindDate: 'Día del aviso',
+    remindTime: 'Hora del aviso',
+    remindHint: 'Te llegará una notificación ese día a esa hora.',
+    save: 'Guardar',
+    remove: 'Borrar cita',
+    removeTitle: '¿Borrar esta cita?',
+    removeBody: 'Se borrarán también sus notas y su aviso.',
+    close: 'Cerrar',
+    when: (date: string, time: string | null) => (time ? `${date}, ${time}` : date),
+    mark: 'cita médica',
+    legend: 'Cita médica',
+    homeNext: 'Próxima cita',
+    hasNotes: 'Con notas',
   },
 }
 

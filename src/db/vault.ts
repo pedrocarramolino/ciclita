@@ -11,7 +11,17 @@
  * Al bloquear (o cerrar la app) la copia en memoria desaparece.
  */
 import Dexie from 'dexie'
-import { AppDB, diskDb, setActiveDb, type DayLog, type Period, type SettingRow, type Symptom, type VaultRow } from './db'
+import {
+  AppDB,
+  diskDb,
+  setActiveDb,
+  type Appointment,
+  type DayLog,
+  type Period,
+  type SettingRow,
+  type Symptom,
+  type VaultRow,
+} from './db'
 import { decryptJSON, deriveKey, encryptJSON, KDF_ITERATIONS, randomBytes, WrongKeyError } from '../security/crypto'
 import type { WrappedPin } from '../security/biometric'
 
@@ -19,6 +29,8 @@ export interface Snapshot {
   periods: Period[]
   days: DayLog[]
   symptoms: Symptom[]
+  /** Las bóvedas anteriores a las citas no lo tienen. */
+  appointments?: Appointment[]
   settings: SettingRow[]
 }
 
@@ -41,25 +53,27 @@ export async function isEncrypted(disk: AppDB = diskDb): Promise<boolean> {
 /** ¿La app está funcionando con los datos descifrados en memoria? */
 export const isVaultUnlocked = () => session !== null
 
-const TABLES = ['periods', 'days', 'symptoms', 'settings'] as const
+const TABLES = ['periods', 'days', 'symptoms', 'settings', 'appointments'] as const
 
 export async function readSnapshot(d: AppDB): Promise<Snapshot> {
-  const [periods, days, symptoms, settings] = await Promise.all([
+  const [periods, days, symptoms, settings, appointments] = await Promise.all([
     d.periods.toArray(),
     d.days.toArray(),
     d.symptoms.toArray(),
     d.settings.toArray(),
+    d.appointments.toArray(),
   ])
-  return { periods, days, symptoms, settings }
+  return { periods, days, symptoms, settings, appointments }
 }
 
 async function writeSnapshot(d: AppDB, snap: Snapshot) {
-  await d.transaction('rw', [d.periods, d.days, d.symptoms, d.settings], async () => {
+  await d.transaction('rw', [d.periods, d.days, d.symptoms, d.settings, d.appointments], async () => {
     await Promise.all(TABLES.map((t) => d[t].clear()))
     await d.periods.bulkAdd(snap.periods)
     await d.days.bulkAdd(snap.days)
     await d.symptoms.bulkAdd(snap.symptoms)
     await d.settings.bulkAdd(snap.settings)
+    await d.appointments.bulkAdd(snap.appointments ?? [])
   })
 }
 
@@ -78,7 +92,7 @@ export async function enableEncryption(
   const salt = randomBytes(16)
   const key = await deriveKey(pin, salt, iterations)
   const sealed = await encryptJSON(key, snap)
-  await disk.transaction('rw', [disk.periods, disk.days, disk.symptoms, disk.settings, disk.vault], async () => {
+  await disk.transaction('rw', [disk.periods, disk.days, disk.symptoms, disk.settings, disk.appointments, disk.vault], async () => {
     await disk.vault.put({
       key: 'vault',
       version: 1,
@@ -207,7 +221,7 @@ export async function disableEncryption(): Promise<void> {
   await flushVault()
   const snap = await readSnapshot(s.mem)
   const d = s.disk
-  await d.transaction('rw', [d.periods, d.days, d.symptoms, d.settings, d.vault], async () => {
+  await d.transaction('rw', [d.periods, d.days, d.symptoms, d.settings, d.appointments, d.vault], async () => {
     await writeSnapshot(d, snap)
     await d.vault.delete('vault')
   })

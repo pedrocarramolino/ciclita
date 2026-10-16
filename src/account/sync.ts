@@ -21,7 +21,7 @@ import {
   type DocumentReference,
   type WriteBatch,
 } from 'firebase/firestore/lite'
-import { db } from '../db/db'
+import { db, type Appointment } from '../db/db'
 import { getSettings, setSettings } from '../db/settings'
 import { today } from '../domain/dates'
 import { firestore } from './firebase'
@@ -32,6 +32,7 @@ import {
   normalizePeriods,
   pickSyncedSettings,
   planDayPush,
+  planPush,
   resolveRemoteDay,
   stableHash,
   toLocalDay,
@@ -47,6 +48,7 @@ function clean<T>(v: T): T {
 
 const userDoc = (uid: string) => doc(firestore(), 'users', uid)
 const daysCol = (uid: string) => collection(firestore(), 'users', uid, 'days')
+const appointmentsCol = (uid: string) => collection(firestore(), 'users', uid, 'appointments')
 const stateDoc = (uid: string, name: 'periods' | 'settings' | 'symptoms') =>
   doc(firestore(), 'users', uid, 'state', name)
 
@@ -93,6 +95,33 @@ export async function pull(uid: string): Promise<void> {
       else state.days[r.date] = r.updatedAt
       const at = r.syncedAt?.toMillis?.()
       if (at && at > state.lastPull) state.lastPull = at
+    }
+  })
+
+  // Citas cambiadas desde la última descarga (gana la versión más reciente de cada una).
+  const apptState = (state.appointments ??= {})
+  const lastAppt = state.lastPullAppointments ?? 0
+  const apptSnap = await getDocs(
+    lastAppt ? query(appointmentsCol(uid), where('syncedAt', '>', Timestamp.fromMillis(lastAppt))) : appointmentsCol(uid),
+  )
+  const apptRemotes = apptSnap.docs.map(
+    (d) => d.data() as Appointment & { deleted?: boolean; syncedAt?: Timestamp },
+  )
+  await db.transaction('rw', db.appointments, async () => {
+    for (const r of apptRemotes) {
+      const local = await db.appointments.get(r.id)
+      if (r.deleted) {
+        if (local && local.updatedAt <= r.updatedAt) await db.appointments.delete(r.id)
+        delete apptState[r.id]
+      } else {
+        if (!local || local.updatedAt < r.updatedAt) {
+          const { syncedAt: _s, deleted: _d, ...appt } = r
+          await db.appointments.put(appt)
+        }
+        apptState[r.id] = r.updatedAt
+      }
+      const at = r.syncedAt?.toMillis?.()
+      if (at && at > (state.lastPullAppointments ?? 0)) state.lastPullAppointments = at
     }
   })
 
@@ -149,11 +178,12 @@ export async function pull(uid: string): Promise<void> {
 export async function push(uid: string): Promise<void> {
   const { state, fresh } = await loadState(uid)
   const before = stableHash(state)
-  const [days, periods, settings, symptoms] = await Promise.all([
+  const [days, periods, settings, symptoms, appointments] = await Promise.all([
     db.days.toArray(),
     db.periods.toArray(),
     getSettings(),
     customSymptoms(),
+    db.appointments.toArray(),
   ])
   const now = Date.now()
   const ops: ((b: WriteBatch) => void)[] = []
@@ -162,6 +192,11 @@ export async function push(uid: string): Promise<void> {
   const plan = planDayPush(days, state.days)
   for (const d of plan.upserts) set(doc(daysCol(uid), d.date), d)
   for (const date of plan.deletes) set(doc(daysCol(uid), date), { date, deleted: true, updatedAt: now })
+
+  const apptState = (state.appointments ??= {})
+  const apptPlan = planPush(appointments, (a) => a.id, apptState)
+  for (const a of apptPlan.upserts) set(doc(appointmentsCol(uid), a.id), a)
+  for (const id of apptPlan.deletes) set(doc(appointmentsCol(uid), id), { id, deleted: true, updatedAt: now })
 
   const periodList = normalizePeriods(periods)
   const periodsHash = stableHash(periodList)
@@ -180,6 +215,8 @@ export async function push(uid: string): Promise<void> {
 
   for (const d of plan.upserts) state.days[d.date] = d.updatedAt
   for (const date of plan.deletes) delete state.days[date]
+  for (const a of apptPlan.upserts) apptState[a.id] = a.updatedAt
+  for (const id of apptPlan.deletes) delete apptState[id]
   if (periodsHash !== state.periods) [state.periods, state.periodsAt] = [periodsHash, now]
   if (settingsHash !== state.settings) [state.settings, state.settingsAt] = [settingsHash, now]
   if (symptomsHash !== state.symptoms) [state.symptoms, state.symptomsAt] = [symptomsHash, now]
@@ -259,8 +296,8 @@ export function startAutoSync(uid: string, onError: (e: unknown) => void, onFirs
  */
 export async function deleteCloudData(uid: string, { withProfile = true }: { withProfile?: boolean } = {}): Promise<void> {
   await flushSync()
-  const days = await getDocs(daysCol(uid))
-  const ops: ((b: WriteBatch) => void)[] = days.docs.map((d) => (b) => b.delete(d.ref))
+  const [days, appts] = await Promise.all([getDocs(daysCol(uid)), getDocs(appointmentsCol(uid))])
+  const ops: ((b: WriteBatch) => void)[] = [...days.docs, ...appts.docs].map((d) => (b) => b.delete(d.ref))
   for (const name of ['periods', 'settings', 'symptoms'] as const) ops.push((b) => b.delete(stateDoc(uid, name)))
   if (withProfile) ops.push((b) => b.delete(userDoc(uid)))
   await commitAll(ops)

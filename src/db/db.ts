@@ -38,6 +38,25 @@ export interface DayLog {
   updatedAt: number
 }
 
+export type AppointmentType = 'gynecology' | 'ultrasound' | 'tests' | 'midwife' | 'other'
+
+/** Cita médica (ginecología, ecografía…), con notas de lo que te dijeron y su aviso. */
+export interface Appointment {
+  id: string
+  type: AppointmentType
+  date: ISODate
+  /** 'HH:MM' o null si no se sabe la hora. */
+  time: string | null
+  /** Con quién o qué (p. ej. "Dra. López"). */
+  title?: string
+  place?: string
+  /** Lo que te han dicho, dudas para llevar… */
+  notes?: string
+  /** Aviso por notificación: día y hora. */
+  reminder: { date: ISODate; time: string } | null
+  updatedAt: number
+}
+
 export interface Symptom {
   id?: number
   name: string
@@ -80,6 +99,7 @@ export class AppDB extends Dexie {
   symptoms!: EntityTable<Symptom, 'id'>
   settings!: EntityTable<SettingRow, 'key'>
   vault!: EntityTable<VaultRow, 'key'>
+  appointments!: EntityTable<Appointment, 'id'>
 
   constructor(name = DB_NAME, options?: DexieOptions) {
     super(name, options)
@@ -90,6 +110,7 @@ export class AppDB extends Dexie {
       settings: 'key',
     })
     this.version(2).stores({ vault: 'key' })
+    this.version(3).stores({ appointments: 'id, date' })
     this.on('populate', (tx) => {
       tx.table('symptoms').bulkAdd(BUILTIN_SYMPTOMS.map((name) => ({ name, builtin: true })))
     })
