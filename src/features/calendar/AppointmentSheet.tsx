@@ -6,6 +6,8 @@ import { deleteAppointment, saveAppointment } from '../../db/appointments'
 import type { Appointment, AppointmentType } from '../../db/db'
 import { addDays, today } from '../../domain/dates'
 import { t } from '../../i18n'
+import { buildIcs } from '../../domain/ics'
+import { saveFile } from '../../files'
 import { permission, requestPermission } from '../../push/pushClient'
 import { APPOINTMENT_EMOJI, APPOINTMENT_TYPES } from './appointmentTypes'
 
@@ -47,6 +49,8 @@ export function AppointmentSheet({
     reminder: appointment ? appointment.reminder : defaultReminder(defaultDate),
   }))
   const [confirmRemove, setConfirmRemove] = useState(false)
+  // El id se fija ya para que el archivo de calendario y la cita guardada coincidan.
+  const [id] = useState(() => appointment?.id ?? crypto.randomUUID())
   const [perm, setPerm] = useState(permission)
   const onCloseRef = useRef(onClose)
   useEffect(() => {
@@ -74,7 +78,7 @@ export function AppointmentSheet({
 
   const save = async () => {
     await saveAppointment({
-      id: appointment?.id,
+      id,
       type: form.type,
       date: form.date,
       time: form.noTime ? null : form.time,
@@ -84,6 +88,23 @@ export function AppointmentSheet({
       reminder: form.reminder,
     })
     onClose()
+  }
+
+  /** Descarga (o comparte, en iPhone) un .ics para añadir la cita al calendario del móvil. */
+  const addToPhoneCalendar = () => {
+    const summary = form.title.trim() ? `${a.types[form.type]} · ${form.title.trim()}` : a.types[form.type]
+    const ics = buildIcs(
+      {
+        id,
+        date: form.date,
+        time: form.noTime ? null : form.time,
+        place: form.place.trim(),
+        notes: form.notes.trim(),
+        reminder: form.reminder,
+      },
+      summary,
+    )
+    void saveFile(new File([ics], `cita-${form.date}.ics`, { type: 'text/calendar' }))
   }
 
   return (
@@ -254,6 +275,11 @@ export function AppointmentSheet({
         </div>
 
         <div className="grid gap-2">
+          <Button variant="secondary" onClick={addToPhoneCalendar}>
+            <span aria-hidden="true">📅</span>
+            {a.addToCalendar}
+          </Button>
+          <p className="-mt-1 text-center text-xs text-muted">{a.addToCalendarHint}</p>
           <Button type="submit">{a.save}</Button>
           {appointment && (
             <Button variant="ghost" className="text-danger" onClick={() => setConfirmRemove(true)}>

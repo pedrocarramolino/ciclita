@@ -1133,5 +1133,7 @@ export const en: Messages = {
     legend: 'Medical appointment',
     homeNext: 'Next appointment',
     hasNotes: 'With notes',
+    addToCalendar: "Add to your phone's calendar",
+    addToCalendarHint: "A calendar file opens: choose 'Add' or your calendar app. Remember to save the appointment here too.",
   },
 }

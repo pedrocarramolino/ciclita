@@ -1132,6 +1132,8 @@ export const es = {
     legend: 'Cita médica',
     homeNext: 'Próxima cita',
     hasNotes: 'Con notas',
+    addToCalendar: 'Añadir al calendario del móvil',
+    addToCalendarHint: 'Se abre un archivo de calendario: elige «Añadir» o tu app de calendario. Recuerda guardar también la cita aquí.',
   },
 }
 
