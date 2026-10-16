@@ -1,6 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import { Switch } from '../../components/Switch'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '../../components/Icon'
 import { LegalNotice } from '../../components/LegalNotice'
 import { NumberStepper } from '../../components/NumberStepper'
@@ -15,7 +14,7 @@ import { InstallSection } from './InstallSection'
 import { PinSection } from './PinSection'
 import { RemindersSection } from './RemindersSection'
 import { PageTitle } from './pageTitle'
-import { Row, Section } from './Section'
+import { Section } from './Section'
 import { TrackingSection } from './TrackingSection'
 import { ModeSection } from './ModeSection'
 
@@ -23,15 +22,7 @@ const THEMES: Theme[] = ['system', 'light', 'dark']
 /** Límites para "Ignorar los ciclos de más de N días". */
 const IGNORE_OPTIONS = [35, 40, 45, 50, 60]
 
-function ShowCycleDaysRow({ checked }: { checked: boolean }) {
-  const id = useId()
-  const s = t.settings
-  return (
-    <Row id={id} label={s.showCycleDays} hint={s.showCycleDaysHint}>
-      <Switch labelledBy={id} checked={checked} onChange={(v) => void setSettings({ showCycleDays: v })} />
-    </Row>
-  )
-}
+
 
 /** Apartados de Ajustes; cada uno se abre en su propia página (#/settings/<apartado>). */
 const PAGES = ['account', 'cycle', 'tracking', 'reminders', 'security', 'backup', 'appearance'] as const
@@ -308,7 +299,6 @@ function CycleSection({ settings }: { settings: Settings }) {
         unit={t.common.days}
         onChange={(n) => void setSettings({ periodLength: n })}
       />
-      <ShowCycleDaysRow checked={settings.showCycleDays} />
       {!settings.manualPrediction && (
         <div>
           <label htmlFor="ignore-long" className="mb-1 block font-bold">

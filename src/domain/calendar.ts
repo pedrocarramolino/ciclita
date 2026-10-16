@@ -32,24 +32,6 @@ export function predictionDates(p: Prediction) {
   }
 }
 
-/** Más allá de esto no se numera (algo falta por registrar). */
-const MAX_NUMBERED_CYCLE_DAY = 60
-
-/**
- * Día del ciclo de cada fecha (1 = primer día del periodo), a partir de los inicios
- * registrados y de los previstos. null antes del primer periodo o si queda demasiado lejos.
- */
-export function cycleDayOf(date: ISODate, sortedStarts: ISODate[]): number | null {
-  let start: ISODate | null = null
-  for (const s of sortedStarts) {
-    if (s > date) break
-    start = s
-  }
-  if (!start) return null
-  const n = diffDays(start, date) + 1
-  return n <= MAX_NUMBERED_CYCLE_DAY ? n : null
-}
-
 export interface GridDay {
   date: ISODate
   day: number

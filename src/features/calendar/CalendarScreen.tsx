@@ -5,7 +5,7 @@ import { Icon } from '../../components/Icon'
 import { db, type Appointment } from '../../db/db'
 import { markPeriodRange, undoPeriodEdit, unmarkPeriodDay, type PeriodEditUndo } from '../../db/repo'
 import { getSettings } from '../../db/settings'
-import { cycleDayOf, monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
+import { monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
 import { diffDays, formatDayMonth, formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
 import { MAX_ONGOING_DAYS, periodDateSet } from '../../domain/periods'
 import { missedPillDates } from '../../domain/pill'
@@ -24,13 +24,10 @@ interface DayState {
   isFertile: boolean
   isOvulation: boolean
   isPossiblePeriod: boolean
-  isPossibleFertile: boolean
   isLogged: boolean
   pillMissed: boolean
   /** Primer día elegido al marcar un tramo en "Editar periodos". */
   isAnchor: boolean
-  /** Día del ciclo (si se numeran). */
-  cycleDay: number | null
   /** Hay alguna cita médica ese día. */
   hasAppointment: boolean
 }
@@ -70,7 +67,6 @@ export function CalendarScreen() {
     ])
     const pill = settings.tracking.pill && settings.pill.start ? { pack: settings.pill.pack, start: settings.pill.start } : null
     return {
-      starts: periods.map((p) => p.startDate),
       periodDays: periodDateSet(periods, today),
       logged: new Set(days.map((d) => d.date)),
       pillMissed: pill ? missedPillDates(days, pill, first, last, today) : null,
@@ -78,16 +74,7 @@ export function CalendarScreen() {
   }, [first, last, today])
 
   const prediction = usePrediction()
-  const prefs = useLiveQuery(() => getSettings().then((s) => ({ mode: s.mode, showCycleDays: s.showCycleDays })))
-  const mode = prefs?.mode
-  // Inicios registrados y, después del último, los previstos: para numerar los días del ciclo.
-  const cycleStarts = useMemo(() => {
-    if (!data || !prefs?.showCycleDays || mode !== 'cycle') return null
-    const real = [...data.starts].sort()
-    const last = real.at(-1)
-    const predictedStarts = (prediction?.nextPeriods ?? []).map((p) => p.start).filter((s) => !last || s > last)
-    return [...real, ...predictedStarts]
-  }, [data, prefs, mode, prediction])
+  const mode = useLiveQuery(() => getSettings().then((s) => s.mode))
   // En embarazo y perimenopausia no se marcan periodos previstos ni ventana fértil.
   const predicted = useMemo(
     () => (prediction && mode === 'cycle' ? predictionDates(prediction) : undefined),
@@ -105,11 +92,9 @@ export function CalendarScreen() {
       isFertile: !isPeriod && !!predicted?.fertile.has(date),
       isOvulation: !isPeriod && !!predicted?.ovulation.has(date),
       isPossiblePeriod: !isPeriod && !!predicted?.possiblePeriod.has(date),
-      isPossibleFertile: !isPeriod && !!predicted?.possibleFertile.has(date),
       isLogged: !!data?.logged.has(date),
       pillMissed: !!data?.pillMissed?.has(date),
       isAnchor: editing && date === anchor,
-      cycleDay: cycleStarts ? cycleDayOf(date, cycleStarts) : null,
       hasAppointment: appointmentDays.has(date),
     }
   }
@@ -294,6 +279,10 @@ export function CalendarScreen() {
   )
 }
 
+/** Ventana fértil: flor cerrada; ovulación: flor abierta. */
+const FLOWER_CLOSED = '🌷'
+const FLOWER_OPEN = '🌸'
+
 function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: ISODate) => void }) {
   const c = t.calendar
   const parts = [formatLong(gd.date)]
@@ -303,29 +292,23 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
   if (s.isPossiblePeriod) parts.push(c.possiblePeriod)
   if (s.isOvulation) parts.push(c.ovulation)
   else if (s.isFertile) parts.push(c.fertile)
-  else if (s.isPossibleFertile) parts.push(c.possibleFertile)
   if (s.isLogged) parts.push(c.logged)
   if (s.pillMissed) parts.push(t.pill.calendarMissed)
   if (s.isAnchor) parts.push(c.edit.anchor)
-  if (s.cycleDay) parts.push(c.cycleDay(s.cycleDay))
   if (s.hasAppointment) parts.push(t.appointments.mark)
 
+  // La ventana fértil y la ovulación se marcan con una flor (cerrada / abierta), sin fondo.
   const look = s.isPeriod
     ? 'bg-primary text-on-primary'
     : s.isPredicted
       ? 'border-2 border-dashed border-primary text-ink'
-      : s.isOvulation
-        ? 'bg-accent text-surface'
-        : s.isFertile
-          ? 'bg-lavender-soft text-ink'
-          : s.isPossiblePeriod
-            ? 'border-2 border-dotted border-primary/60 text-ink'
-            : s.isPossibleFertile
-              ? 'border border-dotted border-accent/60 bg-lavender-soft/40 text-ink'
-              : // Días de otro mes: gris del tema (no transparencia, que no llega al contraste AA).
-                gd.inMonth
-                ? 'text-ink hover:bg-surface-soft'
-                : 'font-semibold text-muted hover:bg-surface-soft'
+      : s.isPossiblePeriod
+        ? 'border-2 border-dotted border-primary/60 text-ink'
+        : // Días de otro mes: gris del tema (no transparencia, que no llega al contraste AA).
+          gd.inMonth
+          ? 'text-ink hover:bg-surface-soft'
+          : 'font-semibold text-muted hover:bg-surface-soft'
+  const flower = s.isOvulation ? FLOWER_OPEN : s.isFertile ? FLOWER_CLOSED : null
 
   return (
     <button
@@ -340,14 +323,12 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
         ${s.isAnchor ? 'bg-primary-soft text-ink ring-3 ring-primary' : ''}
         disabled:cursor-default`}
     >
-      <span>
-        {gd.day}
-        {s.cycleDay && (
-          <sup aria-hidden="true" className="ml-px text-[0.6rem] font-semibold">
-            {s.cycleDay}
-          </sup>
-        )}
-      </span>
+      {gd.day}
+      {flower && (
+        <span aria-hidden="true" className="absolute -right-1 -bottom-1 text-sm leading-none">
+          {flower}
+        </span>
+      )}
       {s.hasAppointment && (
         <span aria-hidden="true" className="absolute -top-1 -left-1 text-xs leading-none">
           🩺
@@ -359,7 +340,7 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
       {s.isLogged && (
         <span
           aria-hidden="true"
-          className={`absolute bottom-1 size-1.5 rounded-full ${s.isPeriod ? 'bg-on-primary' : s.isOvulation ? 'bg-surface' : 'bg-accent'}`}
+          className={`absolute bottom-1 size-1.5 rounded-full ${s.isPeriod ? 'bg-on-primary' : 'bg-accent'}`}
         />
       )}
     </button>
@@ -384,15 +365,22 @@ function Legend({
       {label}
     </li>
   )
+  const emojiItem = (emoji: string, label: string) => (
+    <li className="flex items-center gap-2">
+      <span aria-hidden="true" className="grid size-5 shrink-0 place-items-center text-base leading-none">
+        {emoji}
+      </span>
+      {label}
+    </li>
+  )
   return (
     <section aria-label={c.legend} className="mt-4 mb-4 rounded-2xl bg-surface p-4">
       <ul className="grid grid-cols-2 gap-3 text-sm">
         {item('bg-primary', c.period)}
         {withPredictions && item('border-2 border-dashed border-primary', c.predicted)}
-        {withPredictions && item('bg-lavender-soft', c.fertile)}
-        {withPredictions && item('bg-accent', c.ovulation)}
+        {withPredictions && emojiItem(FLOWER_CLOSED, c.fertile)}
+        {withPredictions && emojiItem(FLOWER_OPEN, c.ovulation)}
         {withMargin && item('border-2 border-dotted border-primary/60', c.possiblePeriod)}
-        {withMargin && item('border border-dotted border-accent/60 bg-lavender-soft/40', c.possibleFertile)}
         {item('outline-2 outline-offset-1 outline-ink', c.todayMark)}
         <li className="flex items-center gap-2">
           <span aria-hidden="true" className="grid size-5 place-items-center">
