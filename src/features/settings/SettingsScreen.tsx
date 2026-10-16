@@ -4,7 +4,7 @@ import { Icon, type IconName } from '../../components/Icon'
 import { NumberStepper } from '../../components/NumberStepper'
 import { getSettings, setSettings, type Settings, type Theme } from '../../db/settings'
 import { formatFullDate } from '../../domain/dates'
-import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH } from '../../domain/prediction'
+import { DEFAULT_CYCLE_LENGTH, DEFAULT_PERIOD_LENGTH, LUTEAL_RANGE } from '../../domain/prediction'
 import { LANGS, lang, setLanguage, t, type Lang } from '../../i18n'
 import { useAccount } from '../../account/useAccount'
 import { AccountSection } from './AccountSection'
@@ -280,6 +280,16 @@ function CycleSection({ settings }: { settings: Settings }) {
         max={60}
         unit={t.common.days}
         onChange={(n) => void setSettings({ cycleLength: n })}
+      />
+      <NumberStepper
+        id="set-luteal"
+        label={s.lutealPhase}
+        help={s.lutealPhaseHelp}
+        value={settings.lutealPhase}
+        min={LUTEAL_RANGE.min}
+        max={LUTEAL_RANGE.max}
+        unit={t.common.days}
+        onChange={(n) => void setSettings({ lutealPhase: n })}
       />
       <NumberStepper
         id="set-period"

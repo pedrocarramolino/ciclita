@@ -19,6 +19,7 @@ export function usePrediction(day?: string): Prediction | undefined {
       confirmedLongCycles: settings.confirmedLongCycles,
       manual: settings.manualPrediction,
       ignoreCyclesOver: settings.ignoreCyclesOver,
+      lutealPhase: settings.lutealPhase,
     })
   }, [day])
 }

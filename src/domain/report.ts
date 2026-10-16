@@ -122,7 +122,7 @@ export function buildReport(
       }
     : null
 
-  const symptoms = symptomStats(rangeDays, periods, prediction.cycleLength, prediction.periodLength, today).map(
+  const symptoms = symptomStats(rangeDays, periods, prediction.cycleLength, prediction.periodLength, today, prediction.lutealPhase).map(
     ({ name, count, topPhase, timing }) => ({ name, count, topPhase, timing }),
   )
 

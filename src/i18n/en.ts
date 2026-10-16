@@ -224,6 +224,9 @@ export const en: Messages = {
       reportSummary: 'PDF to share, download or print',
     },
     cycleSection: 'Your cycle',
+    lutealPhase: 'Luteal phase',
+    lutealPhaseHelp:
+      'Days between ovulation and your next period. It is usually 14; change it if your doctor told you or you see it in your basal temperature. It moves ovulation and the fertile window.',
     ignoreLong: 'Very long cycles',
     ignoreLongHint: 'A cycle much longer than usual is often a period that was not logged.',
     ignoreLongAuto: 'Automatic: ask if it lasts 1.7 times your usual',

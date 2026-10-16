@@ -19,6 +19,8 @@ export interface Settings {
   manualPrediction: boolean
   /** Ciclos de más de estos días no cuentan para la previsión; null = automático (1,7 veces lo habitual). */
   ignoreCyclesOver: number | null
+  /** Fase lútea: días entre la ovulación y el siguiente periodo (14 por defecto). */
+  lutealPhase: number
   theme: Theme
   language: Lang
   /** Hash PBKDF2 del PIN; null = sin PIN. */
@@ -154,6 +156,7 @@ export const DEFAULT_SETTINGS: Settings = {
   periodLength: null,
   manualPrediction: false,
   ignoreCyclesOver: null,
+  lutealPhase: 14,
   theme: 'system',
   language: 'es',
   pinHash: null,

@@ -58,6 +58,7 @@ export const SYNCED_SETTINGS = [
   'periodLength',
   'manualPrediction',
   'ignoreCyclesOver',
+  'lutealPhase',
   'reminders',
   'tracking',
   'mode',

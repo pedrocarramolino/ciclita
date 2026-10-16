@@ -32,7 +32,7 @@ export function StatsScreen() {
 
   const cycles = completedCycles(data.periods).slice(-CHART_CYCLES)
   const extremes = cycleExtremes(cycles)
-  const symptoms = symptomStats(data.days, data.periods, p.cycleLength, p.periodLength, today())
+  const symptoms = symptomStats(data.days, data.periods, p.cycleLength, p.periodLength, today(), p.lutealPhase)
   const tempCycles = temperatureCycles(data.periods, data.days, today())
 
   return (

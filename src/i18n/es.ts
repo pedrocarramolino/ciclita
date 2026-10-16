@@ -168,6 +168,9 @@ export const es = {
       reportSummary: 'PDF para compartir, descargar o imprimir',
     },
     cycleSection: 'Tu ciclo',
+    lutealPhase: 'Fase lútea',
+    lutealPhaseHelp:
+      'Días entre la ovulación y el siguiente periodo. Suele ser de 14; cámbiala si te lo ha indicado tu médico o lo ves con la temperatura basal. Mueve la ovulación y la ventana fértil.',
     ignoreLong: 'Ciclos muy largos',
     ignoreLongHint: 'Un ciclo mucho más largo de lo normal suele ser un periodo sin registrar.',
     ignoreLongAuto: 'Automático: preguntar si dura 1,7 veces lo habitual',

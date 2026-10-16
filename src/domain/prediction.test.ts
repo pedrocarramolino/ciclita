@@ -344,3 +344,21 @@ describe('ignorar ciclos de más de N días (elección de la usuaria)', () => {
   })
 })
 
+describe('fase lútea configurable', () => {
+  // Ciclos de 28 días: siguiente periodo el 29/10.
+  const periods = ['2026-08-06', '2026-09-03', '2026-10-01'].map((s) => ({ startDate: s, endDate: addDays(s, 4) }))
+
+  it('la ovulación es la fase lútea antes del siguiente periodo', () => {
+    expect(predict({ periods, today: '2026-10-05' }).fertileWindows[0].ovulation).toBe('2026-10-15')
+    const p12 = predict({ periods, today: '2026-10-05', lutealPhase: 12 })
+    expect(p12.lutealPhase).toBe(12)
+    expect(p12.fertileWindows[0].ovulation).toBe('2026-10-17')
+    expect(p12.fertileWindows[0].start).toBe('2026-10-12')
+  })
+
+  it('se limita a valores razonables (10 a 16)', () => {
+    expect(predict({ periods, today: '2026-10-05', lutealPhase: 30 }).lutealPhase).toBe(16)
+    expect(predict({ periods, today: '2026-10-05', lutealPhase: 3 }).lutealPhase).toBe(10)
+  })
+})
+

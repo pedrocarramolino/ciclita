@@ -35,6 +35,8 @@ export const HISTORY_SIZE = 6
 export const IRREGULAR_VARIATION = 7
 export const PREDICTED_PERIODS = 3
 export const LUTEAL_PHASE = 14
+/** Valores que se pueden elegir para la fase lútea (días). */
+export const LUTEAL_RANGE = { min: 10, max: 16 }
 /** Ciclos mínimos para estimar un margen, y margen máximo en días. */
 export const MIN_CYCLES_FOR_MARGIN = 3
 export const MAX_MARGIN = 6
@@ -86,6 +88,8 @@ export interface Prediction {
   cycleSource: Source
   /** Duración media del periodo en días. */
   periodLength: number
+  /** Fase lútea usada para la ovulación y la ventana fértil. */
+  lutealPhase: number
   periodSource: Source
   /** Valor indicado por la usuaria (o el habitual) con el que se combinan pocos registros. */
   cyclePrior: number
@@ -119,6 +123,8 @@ export interface PredictionInput {
   manual?: boolean
   /** Ciclos de más de estos días no cuentan (null = automático). */
   ignoreCyclesOver?: number | null
+  /** Días entre la ovulación y el siguiente periodo (por defecto, 14). */
+  lutealPhase?: number
 }
 
 export interface SuspectedMissed {
@@ -193,8 +199,9 @@ export function fertileWindowFor(
   nextStart: ISODate,
   periodLength: number,
   margin = 0,
+  lutealPhase = LUTEAL_PHASE,
 ): FertileWindow {
-  const ovulation = addDays(nextStart, -LUTEAL_PHASE)
+  const ovulation = addDays(nextStart, -lutealPhase)
   let start = addDays(ovulation, -5)
   // En ciclos muy cortos, la ventana no puede empezar antes de que acabe el periodo.
   const afterPeriod = addDays(cycleStart, periodLength)
@@ -222,6 +229,7 @@ export function predictionMargin(recentCycles: number[], k: number): number {
 
 export function predict(input: PredictionInput): Prediction {
   const { periods, today } = input
+  const lutealPhase = Math.min(LUTEAL_RANGE.max, Math.max(LUTEAL_RANGE.min, Math.round(input.lutealPhase ?? LUTEAL_PHASE)))
 
   // 1. Duraciones típicas a partir de los últimos 6 ciclos (o valores de reserva),
   //    sin los ciclos que parecen esconder un periodo olvidado.
@@ -269,6 +277,7 @@ export function predict(input: PredictionInput): Prediction {
     cycleSource,
     periodLength,
     periodSource,
+    lutealPhase,
     cyclePrior,
     periodPrior,
     recentCycles,
@@ -338,12 +347,12 @@ export function predict(input: PredictionInput): Prediction {
   // Ventana del ciclo actual (no aplica si ya vamos con retraso: la ovulación ya pasó o se desconoce).
   if (!late) {
     fertileWindows.push(
-      fertileWindowFor(currentCycleStart, nextPeriods[0].start, periodLength, nextPeriods[0].margin),
+      fertileWindowFor(currentCycleStart, nextPeriods[0].start, periodLength, nextPeriods[0].margin, lutealPhase),
     )
   }
   for (let i = 0; i < nextPeriods.length - 1; i++) {
     fertileWindows.push(
-      fertileWindowFor(nextPeriods[i].start, nextPeriods[i + 1].start, periodLength, nextPeriods[i + 1].margin),
+      fertileWindowFor(nextPeriods[i].start, nextPeriods[i + 1].start, periodLength, nextPeriods[i + 1].margin, lutealPhase),
     )
   }
 

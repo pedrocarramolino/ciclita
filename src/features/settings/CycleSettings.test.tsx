@@ -24,6 +24,17 @@ describe('Ajustes: previsiones', () => {
   })
 })
 
+describe('Ajustes: fase lútea', () => {
+  it('se cambia con los botones y se guarda', async () => {
+    location.hash = '#/settings/cycle'
+    const user = userEvent.setup()
+    render(<SettingsScreen />)
+    expect(await screen.findByLabelText('Fase lútea')).toHaveValue(14)
+    await user.click(screen.getByRole('button', { name: 'Restar un día a fase lútea' }))
+    await waitFor(async () => expect((await getSettings()).lutealPhase).toBe(13))
+  })
+})
+
 describe('Ajustes: menú', () => {
   it('agrupa los apartados y "Tus datos" tiene solo exportar e importar y el informe', async () => {
     location.hash = '#/settings'
