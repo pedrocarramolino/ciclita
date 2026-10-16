@@ -1,4 +1,5 @@
 import { babySize } from '../../domain/babySize'
+import { pregnancyMonth, tipWeek } from '../../domain/pregnancyTips'
 import { formatFullDate } from '../../domain/dates'
 import type { PerimenopauseInfo, PregnancyInfo } from '../../domain/modes'
 import type { Prediction } from '../../domain/prediction'
@@ -42,6 +43,32 @@ export function PregnancyHero({ info }: { info: PregnancyInfo }) {
         {info.daysLeft >= 0 ? g.daysLeft(info.daysLeft) : g.daysPast(-info.daysLeft)}
       </p>
       <BabySizeCard weeks={info.weeks} />
+      <PregnancyTips weeks={info.weeks} />
+    </section>
+  )
+}
+
+/** Recomendación de la semana y del mes de embarazo. */
+function PregnancyTips({ weeks }: { weeks: number }) {
+  const g = t.modes.pregnancy
+  const week = tipWeek(weeks)
+  const month = pregnancyMonth(weeks)
+  return (
+    <section aria-labelledby="pregnancy-tips" className="mt-4 text-left">
+      <h2 id="pregnancy-tips" className="text-lg font-extrabold">
+        {g.tipsTitle}
+      </h2>
+      <div className="mt-2 grid gap-2">
+        <div className="rounded-2xl bg-surface-soft p-4">
+          <p className="text-xs font-bold text-muted uppercase">{g.weekTipTitle(week)}</p>
+          <p className="mt-1">{g.weekTips[week]}</p>
+        </div>
+        <div className="rounded-2xl bg-surface-soft p-4">
+          <p className="text-xs font-bold text-muted uppercase">{g.monthTipTitle(month)}</p>
+          <p className="mt-1">{g.monthTips[month]}</p>
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-muted">{g.tipsNote}</p>
     </section>
   )
 }

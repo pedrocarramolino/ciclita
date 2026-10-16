@@ -119,8 +119,13 @@ describe('Inicio: embarazo', () => {
     await setSettings({ onboardingDone: true, mode: 'pregnancy', pregnancyStart: addDays(T, -(10 * 7 + 3)) })
     render(<Home />)
     expect(await screen.findByText('Tu bebé es como una aceituna')).toBeInTheDocument()
-    expect(screen.getByText('Semana 10')).toBeInTheDocument()
+    expect(screen.getAllByText('Semana 10')).toHaveLength(2) // tamaño y recomendación
     expect(screen.getByText('Mide unos 3,1 cm y pesa unos 4 g')).toBeInTheDocument()
+    // Recomendaciones de la semana 10 y del 3.er mes.
+    expect(screen.getByRole('heading', { name: 'Recomendaciones' })).toBeInTheDocument()
+    expect(screen.getByText(/Limita la cafeína/)).toBeInTheDocument()
+    expect(screen.getByText('3.º mes')).toBeInTheDocument()
+    expect(screen.getByText(/ecografía del primer trimestre \(semanas 11 a 14\)/)).toBeInTheDocument()
   })
 })
 
