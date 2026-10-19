@@ -3,8 +3,9 @@
  * abrir un .ics desde una dirección web (no desde el menú Compartir). La app sube el
  * archivo (POST), recibe un enlace de un solo uso y el usuario lo abre (GET).
  *
- * El archivo se guarda en Redis 10 minutos como mucho y nunca viaja en la URL (solo un
- * identificador aleatorio), para que no quede en los registros de peticiones.
+ * El archivo se guarda en Redis 10 minutos como mucho, se borra en cuanto se descarga
+ * (el enlace solo sirve una vez) y nunca viaja en la URL (solo un identificador
+ * aleatorio), para que no quede en los registros de peticiones.
  */
 import { randomUUID } from 'node:crypto'
 import { requireAccount } from '../server/firebaseAuth.js'
@@ -59,13 +60,13 @@ export async function GET(request: Request) {
   if (!TOKEN_RE.test(token)) return error('Enlace no válido', 400)
   let ics: string | null
   try {
-    ics = await upstash().redis.get<string>(key(token))
+    ics = await upstash().redis.getdel<string>(key(token))
   } catch (e) {
     console.error(e)
     return error('Servidor sin configurar', 503)
   }
   if (!ics) {
-    return new Response('Este enlace ha caducado. Vuelve a pulsar «Añadir al calendario del móvil» en Ciclita.', {
+    return new Response('Este enlace ya se ha usado o ha caducado. Vuelve a pulsar «Añadir al calendario del móvil» en Ciclita.', {
       status: 404,
       headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' },
     })
