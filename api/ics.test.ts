@@ -6,7 +6,11 @@ vi.mock('../server/upstash.js', () => ({
   upstash: () => ({
     redis: {
       set: async (k: string, v: string) => void store.set(k, v),
-      get: async (k: string) => store.get(k) ?? null,
+      getdel: async (k: string) => {
+        const v = store.get(k) ?? null
+        store.delete(k)
+        return v
+      },
     },
     ratelimit: { limit: async () => ({ success: true }) },
   }),
@@ -44,6 +48,13 @@ describe('/api/ics (añadir una cita al Calendario del iPhone)', () => {
     const file = await GET(new Request(`https://ciclita.test${url}`))
     expect(file.headers.get('Content-Type')).toBe('text/calendar; charset=utf-8')
     expect(await file.text()).toBe(ICS)
+  })
+
+  it('el enlace solo sirve una vez', async () => {
+    const { url } = (await (await post({ ics: ICS })).json()) as { url: string }
+    expect((await GET(new Request(`https://ciclita.test${url}`))).status).toBe(200)
+    expect((await GET(new Request(`https://ciclita.test${url}`))).status).toBe(404)
+    expect(store.size).toBe(0)
   })
 
   it('sin sesión de Ciclita no se puede subir nada', async () => {
