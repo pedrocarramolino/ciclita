@@ -285,7 +285,7 @@ export async function deliver(deps: Deps, msg: DeliverMessage): Promise<DeliverR
     }
     // Pasado el último periodo previsto no hay nada más que comprobar hasta que la
     // app vuelva a sincronizar.
-    if (today >= windows.at(-1)!.until) continueChain = false
+    if (today >= windows[windows.length - 1].until) continueChain = false
   } else if ((msg.kind === 'daily' || msg.kind === 'pill') && r[msg.kind]) {
     const { title, body } = r[msg.kind]!
     // Por si llega un mensaje programado antes de cambiar el envase: en descanso no se avisa.
