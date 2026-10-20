@@ -48,7 +48,7 @@ describe('Informe para tu médico', () => {
 
   it('incluye las notas si se pide y la sección de la píldora si se registra', async () => {
     await setSettings({
-      tracking: { temperature: false, mucus: false, sex: false, weight: false, pill: true },
+      tracking: { temperature: false, mucus: false, sex: false, weight: false, pill: true, tests: false, bloodPressure: false },
       pill: { pack: 28, start: addDays(today(), -3) },
     })
     const user = userEvent.setup()

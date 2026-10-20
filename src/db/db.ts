@@ -13,6 +13,7 @@ export interface Period {
 export type Flow = 'spotting' | 'light' | 'medium' | 'heavy'
 export type Mucus = 'dry' | 'sticky' | 'creamy' | 'watery' | 'eggwhite'
 export type Sex = 'protected' | 'unprotected'
+export type TestResult = 'negative' | 'positive'
 
 /** Registro diario. Todos los campos son opcionales. */
 export interface DayLog {
@@ -35,6 +36,15 @@ export interface DayLog {
   weight?: number
   /** Píldora anticonceptiva marcada como tomada. */
   pillTaken?: boolean
+  /** Resultado del test de ovulación (LH) del día. */
+  ovulationTest?: TestResult
+  /** Resultado del test de embarazo del día. */
+  pregnancyTest?: TestResult
+  /** Tensión arterial en mmHg (las dos o ninguna). */
+  systolic?: number
+  diastolic?: number
+  /** Pulso en reposo, en latidos por minuto. */
+  pulse?: number
   updatedAt: number
 }
 

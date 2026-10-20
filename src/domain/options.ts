@@ -1,4 +1,4 @@
-import type { Flow, Mucus, Sex } from '../db/db'
+import type { Flow, Mucus, Sex, TestResult } from '../db/db'
 import { t } from '../i18n'
 
 const o = t.options
@@ -24,9 +24,42 @@ export const SEX_OPTIONS: { value: Sex; label: string }[] = [
   { value: 'unprotected', label: o.sex.unprotected },
 ]
 
+export const TEST_OPTIONS: { value: TestResult; label: string }[] = [
+  { value: 'negative', label: o.test.negative },
+  { value: 'positive', label: o.test.positive },
+]
+
 /** Rangos válidos para los datos numéricos. */
 export const TEMPERATURE_RANGE = { min: 34, max: 42 }
 export const WEIGHT_RANGE = { min: 20, max: 400 }
+/** Tensión (mmHg) y pulso (lpm): márgenes amplios, solo para descartar errores de tecleo. */
+export const SYSTOLIC_RANGE = { min: 60, max: 260 }
+export const DIASTOLIC_RANGE = { min: 30, max: 160 }
+export const PULSE_RANGE = { min: 30, max: 220 }
+
+/** Número entero dentro del rango; null si no lo es. */
+export function parseWhole(text: string, range: { min: number; max: number }): number | null {
+  const v = text.trim()
+  if (!/^\d{2,3}$/.test(v)) return null
+  const n = Number(v)
+  return n >= range.min && n <= range.max ? n : null
+}
+
+/**
+ * Tensión escrita como "120/80" (también "120 80" o "120-80"). La alta tiene que ser
+ * mayor que la baja; null si no es válida.
+ */
+export function parseBloodPressure(text: string): { systolic: number; diastolic: number } | null {
+  const m = /^\s*(\d{2,3})\s*[/\-\s]\s*(\d{2,3})\s*$/.exec(text)
+  if (!m) return null
+  const systolic = parseWhole(m[1], SYSTOLIC_RANGE)
+  const diastolic = parseWhole(m[2], DIASTOLIC_RANGE)
+  return systolic !== null && diastolic !== null && systolic > diastolic ? { systolic, diastolic } : null
+}
+
+/** "120/80" (o '' si no hay tensión). */
+export const formatBloodPressure = (d: { systolic?: number; diastolic?: number }) =>
+  d.systolic !== undefined && d.diastolic !== undefined ? `${d.systolic}/${d.diastolic}` : ''
 
 /** Convierte "36,55" o "36.55" en número; null si no es válido o está fuera del rango. */
 export function parseDecimal(text: string, range: { min: number; max: number }): number | null {

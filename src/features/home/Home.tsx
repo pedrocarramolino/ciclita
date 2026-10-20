@@ -22,6 +22,7 @@ import { pregnancyChance, showsPregnancyChance } from '../../domain/fertility'
 import { MissedPeriodPrompt, PeriodEndPrompt } from './PeriodPrompts'
 import { PerimenopauseHero, PregnancyHero } from './ModeHeroes'
 import { openCalendarAt } from '../calendar/calendarFocus'
+import { StartChanceCard } from './StartChanceCard'
 
 /** Dirección del atajo "Registrar hoy" (manifest). */
 export const LOG_TODAY_HASH = '#/log'
@@ -167,6 +168,7 @@ export function Home() {
       <NextAppointment />
       {mode !== 'pregnancy' && <PillCard />}
 
+      {mode === 'cycle' && <StartChanceCard p={p} today={today} />}
       {mode === 'cycle' && p.nextPeriods.length > 0 && <Upcoming p={p} />}
       {mode !== 'pregnancy' && <CycleSummary p={p} />}
 

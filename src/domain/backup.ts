@@ -2,10 +2,23 @@
  * Copias de seguridad: exportar e importar en JSON (copia completa) y CSV
  * (un registro por día, legible en una hoja de cálculo).
  */
-import type { DayLog, Flow, Mucus, Period, Sex } from '../db/db'
+import type { DayLog, Flow, Mucus, Period, Sex, TestResult } from '../db/db'
 import { diffDays, type ISODate } from './dates'
 import { en, es, lang, symptomLabel, t, type Messages } from '../i18n'
-import { dayMoods, MOOD_OPTIONS, MUCUS_OPTIONS, SEX_OPTIONS, TEMPERATURE_RANGE, WEIGHT_RANGE } from './options'
+import {
+  DIASTOLIC_RANGE,
+  dayMoods,
+  formatBloodPressure,
+  MOOD_OPTIONS,
+  MUCUS_OPTIONS,
+  parseBloodPressure,
+  PULSE_RANGE,
+  SEX_OPTIONS,
+  SYSTOLIC_RANGE,
+  TEMPERATURE_RANGE,
+  TEST_OPTIONS,
+  WEIGHT_RANGE,
+} from './options'
 
 export const BACKUP_APP = 'ciclita'
 /** Identificador de las copias hechas antes del cambio de nombre (se siguen aceptando). */
@@ -29,6 +42,12 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const FLOWS = new Set<Flow>(['spotting', 'light', 'medium', 'heavy'])
 const MUCUS = new Set<Mucus>(MUCUS_OPTIONS.map((o) => o.value))
 const SEXES = new Set<Sex>(SEX_OPTIONS.map((o) => o.value))
+const TESTS = new Set<TestResult>(TEST_OPTIONS.map((o) => o.value))
+const testResult = (v: unknown) => (TESTS.has(v as TestResult) ? (v as TestResult) : undefined)
+const whole = (v: unknown, r: { min: number; max: number }) => {
+  const n = inRange(v, r)
+  return n === undefined ? undefined : Math.round(n)
+}
 const inRange = (v: unknown, r: { min: number; max: number }) =>
   typeof v === 'number' && Number.isFinite(v) && v >= r.min && v <= r.max ? Math.round(v * 100) / 100 : undefined
 const isDate = (v: unknown): v is ISODate => typeof v === 'string' && DATE_RE.test(v)
@@ -64,6 +83,10 @@ function sanitizeDay(raw: unknown): DayLog | null {
       ),
     ),
   ]
+  // La tensión solo vale completa y con la alta mayor que la baja.
+  const systolic = whole(d.systolic, SYSTOLIC_RANGE)
+  const diastolic = whole(d.diastolic, DIASTOLIC_RANGE)
+  const pressure = systolic !== undefined && diastolic !== undefined && systolic > diastolic
   const symptoms = Array.isArray(d.symptoms)
     ? d.symptoms.filter((s): s is string => typeof s === 'string' && !!s.trim()).map((s) => s.trim().slice(0, 40))
     : undefined
@@ -80,6 +103,11 @@ function sanitizeDay(raw: unknown): DayLog | null {
     sex: SEXES.has(d.sex as Sex) ? (d.sex as Sex) : undefined,
     weight: inRange(d.weight, WEIGHT_RANGE),
     pillTaken: d.pillTaken === true ? true : undefined,
+    ovulationTest: testResult(d.ovulationTest),
+    pregnancyTest: testResult(d.pregnancyTest),
+    systolic: pressure ? systolic : undefined,
+    diastolic: pressure ? diastolic : undefined,
+    pulse: whole(d.pulse, PULSE_RANGE),
     updatedAt: typeof d.updatedAt === 'number' ? d.updatedAt : Date.now(),
   }
 }
@@ -182,6 +210,10 @@ export function toCSV(periodDays: Set<ISODate>, days: DayLog[]): string {
       optionLabel('sex', d?.sex),
       decimal(d?.weight),
       d?.pillTaken ? t.csv.yes : '',
+      optionLabel('test', d?.ovulationTest),
+      optionLabel('test', d?.pregnancyTest),
+      d ? formatBloodPressure(d) : '',
+      d?.pulse === undefined ? '' : String(d.pulse),
     ]
       .map(csvCell)
       .join(SEP)
@@ -279,6 +311,10 @@ export function parseCSV(text: string): CSVImport {
       sex: optionValue<Sex>('sex', get(r, 'relaciones')),
       weight: parseNum(get(r, 'peso')),
       pillTaken: isYes(get(r, 'pildora')) || undefined,
+      ovulationTest: optionValue<TestResult>('test', get(r, 'test_ovulacion')),
+      pregnancyTest: optionValue<TestResult>('test', get(r, 'test_embarazo')),
+      ...parseBloodPressure(get(r, 'tension')),
+      pulse: parseNum(get(r, 'pulso')),
     })
     const hasData =
       day &&
@@ -292,7 +328,11 @@ export function parseCSV(text: string): CSVImport {
         day.mucus ||
         day.sex ||
         day.weight !== undefined ||
-        day.pillTaken)
+        day.pillTaken ||
+        day.ovulationTest ||
+        day.pregnancyTest ||
+        day.systolic !== undefined ||
+        day.pulse !== undefined)
     if (day && hasData) {
       days.push(day)
     }

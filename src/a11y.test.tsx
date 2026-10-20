@@ -29,7 +29,7 @@ async function seed() {
   }
   await setSettings({
     onboardingDone: true,
-    tracking: { temperature: true, mucus: true, sex: true, weight: true, pill: true },
+    tracking: { temperature: true, mucus: true, sex: true, weight: true, pill: true, tests: true, bloodPressure: true },
     pill: { pack: 21, start: addDays(T, -3) },
   })
 }

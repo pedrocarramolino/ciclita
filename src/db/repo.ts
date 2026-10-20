@@ -18,7 +18,12 @@ function isEmpty(f: DayForm): boolean {
     !f.mucus &&
     !f.sex &&
     f.weight === undefined &&
-    !f.pillTaken
+    !f.pillTaken &&
+    !f.ovulationTest &&
+    !f.pregnancyTest &&
+    f.systolic === undefined &&
+    f.diastolic === undefined &&
+    f.pulse === undefined
   )
 }
 
@@ -46,6 +51,11 @@ export async function saveDay(
       flow: isPeriod ? form.flow : undefined,
       medication: form.medication?.trim() || undefined,
       notes: form.notes?.trim() || undefined,
+    }
+    // La tensión va siempre en pareja (alta y baja).
+    if (clean.systolic === undefined || clean.diastolic === undefined) {
+      clean.systolic = undefined
+      clean.diastolic = undefined
     }
     if (isEmpty(clean)) await database.days.delete(date)
     else await database.days.put({ ...clean, date, updatedAt: Date.now() })

@@ -6,7 +6,7 @@ import { PILL_PACKS, type PillPack } from '../../domain/pill'
 import { t } from '../../i18n'
 import { Row, Section } from './Section'
 
-const KEYS: (keyof TrackingSettings)[] = ['temperature', 'mucus', 'sex', 'weight', 'pill']
+const KEYS: (keyof TrackingSettings)[] = ['temperature', 'mucus', 'sex', 'weight', 'tests', 'bloodPressure', 'pill']
 
 /** Qué datos opcionales aparecen en el registro diario. */
 export function TrackingSection({ settings }: { settings: Pick<Settings, 'tracking' | 'pill'> }) {

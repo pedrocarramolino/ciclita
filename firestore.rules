@@ -46,11 +46,14 @@ service cloud.firestore {
         allow read, delete: if owner(uid);
         allow create, update: if owner(uid) && isDate(date) && data().date == date && syncFields()
           && data().keys().hasOnly(['date', 'flow', 'symptoms', 'moods', 'mood', 'pain', 'medication',
-              'notes', 'temperature', 'mucus', 'sex', 'weight', 'pillTaken', 'updatedAt', 'syncedAt', 'deleted'])
+              'notes', 'temperature', 'mucus', 'sex', 'weight', 'pillTaken', 'ovulationTest', 'pregnancyTest',
+              'systolic', 'diastolic', 'pulse', 'updatedAt', 'syncedAt', 'deleted'])
           && optText('flow', 20) && optList('symptoms', 100) && optList('moods', 20) && optText('mood', 20)
           && optNumber('pain') && optText('medication', 200) && optText('notes', 2000)
           && optNumber('temperature') && optText('mucus', 20) && optText('sex', 20) && optNumber('weight')
           && (!('pillTaken' in data()) || data().pillTaken is bool)
+          && optText('ovulationTest', 20) && optText('pregnancyTest', 20)
+          && optNumber('systolic') && optNumber('diastolic') && optNumber('pulse')
           && (!('deleted' in data()) || data().deleted is bool);
       }
 

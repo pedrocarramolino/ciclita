@@ -13,7 +13,8 @@ import { InstallSection } from './InstallSection'
 import { PinSection } from './PinSection'
 import { RemindersSection } from './RemindersSection'
 import { PageTitle } from './pageTitle'
-import { Section } from './Section'
+import { Row, Section } from './Section'
+import { Switch } from '../../components/Switch'
 import { TrackingSection } from './TrackingSection'
 import { ModeSection } from './ModeSection'
 
@@ -372,6 +373,9 @@ function AppearanceSection({ settings }: { settings: Settings }) {
           ))}
         </div>
       </fieldset>
+      <Row id="show-moon" label={s.showMoon} hint={s.showMoonHint}>
+        <Switch labelledBy="show-moon" checked={settings.showMoon} onChange={(v) => void setSettings({ showMoon: v })} />
+      </Row>
       <div>
         <label htmlFor="language" className="mb-2 block font-bold">
           {s.language}
