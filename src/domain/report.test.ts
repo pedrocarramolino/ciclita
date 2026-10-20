@@ -77,7 +77,20 @@ describe('buildReport', () => {
       sex: { protected: 1, unprotected: 1 },
       mucusDays: 1,
       weight: { first: 63, last: 62.2, firstDate: '2026-09-01', lastDate: '2026-09-20' },
+      tests: { ovulation: { negative: 0, positive: 0 }, pregnancy: { negative: 0, positive: 0 } },
+      pressure: null,
     })
+  })
+
+  it('cuenta los tests y hace la media de la tensión y el pulso', () => {
+    const extra: DayLog[] = [
+      { date: '2026-09-02', ovulationTest: 'negative', systolic: 118, diastolic: 76, pulse: 70, updatedAt: 0 },
+      { date: '2026-09-03', ovulationTest: 'positive', systolic: 122, diastolic: 80, updatedAt: 0 },
+      { date: '2026-09-25', pregnancyTest: 'positive', pulse: 75, updatedAt: 0 },
+    ]
+    const f = buildReport(periods, extra, prediction, { months: 3, includeNotes: false }, TODAY).fertility!
+    expect(f.tests).toEqual({ ovulation: { negative: 1, positive: 1 }, pregnancy: { negative: 0, positive: 1 } })
+    expect(f.pressure).toEqual({ count: 3, systolic: 120, diastolic: 78, pulse: 73 })
   })
 
   it('"todo" empieza en el primer dato registrado', () => {

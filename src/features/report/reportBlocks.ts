@@ -149,6 +149,16 @@ export function reportBlocks(r: Report, name?: string): ReportBlock[] {
         R.weightValue(f.weight.first, f.weight.last, formatFullDate(f.weight.firstDate), formatFullDate(f.weight.lastDate)),
       ])
     }
+    const { ovulation, pregnancy } = f.tests
+    if (ovulation.negative + ovulation.positive > 0) rows.push([R.ovulationTestRow, R.testValue(ovulation.positive, ovulation.negative)])
+    if (pregnancy.negative + pregnancy.positive > 0) rows.push([R.pregnancyTestRow, R.testValue(pregnancy.positive, pregnancy.negative)])
+    if (f.pressure) {
+      const { systolic, diastolic, pulse, count } = f.pressure
+      rows.push([
+        R.pressureRow(count),
+        R.pressureValue(systolic !== null && diastolic !== null ? `${systolic}/${diastolic}` : null, pulse),
+      ])
+    }
     out.push({ kind: 'h2', text: R.fertilityTitle }, { kind: 'kv', summary: true, numeric: true, rows })
   }
 

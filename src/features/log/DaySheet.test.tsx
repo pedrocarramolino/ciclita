@@ -99,7 +99,7 @@ describe('Registro del día', () => {
   })
 
   it('muestra los campos opcionales solo si están activados', async () => {
-    await setSettings({ tracking: { temperature: true, mucus: false, sex: false, weight: false, pill: false } })
+    await setSettings({ tracking: { temperature: true, mucus: false, sex: false, weight: false, pill: false, tests: false, bloodPressure: false } })
     const user = userEvent.setup()
     const { dialog, onClose } = await openSheet()
 

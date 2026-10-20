@@ -22,6 +22,8 @@ export interface Settings {
   /** Fase lútea: días entre la ovulación y el siguiente periodo (14 por defecto). */
   lutealPhase: number
   theme: Theme
+  /** Fases de la luna en el calendario (de este dispositivo, como el tema). */
+  showMoon: boolean
   language: Lang
   /** Hash PBKDF2 del PIN; null = sin PIN. */
   pinHash: string | null
@@ -115,6 +117,10 @@ export interface TrackingSettings {
   sex: boolean
   weight: boolean
   pill: boolean
+  /** Tests de ovulación y de embarazo. */
+  tests: boolean
+  /** Tensión arterial y pulso. */
+  bloodPressure: boolean
 }
 
 export const DEFAULT_TRACKING: TrackingSettings = {
@@ -123,6 +129,8 @@ export const DEFAULT_TRACKING: TrackingSettings = {
   sex: false,
   weight: false,
   pill: false,
+  tests: false,
+  bloodPressure: false,
 }
 
 export const DEFAULT_REMINDERS: ReminderSettings = {
@@ -158,6 +166,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ignoreCyclesOver: null,
   lutealPhase: 14,
   theme: 'system',
+  showMoon: false,
   language: 'es',
   pinHash: null,
   pinFailures: 0,

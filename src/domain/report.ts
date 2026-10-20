@@ -3,7 +3,7 @@
  * el propio dispositivo. Función pura (sin base de datos) para poder probarla.
  */
 import { lang } from '../i18n'
-import type { DayLog, Flow, Period } from '../db/db'
+import type { DayLog, Flow, Period, TestResult } from '../db/db'
 import { parseISODate, toISODate, type ISODate } from './dates'
 import { splitMissed, type PredictedPeriod, type Prediction } from './prediction'
 import { pillAdherence, type PillAdherence, type PillConfig } from './pill'
@@ -61,6 +61,10 @@ export interface Report {
     sex: { protected: number; unprotected: number }
     mucusDays: number
     weight: { first: number; last: number; firstDate: ISODate; lastDate: ISODate } | null
+    /** Días con cada resultado de test. */
+    tests: { ovulation: Record<TestResult, number>; pregnancy: Record<TestResult, number> }
+    /** Medias de tensión (mmHg) y pulso (lpm) del intervalo. */
+    pressure: { count: number; systolic: number | null; diastolic: number | null; pulse: number | null } | null
   } | null
   notes: { date: ISODate; text: string }[]
   /** Tomas de la píldora; null si no se registran. `missed` va limitado a los más recientes. */
@@ -153,7 +157,31 @@ export function buildReport(
     unprotected: rangeDays.filter((d) => d.sex === 'unprotected').length,
   }
   const mucusDays = rangeDays.filter((d) => d.mucus).length
-  const hasFertility = temps.length > 0 || weights.length > 0 || sex.protected + sex.unprotected > 0 || mucusDays > 0
+  const countTests = (k: 'ovulationTest' | 'pregnancyTest') => ({
+    negative: rangeDays.filter((d) => d[k] === 'negative').length,
+    positive: rangeDays.filter((d) => d[k] === 'positive').length,
+  })
+  const tests = { ovulation: countTests('ovulationTest'), pregnancy: countTests('pregnancyTest') }
+  const testCount = tests.ovulation.negative + tests.ovulation.positive + tests.pregnancy.negative + tests.pregnancy.positive
+  const bp = rangeDays.filter((d) => d.systolic !== undefined && d.diastolic !== undefined)
+  const pulses = rangeDays.flatMap((d) => (d.pulse === undefined ? [] : [d.pulse]))
+  const round = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : null)
+  const pressure =
+    bp.length || pulses.length
+      ? {
+          count: rangeDays.filter((d) => d.systolic !== undefined || d.pulse !== undefined).length,
+          systolic: round(bp.map((d) => d.systolic!)),
+          diastolic: round(bp.map((d) => d.diastolic!)),
+          pulse: round(pulses),
+        }
+      : null
+  const hasFertility =
+    temps.length > 0 ||
+    weights.length > 0 ||
+    sex.protected + sex.unprotected > 0 ||
+    mucusDays > 0 ||
+    testCount > 0 ||
+    pressure !== null
   const fertility = hasFertility
     ? {
         temperature: temps.length ? { count: temps.length, min: Math.min(...temps), max: Math.max(...temps) } : null,
@@ -167,6 +195,8 @@ export function buildReport(
               lastDate: weights.at(-1)!.date,
             }
           : null,
+        tests,
+        pressure,
       }
     : null
 

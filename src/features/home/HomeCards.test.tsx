@@ -11,7 +11,7 @@ import { PillCard } from './PillCard'
 
 const pillOn = (start: string, pack: 21 | 24 | 28 = 21) =>
   setSettings({
-    tracking: { temperature: false, mucus: false, sex: false, weight: false, pill: true },
+    tracking: { temperature: false, mucus: false, sex: false, weight: false, pill: true, tests: false, bloodPressure: false },
     pill: { pack, start },
   })
 

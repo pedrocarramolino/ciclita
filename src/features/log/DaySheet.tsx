@@ -13,6 +13,11 @@ import { symptomLabel, t } from '../../i18n'
 import {
   FLOW_OPTIONS,
   dayMoods,
+  formatBloodPressure,
+  parseBloodPressure,
+  parseWhole,
+  PULSE_RANGE,
+  TEST_OPTIONS,
   MOOD_OPTIONS,
   MUCUS_OPTIONS,
   parseDecimal,
@@ -153,11 +158,18 @@ function DayFormView({
     sex: initial?.sex,
     weight: initial?.weight,
     pillTaken: initial?.pillTaken,
+    ovulationTest: initial?.ovulationTest,
+    pregnancyTest: initial?.pregnancyTest,
+    systolic: initial?.systolic,
+    diastolic: initial?.diastolic,
+    pulse: initial?.pulse,
   }))
   // Texto de los campos numéricos (admiten coma decimal); el número se valida al escribir.
   const toText = (n?: number) => (n === undefined ? '' : t.report.decimal(n))
   const [tempText, setTempText] = useState(() => toText(initial?.temperature))
   const [weightText, setWeightText] = useState(() => toText(initial?.weight))
+  const [pressureText, setPressureText] = useState(() => (initial ? formatBloodPressure(initial) : ''))
+  const [pulseText, setPulseText] = useState(() => (initial?.pulse === undefined ? '' : String(initial.pulse)))
   const tracking = useLiveQuery(() => getSettings().then((s) => s.tracking))
   // La píldora solo se pregunta los días en que toca (no en los de descanso).
   const showPill = useLiveQuery(async () => {
@@ -216,6 +228,8 @@ function DayFormView({
 
   const tempInvalid = tempText.trim() !== '' && form.temperature === undefined
   const weightInvalid = weightText.trim() !== '' && form.weight === undefined
+  const pressureInvalid = pressureText.trim() !== '' && form.systolic === undefined
+  const pulseInvalid = pulseText.trim() !== '' && form.pulse === undefined
 
   const save = async () => {
     setSaving(true)
@@ -475,9 +489,96 @@ function DayFormView({
             )}
           </section>
         )}
-        {tracking && !tracking.temperature && !tracking.mucus && !tracking.sex && !tracking.weight && (
-          <p className="text-xs text-muted">{l.moreFieldsHint}</p>
+        {/* Tests de ovulación y de embarazo */}
+        {tracking?.tests && (
+          <section aria-labelledby="sec-tests" className="space-y-4">
+            <h3 id="sec-tests" className="font-bold">
+              {l.testsTitle}
+            </h3>
+            {(['ovulationTest', 'pregnancyTest'] as const).map((k) => (
+              <fieldset key={k}>
+                <legend className="mb-2 text-sm font-bold text-muted">{l[k]}</legend>
+                <div className="flex flex-wrap gap-2">
+                  {TEST_OPTIONS.map((o) => (
+                    <Chip key={o.value} selected={form[k] === o.value} onClick={() => set(k, form[k] === o.value ? undefined : o.value)}>
+                      {o.label}
+                    </Chip>
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+          </section>
         )}
+
+        {/* Tensión arterial y pulso */}
+        {tracking?.bloodPressure && (
+          <section aria-labelledby="sec-pressure" className="space-y-4">
+            <h3 id="sec-pressure" className="font-bold">
+              {l.pressureTitle}
+            </h3>
+            <div className="flex flex-wrap gap-4">
+              <div>
+                <label htmlFor="pressure" className="mb-1 block text-sm font-bold text-muted">
+                  {l.pressure}
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="pressure"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    value={pressureText}
+                    placeholder={l.pressurePlaceholder}
+                    aria-invalid={pressureInvalid}
+                    aria-describedby="pressure-hint"
+                    onChange={(e) => {
+                      setPressureText(e.target.value)
+                      const bp = parseBloodPressure(e.target.value)
+                      setForm((f) => ({ ...f, systolic: bp?.systolic, diastolic: bp?.diastolic }))
+                    }}
+                    className="min-h-12 w-32 rounded-2xl border border-line bg-surface px-4 text-lg"
+                  />
+                  <span className="text-muted">mmHg</span>
+                </div>
+              </div>
+              <div>
+                <label htmlFor="pulse" className="mb-1 block text-sm font-bold text-muted">
+                  {l.pulse}
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="pulse"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    value={pulseText}
+                    placeholder={l.pulsePlaceholder}
+                    aria-invalid={pulseInvalid}
+                    aria-describedby="pressure-hint"
+                    onChange={(e) => {
+                      setPulseText(e.target.value)
+                      set('pulse', parseWhole(e.target.value, PULSE_RANGE) ?? undefined)
+                    }}
+                    className="min-h-12 w-24 rounded-2xl border border-line bg-surface px-4 text-lg"
+                  />
+                  <span className="text-muted">{l.pulseUnit}</span>
+                </div>
+              </div>
+            </div>
+            <p
+              id="pressure-hint"
+              className={`text-xs ${pressureInvalid || pulseInvalid ? 'font-bold text-danger' : 'text-muted'}`}
+            >
+              {pressureInvalid ? l.pressureInvalid : pulseInvalid ? l.pulseInvalid : l.pressureHint}
+            </p>
+          </section>
+        )}
+
+        {tracking &&
+          !tracking.temperature &&
+          !tracking.mucus &&
+          !tracking.sex &&
+          !tracking.weight &&
+          !tracking.tests &&
+          !tracking.bloodPressure && <p className="text-xs text-muted">{l.moreFieldsHint}</p>}
 
         {/* Medicación y notas */}
         <div>
@@ -508,7 +609,7 @@ function DayFormView({
         </div>
       </div>
       <footer className="shrink-0 border-t border-line bg-bg px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <Button className="w-full" disabled={saving || tempInvalid || weightInvalid} onClick={save}>
+        <Button className="w-full" disabled={saving || tempInvalid || weightInvalid || pressureInvalid || pulseInvalid} onClick={save}>
           {l.save}
         </Button>
         {onClear && (

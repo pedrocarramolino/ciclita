@@ -9,6 +9,7 @@ import { monthGrid, predictionDates, type GridDay } from '../../domain/calendar'
 import { diffDays, formatDayMonth, formatLong, formatMonthYear, today as todayISO, type ISODate } from '../../domain/dates'
 import { MAX_ONGOING_DAYS, periodDateSet } from '../../domain/periods'
 import { missedPillDates } from '../../domain/pill'
+import { moonPhases, type MoonPhase } from '../../domain/moon'
 import { clearCalendarFocus, peekCalendarFocus } from './calendarFocus'
 import { t } from '../../i18n'
 import { usePrediction } from '../../usePrediction'
@@ -31,6 +32,8 @@ interface DayState {
   isAnchor: boolean
   /** Hay alguna cita médica ese día. */
   hasAppointment: boolean
+  /** Fase principal de la luna ese día (si se muestran). */
+  moon: MoonPhase | null
 }
 
 /** Tramo más largo que se puede marcar de una vez (evita marcar meses por un toque equivocado). */
@@ -73,8 +76,11 @@ export function CalendarScreen() {
       periodDays: periodDateSet(periods, today),
       logged: new Set(days.map((d) => d.date)),
       pillMissed: pill ? missedPillDates(days, pill, first, last, today) : null,
+      showMoon: settings.showMoon,
     }
   }, [first, last, today])
+
+  const moon = useMemo(() => (data?.showMoon ? moonPhases(first, last) : null), [data?.showMoon, first, last])
 
   const prediction = usePrediction()
   const mode = useLiveQuery(() => getSettings().then((s) => s.mode))
@@ -99,6 +105,7 @@ export function CalendarScreen() {
       pillMissed: !!data?.pillMissed?.has(date),
       isAnchor: editing && date === anchor,
       hasAppointment: appointmentDays.has(date),
+      moon: moon?.get(date) ?? null,
     }
   }
 
@@ -267,6 +274,7 @@ export function CalendarScreen() {
         withPredictions={mode === 'cycle'}
         withPill={!!data?.pillMissed}
         withAppointments={appointmentDays.size > 0}
+        withMoon={!!moon}
       />
       {sheet && (
         <AppointmentSheet
@@ -297,6 +305,7 @@ export function CalendarScreen() {
 /** Ventana fértil: flor cerrada; ovulación: flor abierta. */
 const FLOWER_CLOSED = '🌷'
 const FLOWER_OPEN = '🌸'
+const MOON: Record<MoonPhase, string> = { new: '🌑', firstQuarter: '🌓', full: '🌕', lastQuarter: '🌗' }
 
 function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: ISODate) => void }) {
   const c = t.calendar
@@ -311,6 +320,7 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
   if (s.pillMissed) parts.push(t.pill.calendarMissed)
   if (s.isAnchor) parts.push(c.edit.anchor)
   if (s.hasAppointment) parts.push(t.appointments.mark)
+  if (s.moon) parts.push(c.moon[s.moon])
 
   // La ventana fértil y la ovulación se marcan con una flor (cerrada / abierta), sin fondo.
   const look = s.isPeriod
@@ -349,6 +359,11 @@ function DayCell({ gd, s, onSelect }: { gd: GridDay; s: DayState; onSelect: (d: 
           🩺
         </span>
       )}
+      {s.moon && (
+        <span aria-hidden="true" className="absolute -bottom-1 -left-1 text-xs leading-none">
+          {MOON[s.moon]}
+        </span>
+      )}
       {s.pillMissed && (
         <span aria-hidden="true" className="absolute top-0.5 right-0.5 size-2.5 rounded-full border-2 border-danger bg-surface" />
       )}
@@ -367,11 +382,13 @@ function Legend({
   withPredictions,
   withPill,
   withAppointments,
+  withMoon,
 }: {
   withMargin: boolean
   withPredictions: boolean
   withPill: boolean
   withAppointments: boolean
+  withMoon: boolean
 }) {
   const c = t.calendar
   const item = (swatch: string, label: string) => (
@@ -419,6 +436,15 @@ function Legend({
             {t.pill.calendarMissed}
           </li>
         )}
+        {withMoon &&
+          (Object.keys(MOON) as MoonPhase[]).map((ph) => (
+            <li key={ph} className="flex items-center gap-2">
+              <span aria-hidden="true" className="grid size-5 shrink-0 place-items-center text-sm leading-none">
+                {MOON[ph]}
+              </span>
+              {c.moon[ph]}
+            </li>
+          ))}
       </ul>
       {withPredictions ? (
         <p className="mt-3 text-xs text-muted">{c.estimatesNote}</p>

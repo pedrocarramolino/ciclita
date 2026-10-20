@@ -66,9 +66,19 @@ describe('CSV', () => {
   it('exporta cabecera, una fila por día y escapa correctamente', () => {
     const rows = parseCSVRows(csv)
     expect(rows[0]).toEqual(CSV_HEADER)
-    expect(CSV_HEADER.slice(-5)).toEqual(['temperatura', 'moco', 'relaciones', 'peso', 'pildora'])
+    expect(CSV_HEADER.slice(-9)).toEqual([
+      'temperatura',
+      'moco',
+      'relaciones',
+      'peso',
+      'pildora',
+      'test_ovulacion',
+      'test_embarazo',
+      'tension',
+      'pulso',
+    ])
     expect(rows).toHaveLength(1 + 3 + 2 + 2) // cabecera + periodo 1 + periodo 2 + 2 días sueltos
-    expect(rows[1]).toEqual(['2026-09-01', 'sí', 'Abundante', 'Dolor abdominal, Cansancio', '', '7', '', '', '', '', '', '', ''])
+    expect(rows[1]).toEqual(['2026-09-01', 'sí', 'Abundante', 'Dolor abdominal, Cansancio', '', '7', '', '', '', '', '', '', '', '', '', '', ''])
     const notes = rows.find((r) => r[0] === '2026-09-15')!
     expect(notes[4]).toBe('Calma, Sin energía')
     expect(notes[7]).toBe('Notas con "comillas"; punto y coma\ny salto')
@@ -113,7 +123,8 @@ describe('datos de fertilidad', () => {
 
   it('CSV: se exportan con coma decimal y vuelven intactos', () => {
     const csv = toCSV(new Set(), [fertile])
-    expect(parseCSVRows(csv)[1].slice(-5, -1)).toEqual(['36,55', 'Clara de huevo', 'Sin protección', '62,5'])
+    const col = (name: string) => parseCSVRows(csv)[1][CSV_HEADER.indexOf(name)]
+    expect(['temperatura', 'moco', 'relaciones', 'peso'].map(col)).toEqual(['36,55', 'Clara de huevo', 'Sin protección', '62,5'])
     const { updatedAt: _u, ...expected } = fertile
     expect(parseCSV(csv).days[0]).toMatchObject(expected)
   })
@@ -139,7 +150,7 @@ describe('datos de fertilidad', () => {
 describe('píldora', () => {
   it('CSV: la toma va y vuelve en la columna "pildora"', () => {
     const csv = toCSV(new Set(), [{ date: '2026-10-01', pillTaken: true, updatedAt: 1 }])
-    expect(parseCSVRows(csv)[1].at(-1)).toBe('sí')
+    expect(parseCSVRows(csv)[1][CSV_HEADER.indexOf('pildora')]).toBe('sí')
     expect(parseCSV(csv).days).toEqual([expect.objectContaining({ date: '2026-10-01', pillTaken: true })])
   })
 
@@ -156,5 +167,47 @@ describe('píldora', () => {
       }),
     )
     expect(b.days.map((d) => d.pillTaken)).toEqual([true, undefined])
+  })
+})
+
+describe('tests, tensión y pulso', () => {
+  const day: DayLog = {
+    date: '2026-10-05',
+    ovulationTest: 'positive',
+    pregnancyTest: 'negative',
+    systolic: 118,
+    diastolic: 76,
+    pulse: 68,
+    updatedAt: 1,
+  }
+
+  it('CSV: van y vuelven en sus columnas', () => {
+    const csv = toCSV(new Set(), [day])
+    const row = parseCSVRows(csv)[1]
+    const col = (name: string) => row[CSV_HEADER.indexOf(name)]
+    expect(['test_ovulacion', 'test_embarazo', 'tension', 'pulso'].map(col)).toEqual(['Positivo', 'Negativo', '118/76', '68'])
+    expect(parseCSV(csv).days).toEqual([expect.objectContaining({ ...day, updatedAt: expect.any(Number) })])
+  })
+
+  it('JSON: descarta valores imposibles y la tensión incompleta o al revés', () => {
+    const backup = buildBackup({ periods: [], days: [day], customSymptoms: [], settings: {} })
+    const ok = parseBackup(JSON.stringify(backup))
+    expect(ok.days[0]).toMatchObject({ ovulationTest: 'positive', systolic: 118, diastolic: 76, pulse: 68 })
+
+    const bad = parseBackup(
+      JSON.stringify({
+        ...backup,
+        days: [
+          { date: '2026-10-06', ovulationTest: 'quizá', systolic: 80, diastolic: 120, pulse: 500, updatedAt: 1 },
+          { date: '2026-10-07', systolic: 120, updatedAt: 1 },
+        ],
+      }),
+    )
+    for (const d of bad.days) {
+      expect(d.ovulationTest).toBeUndefined()
+      expect(d.systolic).toBeUndefined()
+      expect(d.diastolic).toBeUndefined()
+      expect(d.pulse).toBeUndefined()
+    }
   })
 })

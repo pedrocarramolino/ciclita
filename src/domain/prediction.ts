@@ -90,6 +90,8 @@ export interface Prediction {
   periodLength: number
   /** Fase lútea usada para la ovulación y la ventana fértil. */
   lutealPhase: number
+  /** Previsión manual (duraciones fijas, sin margen). */
+  manual: boolean
   periodSource: Source
   /** Valor indicado por la usuaria (o el habitual) con el que se combinan pocos registros. */
   cyclePrior: number
@@ -278,6 +280,7 @@ export function predict(input: PredictionInput): Prediction {
     periodLength,
     periodSource,
     lutealPhase,
+    manual,
     cyclePrior,
     periodPrior,
     recentCycles,

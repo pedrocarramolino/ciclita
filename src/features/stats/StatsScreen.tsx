@@ -15,6 +15,7 @@ import { usePrediction } from '../../usePrediction'
 import { CycleChart } from './CycleChart'
 import { TemperatureCard } from './TemperatureCard'
 import { WeightCard } from './WeightCard'
+import { BloodPressureCard } from './BloodPressureCard'
 import { temperatureCycles } from '../../domain/temperature'
 
 const TOP_SYMPTOMS = 8
@@ -93,6 +94,7 @@ export function StatsScreen() {
       {tempCycles.length > 0 && <TemperatureCard cycles={tempCycles} />}
 
       <WeightCard days={data.days} periods={data.periods} today={today()} />
+      <BloodPressureCard days={data.days} today={today()} />
 
       <Symptoms symptoms={symptoms.slice(0, TOP_SYMPTOMS)} />
     </main>
