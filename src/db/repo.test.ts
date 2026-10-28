@@ -4,7 +4,9 @@ import {
   addCustomSymptom,
   clearDay,
   endPeriod,
+  markPeriodEnd,
   markPeriodRange,
+  markPeriodStart,
   restorePeriods,
   saveDay,
   setPillTaken,
@@ -192,3 +194,37 @@ describe('borrar el registro de un día', () => {
   })
 })
 
+
+describe('comienzo y fin del periodo desde el registro del día', () => {
+  it('un comienzo reciente deja el periodo en curso hasta hoy', async () => {
+    const db = await freshDB()
+    await markPeriodStart('2026-10-11', 5, db, TODAY)
+    expect(await db.periods.toArray()).toMatchObject([{ startDate: '2026-10-11', endDate: null }])
+  })
+
+  it('un comienzo antiguo marca los días que suele durar y lo da por terminado', async () => {
+    const db = await freshDB()
+    const undo = await markPeriodStart('2026-09-01', 5, db, TODAY)
+    expect(await db.periods.toArray()).toMatchObject([{ startDate: '2026-09-01', endDate: '2026-09-05' }])
+    await undoPeriodEdit(undo, db)
+    expect(await db.periods.count()).toBe(0)
+  })
+
+  it('el fin cierra el periodo en curso, lo acorta o lo alarga', async () => {
+    const db = await freshDB()
+    await db.periods.add({ startDate: '2026-10-09', endDate: null })
+    await markPeriodEnd('2026-10-12', db, TODAY)
+    expect(await db.periods.toArray()).toMatchObject([{ startDate: '2026-10-09', endDate: '2026-10-12' }])
+    await markPeriodEnd('2026-10-10', db, TODAY)
+    expect(await db.periods.toArray()).toMatchObject([{ startDate: '2026-10-09', endDate: '2026-10-10' }])
+    await markPeriodEnd('2026-10-13', db, TODAY)
+    expect(await db.periods.toArray()).toMatchObject([{ startDate: '2026-10-09', endDate: '2026-10-13' }])
+  })
+
+  it('sin un periodo empezado en los 14 días antes no hace nada', async () => {
+    const db = await freshDB()
+    await db.periods.add({ startDate: '2026-09-01', endDate: '2026-09-05' })
+    expect(await markPeriodEnd('2026-10-12', db, TODAY)).toBeNull()
+    expect(await db.periods.toArray()).toMatchObject([{ startDate: '2026-09-01', endDate: '2026-09-05' }])
+  })
+})

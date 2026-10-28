@@ -123,8 +123,13 @@ describe('accesibilidad (axe)', () => {
     const user = userEvent.setup()
     render(<App encrypted={false} />)
     await user.click(await screen.findByRole('button', { name: 'Registrar hoy' }))
-    const dialog = await screen.findByRole('dialog')
-    await within(dialog).findByLabelText('Temperatura basal')
+    const dialog = within(await screen.findByRole('dialog'))
+    // Cuadrícula con todos los recuadros y, después, un apartado abierto.
+    await user.click(await dialog.findByRole('button', { name: /^Tensión y pulso/ }))
+    await dialog.findByLabelText('Pulso')
+    await expectNoViolations()
+    await user.click(dialog.getByRole('button', { name: 'Todos los registros' }))
+    await dialog.findByRole('button', { name: /^Temperatura/ })
     await expectNoViolations()
   })
 
