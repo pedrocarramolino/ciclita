@@ -1,7 +1,7 @@
 import { db, type AppDB, type DayLog, type Period } from './db'
-import { dateRange, periodDateSet, setPeriodDays, togglePeriodDay } from '../domain/periods'
+import { dateRange, MAX_ONGOING_DAYS, periodDateSet, periodEnd, setPeriodDays, togglePeriodDay } from '../domain/periods'
 import { findCatalogSymptom, normalize } from '../domain/symptoms'
-import { today as todayISO, type ISODate } from '../domain/dates'
+import { addDays, diffDays, today as todayISO, type ISODate } from '../domain/dates'
 
 export type DayForm = Omit<DayLog, 'date' | 'updatedAt'>
 
@@ -102,6 +102,57 @@ export async function endPeriod(date: ISODate = todayISO(), database: AppDB = db
     const end = date < ongoing.startDate ? ongoing.startDate : date
     await database.periods.update(ongoing.id, { endDate: end })
     return periods
+  })
+}
+
+/**
+ * "Comienzo del periodo" en el registro de un día: el periodo empieza ese día. Si aún
+ * no han pasado los días que suele durar, sigue en curso hasta hoy; si no, se marcan
+ * esos días y queda terminado. Devuelve lo de antes para deshacer.
+ */
+export async function markPeriodStart(
+  date: ISODate,
+  periodLength: number,
+  database: AppDB = db,
+  today: ISODate = todayISO(),
+): Promise<PeriodEditUndo> {
+  return database.transaction('rw', database.periods, async () => {
+    const periods = await database.periods.toArray()
+    const ongoing = diffDays(date, today) < periodLength
+    const end = ongoing ? today : addDays(date, periodLength - 1)
+    const next = setPeriodDays(periods, dateRange(date, end), true, today).map((p) =>
+      ongoing && p.startDate <= date && periodEnd(p, today) === today ? { ...p, endDate: null } : p,
+    )
+    await database.periods.clear()
+    await database.periods.bulkAdd(next)
+    return { periods, days: [] }
+  })
+}
+
+/**
+ * "Fin del periodo" en el registro de un día: el último periodo empezado antes termina
+ * ese día (se alarga o se acorta). null si no hay ninguno empezado en los 14 días antes.
+ */
+export async function markPeriodEnd(
+  date: ISODate,
+  database: AppDB = db,
+  today: ISODate = todayISO(),
+): Promise<PeriodEditUndo | null> {
+  return database.transaction('rw', database.periods, async () => {
+    const periods = await database.periods.toArray()
+    const p = periods
+      .filter((x) => x.startDate <= date)
+      .sort((a, b) => a.startDate.localeCompare(b.startDate))
+      .at(-1)
+    if (!p || diffDays(p.startDate, date) + 1 > MAX_ONGOING_DAYS) return null
+    const currentEnd = periodEnd(p, today)
+    let next = periods
+    if (currentEnd > date) next = setPeriodDays(next, dateRange(addDays(date, 1), currentEnd), false, today)
+    else if (currentEnd < date) next = setPeriodDays(next, dateRange(p.startDate, date), true, today)
+    next = next.map((x) => (x.startDate === p.startDate ? { ...x, endDate: date } : x))
+    await database.periods.clear()
+    await database.periods.bulkAdd(next)
+    return { periods, days: [] }
   })
 }
 
